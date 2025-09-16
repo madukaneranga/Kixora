@@ -1,0 +1,21 @@
+/*
+  Color Palette CSS Custom Properties
+
+  This file dynamically loads color values from environment variables
+  and makes them available as CSS custom properties for Tailwind CSS.
+
+  Color Palette:
+  - Primary: #005147 (Dark teal/green)
+  - Secondary: #ea553b (Orange-red)
+  - Accent: #ba2b2b (Dark red)
+  - Dark: #000000 (Black)
+  - Light: #ffffff (White)
+*/
+
+:root {
+  --color-primary: #005147;
+  --color-secondary: #ea553b;
+  --color-accent: #ba2b2b;
+  --color-dark: #000000;
+  --color-light: #ffffff;
+}
