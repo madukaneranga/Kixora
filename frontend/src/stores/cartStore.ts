@@ -25,7 +25,7 @@ interface CartStore {
   addItem: (item: Omit<CartItem, 'id'>, userId?: string) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<boolean>;
   removeItem: (itemId: string, userId?: string) => Promise<void>;
-  clearCart: () => void;
+  clearCart: (userId?: string) => Promise<void>;
   openCart: () => void;
   closeCart: () => void;
   setUserId: (userId: string | null, isNewUser?: boolean) => void;
@@ -139,8 +139,18 @@ export const useCartStore = create<CartStore>()(
         }
       },
       
-      clearCart: () => {
+      clearCart: async (userId) => {
         set({ items: [] });
+
+        // Auto-sync to database if user is authenticated
+        const currentUserId = userId || get().currentUserId;
+        if (currentUserId) {
+          try {
+            await get().syncToDb(currentUserId);
+          } catch (error) {
+            console.warn('Could not sync cart clear to database:', error);
+          }
+        }
       },
       
       openCart: () => set({ isOpen: true }),

@@ -41,13 +41,13 @@ const CartDrawer = () => {
     }
   };
 
-  const handleClearCart = () => {
+  const handleClearCart = async () => {
     if (items.length === 0) return;
 
     const confirmed = window.confirm(`Are you sure you want to remove all ${itemCount} ${itemCount === 1 ? 'item' : 'items'} from your cart?`);
 
     if (confirmed) {
-      clearCart();
+      await clearCart();
       toast.success('Cart cleared successfully');
     }
   };

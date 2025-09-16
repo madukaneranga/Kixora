@@ -261,7 +261,7 @@ const CheckoutPage = () => {
         }));
 
         // Clear cart before redirecting to PayHere
-        clearCart();
+        await clearCart();
       } else {
         // For bank transfer and COD, redirect to thank you page
         const thankYouUrl = `/thank-you?total=${total}&method=${formData.paymentMethod}&name=${encodeURIComponent(`${formData.firstName} ${formData.lastName}`)}`;
@@ -270,8 +270,8 @@ const CheckoutPage = () => {
         navigate(thankYouUrl);
 
         // Clear cart after navigation
-        setTimeout(() => {
-          clearCart();
+        setTimeout(async () => {
+          await clearCart();
         }, 100);
       }
 
