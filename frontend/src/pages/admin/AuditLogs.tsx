@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ClipboardList, Filter, Search, Eye } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { supabase } from '../../lib/supabase';
+import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
+import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 
@@ -21,6 +22,7 @@ interface AuditLog {
 }
 
 const AuditLogs = () => {
+  const { user } = useAuth();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
@@ -32,13 +34,25 @@ const AuditLogs = () => {
   });
 
   useEffect(() => {
-    fetchAuditLogs();
-  }, []);
+    if (user) {
+      fetchAuditLogs();
+    }
+  }, [user]);
 
   const fetchAuditLogs = async () => {
     try {
       setLoading(true);
-      let query = supabase
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      let query = supabaseAdmin
         .from('audit_logs')
         .select(`
           *,

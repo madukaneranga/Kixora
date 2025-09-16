@@ -24,7 +24,7 @@ const PaymentSuccessPage = () => {
         localStorage.removeItem('pendingOrderInfo');
 
         // Redirect to thank you page with order data
-        const thankYouUrl = `/thank-you?total=${orderData.total}&method=${orderData.paymentMethod}&name=${encodeURIComponent(orderData.customerName)}`;
+        const thankYouUrl = `/thank-you?total=${orderData.total}&method=${orderData.paymentMethod}&name=${encodeURIComponent(orderData.customerName)}&orderId=${orderData.orderId || 'N/A'}`;
         navigate(thankYouUrl);
       } catch (e) {
         console.error('Error parsing pending order info:', e);

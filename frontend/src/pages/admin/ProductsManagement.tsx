@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Eye, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, ToggleLeft, ToggleRight, Package } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { supabase } from '../../lib/supabase';
+import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
+import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import toast from 'react-hot-toast';
@@ -40,6 +41,7 @@ interface Brand {
 }
 
 const ProductsManagement = () => {
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -58,14 +60,26 @@ const ProductsManagement = () => {
   });
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
       const [productsRes, categoriesRes, brandsRes] = await Promise.all([
-        supabase
+        supabaseAdmin
           .from('products')
           .select(`
             *,
@@ -74,8 +88,8 @@ const ProductsManagement = () => {
             product_variants (id, stock, size, color)
           `)
           .order('created_at', { ascending: false }),
-        supabase.from('categories').select('id, name').order('name'),
-        supabase.from('brands').select('id, name').order('name')
+        supabaseAdmin.from('categories').select('id, name').order('name'),
+        supabaseAdmin.from('brands').select('id, name').order('name')
       ]);
 
       if (productsRes.error) throw productsRes.error;
@@ -108,8 +122,17 @@ const ProductsManagement = () => {
         featured: formData.featured
       };
 
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
       if (editingProduct) {
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
           .from('products')
           .update(productData)
           .eq('id', editingProduct.id);
@@ -117,7 +140,7 @@ const ProductsManagement = () => {
         if (error) throw error;
         toast.success('Product updated successfully');
       } else {
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
           .from('products')
           .insert([productData]);
 
@@ -137,7 +160,16 @@ const ProductsManagement = () => {
 
   const toggleProductStatus = async (productId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { error } = await supabaseAdmin
         .from('products')
         .update({ is_active: !currentStatus })
         .eq('id', productId);
@@ -161,7 +193,16 @@ const ProductsManagement = () => {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const { error } = await supabase
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { error } = await supabaseAdmin
         .from('products')
         .delete()
         .eq('id', productId);

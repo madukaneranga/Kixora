@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { Eye, Filter } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { supabase } from '../../lib/supabase';
+import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
 import Button from '../../components/ui/Button';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../hooks/useAuth';
 
 interface Order {
   id: string;
@@ -20,6 +22,7 @@ interface Order {
 }
 
 const OrdersManagement = () => {
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -28,34 +31,49 @@ const OrdersManagement = () => {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    if (user) {
+      fetchOrders();
+    }
+  }, [user]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      console.log('Fetching orders...');
 
-      const { data, error } = await supabase
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Verify user is admin before using admin client
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      // Use admin client to bypass RLS and get all orders
+      const { data, error } = await supabaseAdmin
         .from('orders')
         .select(`
-          *,
-          profiles (
+          id,
+          total,
+          currency,
+          status,
+          created_at,
+          payment_method,
+          shipping_method,
+          user_id,
+          profiles:user_id (
             full_name,
             email
           )
         `)
         .order('created_at', { ascending: false });
 
-      console.log('Orders query result:', { data, error });
-
       if (error) {
-        console.error('Orders query error:', error);
         throw error;
       }
 
       setOrders(data || []);
-      console.log('Orders set:', data?.length || 0, 'orders found');
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast.error(`Failed to load orders: ${error.message || 'Unknown error'}`);
@@ -67,7 +85,18 @@ const OrdersManagement = () => {
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
       setUpdating(orderId);
-      const { error } = await supabase
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Verify user is admin before using admin client
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { error } = await supabaseAdmin
         .from('orders')
         .update({ status: newStatus })
         .eq('id', orderId);

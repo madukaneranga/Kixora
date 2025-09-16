@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Eye, UserCheck, UserX, Shield, User } from 'lucide-react';
+import { Eye, UserCheck, UserX, Shield, User, Users } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { supabase } from '../../lib/supabase';
+import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
+import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/ui/Button';
 import toast from 'react-hot-toast';
 
@@ -23,6 +24,7 @@ interface OrderStats {
 }
 
 const UsersManagement = () => {
+  const { user } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -32,13 +34,26 @@ const UsersManagement = () => {
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (user) {
+      fetchUsers();
+    }
+  }, [user]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Verify user is admin before using admin client
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { data, error } = await supabaseAdmin
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
@@ -55,7 +70,16 @@ const UsersManagement = () => {
 
   const fetchUserStats = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { data, error } = await supabaseAdmin
         .from('orders')
         .select('total')
         .eq('user_id', userId);
@@ -77,7 +101,17 @@ const UsersManagement = () => {
   const updateUserRole = async (userId: string, newRole: 'user' | 'admin') => {
     try {
       setUpdating(userId);
-      const { error } = await supabase
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { error } = await supabaseAdmin
         .from('profiles')
         .update({ role: newRole })
         .eq('id', userId);

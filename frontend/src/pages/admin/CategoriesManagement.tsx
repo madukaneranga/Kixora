@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Pin, PinOff, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { supabase } from '../../lib/supabase';
+import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
+import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import toast from 'react-hot-toast';
@@ -17,6 +18,7 @@ interface Category {
 }
 
 const CategoriesManagement = () => {
+  const { user } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -31,13 +33,25 @@ const CategoriesManagement = () => {
   });
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (user) {
+      fetchCategories();
+    }
+  }, [user]);
 
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { data, error } = await supabaseAdmin
         .from('categories')
         .select('*')
         .order('created_at', { ascending: false });
@@ -88,8 +102,17 @@ const CategoriesManagement = () => {
         is_pinned: formData.is_pinned
       };
 
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
       if (editingCategory) {
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
           .from('categories')
           .update(categoryData)
           .eq('id', editingCategory.id);
@@ -97,7 +120,7 @@ const CategoriesManagement = () => {
         if (error) throw error;
         toast.success('Category updated successfully');
       } else {
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
           .from('categories')
           .insert([categoryData]);
 
@@ -130,7 +153,16 @@ const CategoriesManagement = () => {
     }
 
     try {
-      const { error } = await supabase
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { error } = await supabaseAdmin
         .from('categories')
         .update({ is_pinned: !currentPinned })
         .eq('id', categoryId);
@@ -154,7 +186,16 @@ const CategoriesManagement = () => {
     if (!confirm('Are you sure you want to delete this category? This action cannot be undone.')) return;
 
     try {
-      const { error } = await supabase
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { error } = await supabaseAdmin
         .from('categories')
         .delete()
         .eq('id', categoryId);
@@ -182,7 +223,7 @@ const CategoriesManagement = () => {
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `categories/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabaseAdmin.storage
         .from('product-images')
         .upload(filePath, file);
 
@@ -190,7 +231,7 @@ const CategoriesManagement = () => {
         throw uploadError;
       }
 
-      const { data } = supabase.storage
+      const { data } = supabaseAdmin.storage
         .from('product-images')
         .getPublicUrl(filePath);
 

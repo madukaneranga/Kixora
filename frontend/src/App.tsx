@@ -18,6 +18,7 @@ import CollectionDetailPage from './pages/CollectionDetailPage';
 import CheckoutPage from './pages/CheckoutPage';
 import WishlistPage from './pages/WishlistPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import PaymentCancelPage from './pages/PaymentCancelPage';
 import ThankYouPage from './pages/ThankYouPage';
 import OrderDashboard from './pages/OrderDashboard';
 import OrderDetails from './pages/OrderDetails';
@@ -61,7 +62,7 @@ const AppLayout = () => {
           <Route path="/orders/:orderId" element={<OrderDetails />} />
           <Route path="/thank-you" element={<ThankYouPage />} />
           <Route path="/payment/success" element={<PaymentSuccessPage />} />
-          <Route path="/payment/cancel" element={<HomePage />} />
+          <Route path="/payment/cancel" element={<PaymentCancelPage />} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
