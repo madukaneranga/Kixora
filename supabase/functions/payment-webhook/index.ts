@@ -50,9 +50,11 @@ class PayHereWebhookService {
       hashInput: hashString.substring(0, 50) + '...'
     });
 
+    // Use Deno's std library for MD5
+    const crypto_std = await import("https://deno.land/std@0.177.0/crypto/mod.ts");
     const encoder = new TextEncoder();
     const data = encoder.encode(hashString);
-    const hashBuffer = await crypto.subtle.digest("MD5", data);
+    const hashBuffer = await crypto_std.crypto.subtle.digest("MD5", data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const calculatedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 
