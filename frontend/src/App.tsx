@@ -22,6 +22,7 @@ import PaymentCancelPage from './pages/PaymentCancelPage';
 import ThankYouPage from './pages/ThankYouPage';
 import OrderDashboard from './pages/OrderDashboard';
 import OrderDetails from './pages/OrderDetails';
+import ProfilePage from './pages/ProfilePage';
 import ProtectedAdminRoute from './components/admin/ProtectedAdminRoute';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import OrdersManagement from './pages/admin/OrdersManagement';
@@ -29,6 +30,9 @@ import ProductsManagement from './pages/admin/ProductsManagement';
 import CategoriesManagement from './pages/admin/CategoriesManagement';
 import UsersManagement from './pages/admin/UsersManagement';
 import AuditLogs from './pages/admin/AuditLogs';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import { PageLoading } from './components/ui/Loading';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,11 +62,14 @@ const AppLayout = () => {
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/orders" element={<OrderDashboard />} />
           <Route path="/orders/:orderId" element={<OrderDetails />} />
           <Route path="/thank-you" element={<ThankYouPage />} />
           <Route path="/payment/success" element={<PaymentSuccessPage />} />
           <Route path="/payment/cancel" element={<PaymentCancelPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
@@ -100,12 +107,7 @@ const AppContent = () => {
   }, [user?.id, authLoading, isNewUser, mergeWithDbWishlist, setUserId, clearLocal]);
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
-        <p className="ml-4">Loading...</p>
-      </div>
-    );
+    return <PageLoading />;
   }
 
   return (
@@ -121,13 +123,19 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AppContent />
       <Toaster
-        position="top-right"
+        position="bottom-center"
         toastOptions={{
-          duration: 4000,
+          duration: 3000,
+          // Remove default styles since we're using custom toasts
           style: {
-            background: '#363636',
-            color: '#fff',
+            background: 'transparent',
+            boxShadow: 'none',
+            padding: 0,
+            border: 'none',
           },
+        }}
+        containerStyle={{
+          bottom: '20px',
         }}
       />
     </QueryClientProvider>

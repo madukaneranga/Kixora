@@ -7,7 +7,8 @@ import {
   FolderOpen,
   Users,
   ClipboardList,
-  LogOut
+  LogOut,
+  Home,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../ui/Button';
@@ -24,6 +25,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   const handleSignOut = async () => {
     await signOut();
+    navigate('/');
+  };
+  const handleBackHome = async () => {
     navigate('/');
   };
 
@@ -75,6 +79,14 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         {/* Sign Out */}
         <div className="p-4 border-t border-[rgb(51,51,51)]">
           <Button
+            onClick={handleBackHome}
+            variant="outline"
+            className="w-full border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
+          >
+            <Home className="w-4 h-4 mr-2" />
+            Home
+          </Button>
+          <Button
             onClick={handleSignOut}
             variant="outline"
             className="w-full border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
@@ -82,6 +94,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out
           </Button>
+          
         </div>
       </div>
 

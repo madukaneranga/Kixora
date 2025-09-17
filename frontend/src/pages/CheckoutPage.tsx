@@ -10,7 +10,7 @@ import { useCartStore } from '../stores/cartStore';
 import { supabase } from '../lib/supabase';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import toast from 'react-hot-toast';
+import { showErrorToast } from '../components/ui/CustomToast';
 import logo from '../assests/logo.black.png';
 
 const checkoutSchema = yup.object({
@@ -85,7 +85,7 @@ const CheckoutPage = () => {
   useEffect(() => {
     // Check for payment cancellation
     if (searchParams.get('cancelled') === 'true') {
-      toast.error('Payment was cancelled. Please try again or choose a different payment method.');
+      showErrorToast('Payment was cancelled. Please try again or choose a different payment method.');
       // Remove the cancelled parameter from URL
       navigate('/checkout', { replace: true });
     }
@@ -288,7 +288,7 @@ const CheckoutPage = () => {
 
     } catch (error: any) {
       console.error('Checkout error:', error);
-      toast.error(error.message || 'Failed to process checkout');
+      showErrorToast(error.message || 'Failed to process checkout');
     } finally {
       setLoading(false);
     }

@@ -35,6 +35,7 @@ const Header = () => {
   const handleSignOut = async () => {
     await signOut();
     setShowUserMenu(false);
+    navigate('/');
   };
 
   return (
@@ -55,7 +56,7 @@ const Header = () => {
           <div className="flex-1"></div>
 
           {/* Right Side Controls */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             {/* Search */}
             <motion.div
               animate={{ width: isSearchOpen ? '300px' : '40px' }}
@@ -229,8 +230,10 @@ const Header = () => {
                 variant="primary"
                 size="sm"
                 onClick={() => setShowAuthModal(true)}
+                className="px-2 sm:px-4 text-xs sm:text-sm"
               >
-                Sign In
+                <span className="hidden sm:inline">Sign In</span>
+                <span className="sm:hidden">Sign</span>
               </Button>
             )}
           </div>
@@ -291,7 +294,7 @@ const Header = () => {
       <Modal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
-        title="Welcome to Kixora"
+        title=""
       >
         <AuthForm onSuccess={() => setShowAuthModal(false)} />
       </Modal>

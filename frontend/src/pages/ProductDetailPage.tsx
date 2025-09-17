@@ -25,7 +25,7 @@ import { useCartStore } from '../stores/cartStore';
 import { useWishlistStore } from '../stores/wishlistStore';
 import Button from '../components/ui/Button';
 import ColorSelector from '../components/ui/ColorSelector';
-import toast from 'react-hot-toast';
+import { showSuccessToast, showErrorToast } from '../components/ui/CustomToast';
 
 interface Product {
   id: string;
@@ -182,7 +182,7 @@ const ProductDetailPage = () => {
 
     } catch (error) {
       console.error('Error fetching product:', error);
-      toast.error('Product not found');
+      showErrorToast('Product not found');
       navigate('/products');
     } finally {
       setLoading(false);
@@ -228,27 +228,27 @@ const ProductDetailPage = () => {
 
   const handleWishlistToggle = async () => {
     if (!user || !product) {
-      toast.error('Please sign in to add to wishlist');
+      showErrorToast('Please sign in to add to wishlist');
       return;
     }
 
     try {
       if (isInWishlist(product.id)) {
         await removeFromWishlist(user.id, product.id);
-        toast.success('Removed from wishlist');
+        showSuccessToast('Removed from wishlist');
       } else {
         await addToWishlist(user.id, product.id);
-        toast.success('Added to wishlist');
+        showSuccessToast('Added to wishlist');
       }
     } catch (error) {
-      toast.error('Something went wrong');
+      showErrorToast('Something went wrong');
     }
   };
 
 
   const handleAddToCart = async () => {
     if (!product) {
-      toast.error('Product not found');
+      showErrorToast('Product not found');
       return;
     }
 
@@ -258,7 +258,7 @@ const ProductDetailPage = () => {
     const hasColor = hasVariants && product.product_variants.some(v => v.color);
 
     if (!hasVariants) {
-      toast.error('Product configuration error - no variants found');
+      showErrorToast('Product configuration error - no variants found');
       return;
     }
 
@@ -269,21 +269,21 @@ const ProductDetailPage = () => {
         let missingSelections = [];
         if (hasSize) missingSelections.push('size');
         if (hasColor) missingSelections.push('color');
-        toast.error(`Please select ${missingSelections.join(' and ')}`);
+        showErrorToast(`Please select ${missingSelections.join(' and ')}`);
         return;
       }
     } else {
       // Product has variants but only for stock tracking (no size/color)
       // selectedVariant should already be auto-selected
       if (!selectedVariant) {
-        toast.error('Please try again');
+        showErrorToast('Please try again');
         return;
       }
     }
 
     const variant = product.product_variants.find(v => v.id === selectedVariant);
     if (!variant || variant.stock < quantity) {
-      toast.error('Not enough stock available');
+      showErrorToast('Not enough stock available');
       return;
     }
 
@@ -302,7 +302,7 @@ const ProductDetailPage = () => {
       maxStock: variant.stock,
     }, user?.id);
 
-    toast.success('Added to cart!');
+    showSuccessToast('Added to cart!');
   };
 
   const handleShare = async () => {
@@ -319,7 +319,7 @@ const ProductDetailPage = () => {
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href);
-      toast.success('Link copied to clipboard!');
+      showSuccessToast('Link copied to clipboard!');
     }
   };
 

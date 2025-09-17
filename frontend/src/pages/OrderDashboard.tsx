@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Package, X, Clock, CheckCircle } from 'lucide-react';
+import { Package, X, Clock, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import Button from '../components/ui/Button';
-import toast from 'react-hot-toast';
+import { showErrorToast } from '../components/ui/CustomToast';
 
 interface Order {
   id: string;
@@ -34,16 +34,30 @@ const OrderDashboard = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'arrived' | 'cancelled'>('all');
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [allOrdersCount, setAllOrdersCount] = useState(0);
+  const [arrivedCount, setArrivedCount] = useState(0);
+  const [cancelledCount, setCancelledCount] = useState(0);
 
   useEffect(() => {
     if (user) {
       fetchOrders();
+      fetchOrderCounts();
     }
   }, [user]);
 
   const fetchOrders = async () => {
     try {
-      const { data, error } = await supabase
+      // Build base query for counting
+      let countQuery = supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user!.id);
+
+      // Build query for fetching data
+      let dataQuery = supabase
         .from('orders')
         .select(`
           id,
@@ -62,33 +76,130 @@ const OrderDashboard = () => {
           )
         `)
         .eq('user_id', user!.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(
+          (currentPage - 1) * itemsPerPage,
+          currentPage * itemsPerPage - 1
+        );
+
+      // Apply status filter to both queries
+      if (selectedFilter === 'arrived') {
+        countQuery = countQuery.eq('status', 'delivered');
+        dataQuery = dataQuery.eq('status', 'delivered');
+      } else if (selectedFilter === 'cancelled') {
+        countQuery = countQuery.eq('status', 'cancelled');
+        dataQuery = dataQuery.eq('status', 'cancelled');
+      }
+
+      // Execute both queries
+      const [{ count }, { data, error }] = await Promise.all([
+        countQuery,
+        dataQuery
+      ]);
 
       if (error) throw error;
       setOrders(data || []);
+      setTotalCount(count || 0);
     } catch (error) {
       console.error('Error fetching orders:', error);
-      toast.error('Failed to load orders');
+      showErrorToast('Failed to load orders');
     } finally {
       setLoading(false);
     }
   };
 
-  const getFilteredOrders = () => {
-    switch (selectedFilter) {
-      case 'arrived':
-        return orders.filter(order => order.status === 'delivered');
-      case 'cancelled':
-        return orders.filter(order => order.status === 'cancelled');
-      default:
-        return orders;
+  // Add effect to refetch when pagination or filters change
+  useEffect(() => {
+    setCurrentPage(1); // Reset to first page when filter changes
+  }, [selectedFilter]);
+
+  useEffect(() => {
+    if (user) {
+      fetchOrders();
+    }
+  }, [currentPage, selectedFilter]);
+
+  const fetchOrderCounts = async () => {
+    try {
+      const [allCount, arrivedCount, cancelledCount] = await Promise.all([
+        supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user!.id),
+        supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user!.id)
+          .eq('status', 'delivered'),
+        supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user!.id)
+          .eq('status', 'cancelled')
+      ]);
+
+      setAllOrdersCount(allCount.count || 0);
+      setArrivedCount(arrivedCount.count || 0);
+      setCancelledCount(cancelledCount.count || 0);
+    } catch (error) {
+      console.error('Error fetching order counts:', error);
     }
   };
 
-  const getOrderCounts = () => {
-    const arrived = orders.filter(order => order.status === 'delivered').length;
-    const cancelled = orders.filter(order => order.status === 'cancelled').length;
-    return { arrived, cancelled };
+  // Pagination calculations
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalCount);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const generatePageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const halfVisible = Math.floor(maxVisiblePages / 2);
+      let startPage = Math.max(1, currentPage - halfVisible);
+      let endPage = Math.min(totalPages, currentPage + halfVisible);
+
+      // Adjust to show exactly maxVisiblePages when possible
+      if (endPage - startPage + 1 < maxVisiblePages) {
+        if (startPage === 1) {
+          endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        } else {
+          startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+      }
+
+      // Add first page and ellipsis if needed
+      if (startPage > 1) {
+        pages.push(1);
+        if (startPage > 2) {
+          pages.push('...');
+        }
+      }
+
+      // Add visible page numbers
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      // Add ellipsis and last page if needed
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pages.push('...');
+        }
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
   };
 
   const getStatusIcon = (status: string) => {
@@ -117,8 +228,6 @@ const OrderDashboard = () => {
     }
   };
 
-  const filteredOrders = getFilteredOrders();
-  const { arrived, cancelled } = getOrderCounts();
 
   if (loading) {
     return (
@@ -151,7 +260,7 @@ const OrderDashboard = () => {
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  All Orders ({orders.length})
+                  All Orders ({allOrdersCount})
                 </button>
                 <button
                   onClick={() => setSelectedFilter('arrived')}
@@ -163,7 +272,7 @@ const OrderDashboard = () => {
                 >
                   <span>Arrived</span>
                   <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
-                    {arrived}
+                    {arrivedCount}
                   </span>
                 </button>
                 <button
@@ -176,7 +285,7 @@ const OrderDashboard = () => {
                 >
                   <span>Cancelled</span>
                   <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
-                    {cancelled}
+                    {cancelledCount}
                   </span>
                 </button>
               </div>
@@ -185,7 +294,7 @@ const OrderDashboard = () => {
 
           {/* Main Content */}
           <div className="flex-1">
-            {filteredOrders.length === 0 ? (
+            {orders.length === 0 ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
                 <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders found</h3>
@@ -198,7 +307,7 @@ const OrderDashboard = () => {
               </div>
             ) : (
               <div className="space-y-6">
-                {filteredOrders.map((order) => (
+                {orders.map((order) => (
                   <motion.div
                     key={order.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -278,6 +387,64 @@ const OrderDashboard = () => {
                     </div>
                   </motion.div>
                 ))}
+
+                {/* Pagination */}
+                {totalCount > itemsPerPage && (
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-4">
+                    <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+                      <div className="text-sm text-gray-600">
+                        Showing {startItem} to {endItem} of {totalCount} orders
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        {/* Previous Button */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className="border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </Button>
+
+                        {/* Page Numbers */}
+                        {generatePageNumbers().map((page, index) => (
+                          page === '...' ? (
+                            <span key={index} className="px-3 py-1 text-gray-500">
+                              {page}
+                            </span>
+                          ) : (
+                            <Button
+                              key={page}
+                              size="sm"
+                              variant={page === currentPage ? "default" : "outline"}
+                              onClick={() => handlePageChange(page as number)}
+                              className={
+                                page === currentPage
+                                  ? "bg-black text-white"
+                                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                              }
+                            >
+                              {page}
+                            </Button>
+                          )
+                        ))}
+
+                        {/* Next Button */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className="border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

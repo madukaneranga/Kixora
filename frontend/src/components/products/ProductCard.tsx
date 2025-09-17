@@ -7,7 +7,7 @@ import { useWishlistStore } from '../../stores/wishlistStore';
 import { useCartStore } from '../../stores/cartStore';
 import Button from '../ui/Button';
 import ColorSelector from '../ui/ColorSelector';
-import toast from 'react-hot-toast';
+import { showSuccessToast, showErrorToast } from '../ui/CustomToast';
 
 interface ProductCardProps {
   product: {
@@ -67,7 +67,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   const handleWishlistToggle = async () => {
     if (!user) {
-      toast.error('Please sign in to add to wishlist');
+      showErrorToast('Please sign in to add to wishlist');
       return;
     }
 
@@ -75,14 +75,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
     try {
       if (inWishlist) {
         await removeFromWishlist(user.id, product.id);
-        toast.success('Removed from wishlist');
+        showSuccessToast('Removed from wishlist');
       } else {
         await addToWishlist(user.id, product.id);
-        toast.success('Added to wishlist');
+        showSuccessToast('Added to wishlist');
       }
     } catch (error) {
       console.error('Wishlist error:', error);
-      toast.error('Something went wrong');
+      showErrorToast('Something went wrong');
     } finally {
       setIsLoading(false);
     }
@@ -95,20 +95,20 @@ const ProductCard = ({ product }: ProductCardProps) => {
         let missing = [];
         if (!selectedSize) missing.push('size');
         if (!selectedColor) missing.push('color');
-        toast.error(`Please select ${missing.join(' and ')}`);
+        showErrorToast(`Please select ${missing.join(' and ')}`);
       } else if (variantScenario === 'size-only') {
-        toast.error('Please select size');
+        showErrorToast('Please select size');
       } else if (variantScenario === 'color-only') {
-        toast.error('Please select color');
+        showErrorToast('Please select color');
       } else {
-        toast.error('Product configuration error');
+        showErrorToast('Product configuration error');
       }
       return;
     }
 
     // Enhanced stock validation matching ProductDetailPage
     if (!selectedVariant.stock || selectedVariant.stock < 1) {
-      toast.error('Not enough stock available');
+      showErrorToast('Not enough stock available');
       return;
     }
 
@@ -127,7 +127,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
       maxStock: selectedVariant.stock,
     }, user?.id);
 
-    toast.success('Added to cart');
+    showSuccessToast('Added to cart');
     // Reset selections
     setSelectedSize('');
     setSelectedColor('');

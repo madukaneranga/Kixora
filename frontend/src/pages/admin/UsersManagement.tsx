@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Eye, UserCheck, UserX, Shield, User, Users } from 'lucide-react';
+import { Eye, UserCheck, UserX, Shield, User, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/ui/Button';
-import toast from 'react-hot-toast';
+import { showSuccessToast, showErrorToast } from '../../components/ui/CustomToast';
 
 interface UserProfile {
   id: string;
@@ -32,6 +32,9 @@ const UsersManagement = () => {
   const [userStats, setUserStats] = useState<OrderStats | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   useEffect(() => {
     if (user) {
@@ -53,16 +56,40 @@ const UsersManagement = () => {
         throw new Error('Access denied: Admin privileges required');
       }
 
-      const { data, error } = await supabaseAdmin
+      // Build base query for counting
+      let countQuery = supabaseAdmin
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      // Build query for fetching data
+      let dataQuery = supabaseAdmin
         .from('profiles')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(
+          (currentPage - 1) * itemsPerPage,
+          currentPage * itemsPerPage - 1
+        );
+
+      // Apply role filter to both queries
+      if (roleFilter !== 'all') {
+        countQuery = countQuery.eq('role', roleFilter);
+        dataQuery = dataQuery.eq('role', roleFilter);
+      }
+
+      // Execute both queries
+      const [{ count }, { data, error }] = await Promise.all([
+        countQuery,
+        dataQuery
+      ]);
 
       if (error) throw error;
+
       setUsers(data || []);
+      setTotalCount(count || 0);
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast.error('Failed to load users');
+      showErrorToast('Failed to load users');
     } finally {
       setLoading(false);
     }
@@ -124,10 +151,10 @@ const UsersManagement = () => {
           : user
       ));
 
-      toast.success(`User role updated to ${newRole} successfully`);
+      showSuccessToast(`User role updated to ${newRole} successfully`);
     } catch (error) {
       console.error('Error updating user role:', error);
-      toast.error('Failed to update user role');
+      showErrorToast('Failed to update user role');
     } finally {
       setUpdating(null);
     }
@@ -139,9 +166,72 @@ const UsersManagement = () => {
     await fetchUserStats(user.id);
   };
 
-  const filteredUsers = roleFilter === 'all'
-    ? users
-    : users.filter(user => user.role === roleFilter);
+  // Add effect to refetch when pagination or filters change
+  useEffect(() => {
+    setCurrentPage(1); // Reset to first page when filter changes
+  }, [roleFilter]);
+
+  useEffect(() => {
+    if (user) {
+      fetchUsers();
+    }
+  }, [currentPage, itemsPerPage, roleFilter]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalCount);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const generatePageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const halfVisible = Math.floor(maxVisiblePages / 2);
+      let startPage = Math.max(1, currentPage - halfVisible);
+      let endPage = Math.min(totalPages, currentPage + halfVisible);
+
+      // Adjust to show exactly maxVisiblePages when possible
+      if (endPage - startPage + 1 < maxVisiblePages) {
+        if (startPage === 1) {
+          endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        } else {
+          startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+      }
+
+      // Add first page and ellipsis if needed
+      if (startPage > 1) {
+        pages.push(1);
+        if (startPage > 2) {
+          pages.push('...');
+        }
+      }
+
+      // Add visible page numbers
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      // Add ellipsis and last page if needed
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pages.push('...');
+        }
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
 
   const getRoleColor = (role: string) => {
     return role === 'admin'
@@ -191,6 +281,20 @@ const UsersManagement = () => {
                 </option>
               ))}
             </select>
+
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="px-4 py-2 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white"
+            >
+              <option value={10} className="bg-black">10 per page</option>
+              <option value={20} className="bg-black">20 per page</option>
+              <option value={50} className="bg-black">50 per page</option>
+              <option value={100} className="bg-black">100 per page</option>
+            </select>
           </div>
         </div>
 
@@ -218,7 +322,7 @@ const UsersManagement = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[rgb(51,51,51)]">
-                {filteredUsers.map((user) => {
+                {users.map((user) => {
                   const RoleIcon = getRoleIcon(user.role);
                   return (
                     <tr key={user.id} className="hover:bg-white/5">
@@ -272,13 +376,71 @@ const UsersManagement = () => {
             </table>
           </div>
 
-          {filteredUsers.length === 0 && (
+          {users.length === 0 && (
             <div className="px-6 py-12 text-center text-[rgb(94,94,94)]">
               <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>No users found</p>
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {totalCount > itemsPerPage && (
+          <div className="bg-black border border-[rgb(51,51,51)] rounded-lg px-6 py-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+              <div className="text-sm text-[rgb(94,94,94)]">
+                Showing {startItem} to {endItem} of {totalCount} results
+              </div>
+
+              <div className="flex items-center space-x-2">
+                {/* Previous Button */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+
+                {/* Page Numbers */}
+                {generatePageNumbers().map((page, index) => (
+                  page === '...' ? (
+                    <span key={index} className="px-3 py-1 text-[rgb(94,94,94)]">
+                      {page}
+                    </span>
+                  ) : (
+                    <Button
+                      key={page}
+                      size="sm"
+                      variant={page === currentPage ? "default" : "outline"}
+                      onClick={() => handlePageChange(page as number)}
+                      className={
+                        page === currentPage
+                          ? "bg-white text-black"
+                          : "border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
+                      }
+                    >
+                      {page}
+                    </Button>
+                  )
+                ))}
+
+                {/* Next Button */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* User Details Modal */}
         {showModal && selectedUser && (

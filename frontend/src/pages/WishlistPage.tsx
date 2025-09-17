@@ -7,7 +7,7 @@ import { useWishlistStore } from '../stores/wishlistStore';
 import ProductGrid from '../components/products/ProductGrid';
 import Button from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
-import toast from 'react-hot-toast';
+import { showSuccessToast, showErrorToast } from '../components/ui/CustomToast';
 
 const WishlistPage = () => {
   const { user } = useAuth();
@@ -64,9 +64,9 @@ const WishlistPage = () => {
       for (const item of items) {
         await removeFromWishlist(user.id, item.productId);
       }
-      toast.success('Wishlist cleared');
+      showSuccessToast('Wishlist cleared');
     } catch (error) {
-      toast.error('Failed to clear wishlist');
+      showErrorToast('Failed to clear wishlist');
     }
   };
 
