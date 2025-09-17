@@ -63,16 +63,20 @@ export class PayHereService {
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) {
+      console.log('PayHere already initialized');
       return;
     }
 
     if (this.initializationPromise) {
+      console.log('PayHere initialization in progress, waiting...');
       return this.initializationPromise;
     }
 
+    console.log('Starting PayHere initialization...');
     this.initializationPromise = this.loadPayHereScript();
     await this.initializationPromise;
     this.isInitialized = true;
+    console.log('PayHere initialization completed');
   }
 
   private loadPayHereScript(): Promise<void> {
@@ -172,7 +176,15 @@ export class PayHereService {
 
         // Start the payment
         console.log('Initiating PayHere payment...');
-        window.payhere!.startPayment(paymentData);
+        console.log('PayHere object available:', !!window.payhere);
+        console.log('PayHere startPayment function:', typeof window.payhere?.startPayment);
+
+        if (!window.payhere || typeof window.payhere.startPayment !== 'function') {
+          throw new Error('PayHere SDK not properly loaded');
+        }
+
+        window.payhere.startPayment(paymentData);
+        console.log('PayHere startPayment called successfully');
       });
 
     } catch (error) {
