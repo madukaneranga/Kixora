@@ -92,9 +92,11 @@ class PayHereService {
       hashInput: hashString.substring(0, 50) + '...'
     });
 
+    // Use Deno's std library for MD5
+    const crypto_std = await import("https://deno.land/std@0.177.0/crypto/mod.ts");
     const encoder = new TextEncoder();
     const data = encoder.encode(hashString);
-    const hashBuffer = await crypto.subtle.digest("MD5", data);
+    const hashBuffer = await crypto_std.crypto.subtle.digest("MD5", data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 
@@ -138,19 +140,16 @@ class PayHereService {
       address: 'N/A',
       city: 'Colombo',
       country: 'Sri Lanka',
-      hash: hash
+      hash: hash,
+      sandbox: !this.config.isProduction
     };
-
-    // Add sandbox flag if not production
-    if (!this.config.isProduction) {
-      paymentData.sandbox = true;
-    }
 
     console.log('PayHere payment data created:', {
       orderId: paymentData.order_id,
       amount: paymentData.amount,
       currency: paymentData.currency,
       isProduction: this.config.isProduction,
+      sandbox: paymentData.sandbox,
       hash: paymentData.hash
     });
 
@@ -206,7 +205,14 @@ serve(async (req) => {
     // Get PayHere configuration
     const merchantId = Deno.env.get('PAYHERE_MERCHANT_ID');
     const merchantSecret = Deno.env.get('PAYHERE_SECRET');
-    const isProduction = Deno.env.get('PAYHERE_ENVIRONMENT') === 'production';
+    const payHereEnvironment = Deno.env.get('PAYHERE_ENVIRONMENT') || 'sandbox';
+    const isProduction = payHereEnvironment?.toLowerCase() === 'production';
+
+    console.log('PayHere Environment Debug:', {
+      rawEnvironment: Deno.env.get('PAYHERE_ENVIRONMENT'),
+      payHereEnvironment,
+      isProduction
+    });
 
     console.log('Environment Configuration:', {
       hasSupabaseUrl: !!supabaseUrl,
@@ -214,6 +220,7 @@ serve(async (req) => {
       hasAnonKey: !!supabaseAnonKey,
       hasMerchantId: !!merchantId,
       hasSecret: !!merchantSecret,
+      payHereEnvironment,
       isProduction
     });
 
@@ -235,14 +242,27 @@ serve(async (req) => {
     const notifyUrl = `${supabaseUrl}/functions/v1/payment-webhook`;
 
     // Initialize PayHere service
-    const payHereService = new PayHereService({
-      merchantId,
-      merchantSecret,
-      isProduction,
-      returnUrl,
-      cancelUrl,
-      notifyUrl
-    });
+    let payHereService: PayHereService;
+    try {
+      payHereService = new PayHereService({
+        merchantId,
+        merchantSecret,
+        isProduction,
+        returnUrl,
+        cancelUrl,
+        notifyUrl
+      });
+      console.log('PayHere service initialized successfully');
+    } catch (serviceError) {
+      console.error('PayHere service initialization failed:', serviceError.message);
+      return new Response(JSON.stringify({
+        success: false,
+        error: `PayHere service error: ${serviceError.message}`
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     // Authenticate user
     const authHeader = req.headers.get('Authorization');
@@ -305,8 +325,23 @@ serve(async (req) => {
     console.log('Order verified:', order.id);
 
     // Create PayHere payment data
-    const paymentData = await payHereService.createPaymentData(paymentRequest);
-    const checkoutUrl = payHereService.getCheckoutUrl();
+    let paymentData: PayHerePaymentData;
+    let checkoutUrl: string;
+
+    try {
+      paymentData = await payHereService.createPaymentData(paymentRequest);
+      checkoutUrl = payHereService.getCheckoutUrl();
+      console.log('PayHere payment data created successfully');
+    } catch (paymentError) {
+      console.error('PayHere payment data creation failed:', paymentError.message);
+      return new Response(JSON.stringify({
+        success: false,
+        error: `Payment data creation failed: ${paymentError.message}`
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     // Update order with payment provider info
     const { error: updateError } = await supabase
