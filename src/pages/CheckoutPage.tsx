@@ -12,6 +12,7 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { showErrorToast } from '../components/ui/CustomToast';
 import logo from '../assests/logo.black.png';
+import { payHereService, PayHerePaymentData } from '../services/payhere';
 
 const checkoutSchema = yup.object({
   country: yup.string().required('Country is required'),
@@ -248,33 +249,23 @@ const CheckoutPage = () => {
           throw new Error(responseData.error || 'Payment creation failed');
         }
 
-        const { paymentData: payHereData, checkoutUrl } = responseData;
+        const { paymentData: payHereData, environment } = responseData;
+
+        console.log('PayHere payment data received:', {
+          orderId: payHereData.order_id,
+          amount: payHereData.amount,
+          environment
+        });
 
         // Update order with PayHere payment ID
         await supabase
           .from('orders')
           .update({
-            payment_provider_id: payHereData.order_id || payHereData.merchant_id,
+            payment_provider_id: payHereData.order_id,
           })
           .eq('id', order.id);
 
-        // Create a form and submit to PayHere
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = checkoutUrl;
-
-        Object.keys(payHereData).forEach(key => {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = key;
-          input.value = payHereData[key];
-          form.appendChild(input);
-        });
-
-        document.body.appendChild(form);
-        form.submit();
-
-        // Store order info for when user returns from PayHere
+        // Store order info before payment
         localStorage.setItem('pendingOrderInfo', JSON.stringify({
           total: total,
           paymentMethod: 'payhere',
@@ -282,8 +273,35 @@ const CheckoutPage = () => {
           orderId: order.id,
         }));
 
-        // Clear cart before redirecting to PayHere
-        await clearCart();
+        console.log('Starting PayHere payment with SDK...');
+
+        // Start PayHere payment using the service
+        const paymentResult = await payHereService.startPayment(
+          payHereData as PayHerePaymentData,
+          {
+            onCompleted: (orderId) => {
+              console.log('Payment completed callback:', orderId);
+            },
+            onDismissed: () => {
+              console.log('Payment dismissed callback');
+            },
+            onError: (error) => {
+              console.error('Payment error callback:', error);
+            }
+          }
+        );
+
+        if (paymentResult.success) {
+          console.log('Payment successful, clearing cart and redirecting...');
+
+          // Clear cart after successful payment
+          await clearCart();
+
+          // Navigate to success page
+          navigate(`/payment/success?orderId=${paymentResult.orderId}&total=${total}`);
+        } else {
+          throw new Error(paymentResult.error || 'Payment failed');
+        }
       } else {
         // For bank transfer and COD, redirect to thank you page
         const thankYouUrl = `/thank-you?total=${total}&method=${formData.paymentMethod}&name=${encodeURIComponent(`${formData.firstName} ${formData.lastName}`)}&orderId=${order.id}`;
