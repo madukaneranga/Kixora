@@ -156,6 +156,14 @@ serve(async (req) => {
       merchantSecret
     ].join('').toUpperCase()
 
+    console.log('Hash calculation:', {
+      merchantId,
+      orderId: paymentRequest.orderId,
+      amount: paymentRequest.amount.toFixed(2),
+      currency: paymentRequest.currency,
+      hashString: hashString.substring(0, 50) + '...'
+    })
+
     // Use Deno's built-in crypto for MD5
     const crypto = await import("https://deno.land/std@0.177.0/crypto/mod.ts")
     const encoder = new TextEncoder()
@@ -163,6 +171,8 @@ serve(async (req) => {
     const hashBuffer = await crypto.crypto.subtle.digest("MD5", data)
     const hashArray = Array.from(new Uint8Array(hashBuffer))
     const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase()
+
+    console.log('Generated hash:', hash)
 
     // Create PayHere payment form data
     const paymentData = {
@@ -181,7 +191,8 @@ serve(async (req) => {
       address: 'N/A',
       city: 'Colombo',
       country: 'Sri Lanka',
-      hash: hash
+      hash: hash,
+      sandbox: false
     }
 
     // Update order with payment provider info
@@ -197,7 +208,6 @@ serve(async (req) => {
       success: true,
       paymentId: paymentRequest.orderId,
       paymentData: paymentData,
-      checkoutUrl: 'https://sandbox.payhere.lk/pay/checkout', // Use https://www.payhere.lk/pay/checkout for production
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
