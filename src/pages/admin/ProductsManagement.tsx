@@ -7,6 +7,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { showSuccessToast, showErrorToast } from '../../components/ui/CustomToast';
+import { uploadProductImages, saveProductImages, deleteProductImages, getProductImages } from '../../lib/imageUpload';
 
 interface Product {
   id: string;
@@ -14,6 +15,8 @@ interface Product {
   description: string;
   price: number;
   sku: string;
+  category_id: string | null;
+  brand_id: string | null;
   is_active: boolean;
   featured: boolean;
   created_at: string;
@@ -83,6 +86,8 @@ const ProductsManagement = () => {
     { name: 'Gray', image: '/src/assests/colors/gray.png' },
   ]);
   const [images, setImages] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<any[]>([]);
+  const [loadingImages, setLoadingImages] = useState(false);
   const [simpleStock, setSimpleStock] = useState<number>(0);
   const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
 
@@ -137,12 +142,17 @@ const ProductsManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Only allow submission on the final step (step 4)
+    // If not on final step, just navigate to next step
     if (currentStep !== 4) {
       nextStep();
       return;
     }
 
+    // Only submit when explicitly clicking Create/Update button
+    // This prevents auto-saving when just reaching step 4
+  };
+
+  const handleFinalSubmit = async () => {
     setSubmitting(true);
 
     try {
@@ -252,6 +262,29 @@ const ProductsManagement = () => {
         if (variantError) throw variantError;
       }
 
+      // Handle image upload if images are selected
+      if (images.length > 0) {
+        try {
+          // Delete existing images if editing a product
+          if (editingProduct) {
+            await deleteProductImages(productId);
+          }
+
+          // Upload new images
+          const uploadedImages = await uploadProductImages(images, productId);
+
+          // Save image records to database
+          await saveProductImages(productId, uploadedImages);
+        } catch (imageError: any) {
+          console.error('Error uploading images:', imageError);
+          showErrorToast(`Product saved but image upload failed: ${imageError.message}`);
+          // Continue with success since product was created
+        }
+      } else if (editingProduct) {
+        // If no new images and editing, keep existing images (don't delete)
+        // This allows editing product without changing images
+      }
+
       showSuccessToast(editingProduct ? 'Product updated successfully' : 'Product created successfully');
 
       // Add a small delay before closing the modal for better UX
@@ -319,6 +352,9 @@ const ProductsManagement = () => {
         throw new Error('Access denied: Admin privileges required');
       }
 
+      // Delete product images first
+      await deleteProductImages(deletingProductId);
+
       const { error } = await supabaseAdmin
         .from('products')
         .delete()
@@ -338,7 +374,7 @@ const ProductsManagement = () => {
     }
   };
 
-  const openEditModal = (product?: Product) => {
+  const openEditModal = async (product?: Product) => {
     if (product) {
       setEditingProduct(product);
       setFormData({
@@ -346,8 +382,8 @@ const ProductsManagement = () => {
         description: product.description || '',
         price: product.price.toString(),
         sku: product.sku,
-        category_id: '', // We'll need to fetch this properly
-        brand_id: '', // We'll need to fetch this properly
+        category_id: product.category_id || '',
+        brand_id: product.brand_id || '',
         is_active: product.is_active,
         featured: product.featured
       });
@@ -373,6 +409,18 @@ const ProductsManagement = () => {
         setProductType('simple');
         setSimpleStock(0);
       }
+
+      // Load existing images
+      setLoadingImages(true);
+      try {
+        const productImages = await getProductImages(product.id);
+        setExistingImages(productImages);
+      } catch (error) {
+        console.error('Error loading product images:', error);
+        setExistingImages([]);
+      } finally {
+        setLoadingImages(false);
+      }
     } else {
       setEditingProduct(null);
       resetForm();
@@ -395,6 +443,8 @@ const ProductsManagement = () => {
     setCurrentStep(1);
     setVariants([]);
     setImages([]);
+    setExistingImages([]);
+    setLoadingImages(false);
     setSimpleStock(0);
     setFieldErrors({});
   };
@@ -991,6 +1041,46 @@ const ProductsManagement = () => {
                     <div>
                       <label className="block text-sm font-medium text-white mb-4">Product Images</label>
 
+                      {/* Show existing images if editing */}
+                      {editingProduct && (
+                        <div className="mb-6">
+                          <h4 className="text-sm font-medium text-white mb-3">Current Images</h4>
+                          {loadingImages ? (
+                            <div className="flex items-center justify-center h-32 bg-[rgb(25,25,25)] rounded-lg">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                            </div>
+                          ) : existingImages.length > 0 ? (
+                            <div>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                                {existingImages.map((image, index) => (
+                                  <div key={image.id} className="relative group">
+                                    <div className="aspect-square bg-[rgb(25,25,25)] rounded-lg overflow-hidden border border-[rgb(51,51,51)]">
+                                      <img
+                                        src={image.image_url}
+                                        alt={image.alt_text || `Product image ${index + 1}`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                    {image.is_primary && (
+                                      <div className="absolute bottom-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                                        Primary
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                              <p className="text-xs text-[rgb(94,94,94)]">
+                                Add new images below to replace existing ones. All current images will be replaced with new uploads.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded-lg p-4 text-center">
+                              <p className="text-[rgb(94,94,94)] text-sm">No existing images</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Image Upload Area */}
                       <div
                         className="border-2 border-dashed border-[rgb(51,51,51)] rounded-lg p-8 text-center hover:border-[rgb(94,94,94)] transition-colors cursor-pointer"
@@ -1003,7 +1093,9 @@ const ProductsManagement = () => {
                         onClick={() => document.getElementById('imageInput')?.click()}
                       >
                         <Package className="w-12 h-12 text-[rgb(94,94,94)] mx-auto mb-4" />
-                        <p className="text-white mb-2">Drop images here or click to browse</p>
+                        <p className="text-white mb-2">
+                          {editingProduct ? 'Drop new images here or click to browse' : 'Drop images here or click to browse'}
+                        </p>
                         <p className="text-[rgb(94,94,94)] text-sm">
                           Supports: JPG, PNG, WebP (Max 10 images)
                         </p>
@@ -1187,7 +1279,8 @@ const ProductsManagement = () => {
                       </Button>
                     ) : (
                       <Button
-                        type="submit"
+                        type="button"
+                        onClick={handleFinalSubmit}
                         loading={submitting}
                         disabled={submitting}
                         className="bg-[rgb(51,51,51)] text-white hover:bg-[rgb(64,64,64)] border border-[rgb(94,94,94)] disabled:opacity-50"

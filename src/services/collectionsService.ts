@@ -233,6 +233,7 @@ export const fetchPinnedCollection = async () => {
         position: item.display_order,
         brand: item.products.brands?.name,
         image: item.products.product_images?.[0]?.storage_path,
+        images: item.products.product_images?.map(img => img.storage_path) || [],
         variants: item.products.product_variants || []
       })) || [];
 
