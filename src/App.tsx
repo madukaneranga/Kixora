@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useCartStore } from './stores/cartStore';
 import { useWishlistStore } from './stores/wishlistStore';
+import { usePageTitle } from './hooks/usePageTitle';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import CartDrawer from './components/cart/CartDrawer';
@@ -49,6 +50,9 @@ const AppLayout = () => {
   const isThankYouPage = location.pathname === '/thank-you';
   const isAdminPage = location.pathname.startsWith('/admin');
   const isSpecialPage = isCheckoutPage || isThankYouPage || isAdminPage;
+
+  // Use the page title hook to dynamically update document title
+  usePageTitle();
 
   return (
     <div className={`min-h-screen flex flex-col ${isSpecialPage ? 'bg-black' : 'bg-slate-50'}`}>

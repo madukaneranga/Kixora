@@ -74,6 +74,7 @@ const ThankYouPage = () => {
         price: product.price,
         featured: product.featured,
         image: product.product_images?.[0]?.storage_path,
+        images: product.product_images?.map(img => img.storage_path) || [],
         variants: product.product_variants?.map(variant => ({
           id: variant.id,
           size: variant.size,

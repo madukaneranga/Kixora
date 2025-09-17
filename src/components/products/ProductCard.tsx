@@ -8,6 +8,7 @@ import { useCartStore } from '../../stores/cartStore';
 import Button from '../ui/Button';
 import ColorSelector from '../ui/ColorSelector';
 import { showSuccessToast, showErrorToast } from '../ui/CustomToast';
+import { getColorInfo } from '../../services/colorService';
 
 interface ProductCardProps {
   product: {
@@ -16,6 +17,7 @@ interface ProductCardProps {
     brand?: string;
     price: number;
     image?: string;
+    images?: string[];
     rating?: number;
     reviewCount?: number;
     featured?: boolean;
@@ -35,6 +37,17 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>('');
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Determine which images to use (prioritize images array, fallback to single image)
+  const productImages = product.images && product.images.length > 0
+    ? product.images
+    : product.image
+    ? [product.image]
+    : [];
+
+  const primaryImage = productImages[0];
+  const secondaryImage = productImages.length > 1 ? productImages[1] : null;
 
   const inWishlist = user ? isInWishlist(product.id) : false;
 
@@ -123,7 +136,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
       },
       price: product.price,
       quantity: 1,
-      image: product.image,
+      image: primaryImage,
       maxStock: selectedVariant.stock,
     }, user?.id);
 
@@ -139,14 +152,50 @@ const ProductCard = ({ product }: ProductCardProps) => {
       animate={{ opacity: 1, y: 0 }}
       className="group bg-white shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
     >
-      <div className="relative aspect-[4/5] overflow-hidden">
+      <div
+        className="relative aspect-[4/5] overflow-hidden"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         <Link to={`/products/${product.id}`}>
-          {product.image ? (
-            <img
-              src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${product.image}`}
-              alt={product.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
+          {primaryImage ? (
+            <div className="relative w-full h-full">
+              {/* Primary Image */}
+              <motion.img
+                key="primary"
+                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${primaryImage}`}
+                alt={product.title}
+                className="absolute inset-0 w-full h-full object-cover"
+                initial={false}
+                animate={{
+                  opacity: isHovered && secondaryImage ? 0 : 1,
+                  scale: isHovered ? 1.05 : 1,
+                }}
+                transition={{
+                  opacity: { duration: 0.3, ease: "easeInOut" },
+                  scale: { duration: 0.5, ease: "easeOut" }
+                }}
+              />
+
+              {/* Secondary Image - Only render if it exists */}
+              {secondaryImage && (
+                <motion.img
+                  key="secondary"
+                  src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${secondaryImage}`}
+                  alt={`${product.title} - Alternative view`}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  initial={false}
+                  animate={{
+                    opacity: isHovered ? 1 : 0,
+                    scale: isHovered ? 1.05 : 1,
+                  }}
+                  transition={{
+                    opacity: { duration: 0.3, ease: "easeInOut" },
+                    scale: { duration: 0.5, ease: "easeOut" }
+                  }}
+                />
+              )}
+            </div>
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
               <ShoppingCart className="h-12 w-12 text-slate-400" />
@@ -194,14 +243,32 @@ const ProductCard = ({ product }: ProductCardProps) => {
           </p>
 
           {product.variants && product.variants.length > 0 && (
-            <ColorSelector
-              colors={[...new Set(product.variants.slice(0, 4).map(v => v.color).filter(Boolean))]}
-              selectedColors={[]}
-              onColorSelect={() => {}}
-              size="sm"
-              className="gap-1"
-              disabled={true}
-            />
+            <div className="flex gap-1">
+              {[...new Set(product.variants.slice(0, 4).map(v => v.color).filter(Boolean))].map((color) => {
+                const colorInfo = getColorInfo(color);
+                return colorInfo ? (
+                  <div
+                    key={color}
+                    className="w-4 h-4 rounded-full border border-gray-300 overflow-hidden"
+                    title={colorInfo.displayName}
+                  >
+                    <img
+                      src={colorInfo.image}
+                      alt={colorInfo.displayName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div
+                    key={color}
+                    className="w-4 h-4 rounded-full border border-gray-300 bg-gray-200 flex items-center justify-center"
+                    title={color}
+                  >
+                    <span className="text-[8px] text-gray-500">?</span>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
 

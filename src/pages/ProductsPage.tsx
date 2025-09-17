@@ -34,6 +34,7 @@ interface Product {
   price: number;
   category: string;
   image?: string;
+  images?: string[];
   rating?: number;
   reviewCount?: number;
   featured?: boolean;
@@ -301,6 +302,7 @@ const ProductsPage = () => {
         featured: product.featured,
         category: product.categories?.name || '',
         image: product.product_images?.[0]?.storage_path,
+        images: product.product_images?.map(img => img.storage_path) || [],
         variants: product.product_variants || []
       })) || [];
 

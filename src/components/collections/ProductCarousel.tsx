@@ -9,6 +9,7 @@ interface Product {
   brand?: string;
   price: number;
   image?: string;
+  images?: string[];
   rating?: number;
   reviewCount?: number;
   featured?: boolean;

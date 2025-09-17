@@ -44,6 +44,7 @@ const WishlistPage = () => {
         const productsWithImages = data?.map(product => ({
           ...product,
           image: product.product_images?.[0]?.storage_path,
+          images: product.product_images?.map(img => img.storage_path) || [],
           variants: product.product_variants || []
         })) || [];
 
