@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { ClipboardList, Filter, Search, Eye } from 'lucide-react';
+import { ClipboardList, Filter, Search, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { supabase } from '../../lib/supabase';
+import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
+import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 
@@ -21,10 +22,14 @@ interface AuditLog {
 }
 
 const AuditLogs = () => {
+  const { user } = useAuth();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [filters, setFilters] = useState({
     table_name: 'all',
     action: 'all',
@@ -32,13 +37,31 @@ const AuditLogs = () => {
   });
 
   useEffect(() => {
-    fetchAuditLogs();
-  }, []);
+    if (user) {
+      fetchAuditLogs();
+    }
+  }, [user]);
 
   const fetchAuditLogs = async () => {
     try {
       setLoading(true);
-      let query = supabase
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      // Build base query for counting
+      let countQuery = supabaseAdmin
+        .from('audit_logs')
+        .select('*', { count: 'exact', head: true });
+
+      // Build query for fetching data
+      let dataQuery = supabaseAdmin
         .from('audit_logs')
         .select(`
           *,
@@ -48,24 +71,38 @@ const AuditLogs = () => {
           )
         `)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .range(
+          (currentPage - 1) * itemsPerPage,
+          currentPage * itemsPerPage - 1
+        );
 
+      // Apply filters to both queries
       if (filters.table_name !== 'all') {
-        query = query.eq('table_name', filters.table_name);
+        countQuery = countQuery.eq('table_name', filters.table_name);
+        dataQuery = dataQuery.eq('table_name', filters.table_name);
       }
 
       if (filters.action !== 'all') {
-        query = query.eq('action', filters.action);
+        countQuery = countQuery.eq('action', filters.action);
+        dataQuery = dataQuery.eq('action', filters.action);
       }
 
       if (filters.search) {
-        query = query.or(`record_id.ilike.%${filters.search}%,user_id.ilike.%${filters.search}%`);
+        const searchFilter = `record_id.ilike.%${filters.search}%,user_id.ilike.%${filters.search}%`;
+        countQuery = countQuery.or(searchFilter);
+        dataQuery = dataQuery.or(searchFilter);
       }
 
-      const { data, error } = await query;
+      // Execute both queries
+      const [{ count }, { data, error }] = await Promise.all([
+        countQuery,
+        dataQuery
+      ]);
 
       if (error) throw error;
+
       setLogs(data || []);
+      setTotalCount(count || 0);
     } catch (error) {
       console.error('Error fetching audit logs:', error);
     } finally {
@@ -75,11 +112,16 @@ const AuditLogs = () => {
 
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
+      setCurrentPage(1); // Reset to first page when filters change
       fetchAuditLogs();
     }, 300);
 
     return () => clearTimeout(debounceTimer);
   }, [filters]);
+
+  useEffect(() => {
+    fetchAuditLogs();
+  }, [currentPage, itemsPerPage]);
 
   const getActionColor = (action: string) => {
     switch (action) {
@@ -154,6 +196,62 @@ const AuditLogs = () => {
     { value: 'DELETE', label: 'Deleted' }
   ];
 
+  // Pagination calculations
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalCount);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const generatePageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const halfVisible = Math.floor(maxVisiblePages / 2);
+      let startPage = Math.max(1, currentPage - halfVisible);
+      let endPage = Math.min(totalPages, currentPage + halfVisible);
+
+      // Adjust to show exactly maxVisiblePages when possible
+      if (endPage - startPage + 1 < maxVisiblePages) {
+        if (startPage === 1) {
+          endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        } else {
+          startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+      }
+
+      // Add first page and ellipsis if needed
+      if (startPage > 1) {
+        pages.push(1);
+        if (startPage > 2) {
+          pages.push('...');
+        }
+      }
+
+      // Add visible page numbers
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      // Add ellipsis and last page if needed
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pages.push('...');
+        }
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -175,7 +273,7 @@ const AuditLogs = () => {
 
         {/* Filters */}
         <div className="bg-black border border-[rgb(51,51,51)] rounded-lg p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-[rgb(94,94,94)] mb-2">
                 Table
@@ -207,6 +305,25 @@ const AuditLogs = () => {
                     {option.label}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[rgb(94,94,94)] mb-2">
+                Per Page
+              </label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="w-full px-3 py-2 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white text-sm"
+              >
+                <option value={10} className="bg-black">10</option>
+                <option value={20} className="bg-black">20</option>
+                <option value={50} className="bg-black">50</option>
+                <option value={100} className="bg-black">100</option>
               </select>
             </div>
 
@@ -311,6 +428,64 @@ const AuditLogs = () => {
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {totalCount > itemsPerPage && (
+          <div className="bg-black border border-[rgb(51,51,51)] rounded-lg px-6 py-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+              <div className="text-sm text-[rgb(94,94,94)]">
+                Showing {startItem} to {endItem} of {totalCount} results
+              </div>
+
+              <div className="flex items-center space-x-2">
+                {/* Previous Button */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+
+                {/* Page Numbers */}
+                {generatePageNumbers().map((page, index) => (
+                  page === '...' ? (
+                    <span key={index} className="px-3 py-1 text-[rgb(94,94,94)]">
+                      {page}
+                    </span>
+                  ) : (
+                    <Button
+                      key={page}
+                      size="sm"
+                      variant={page === currentPage ? "default" : "outline"}
+                      onClick={() => handlePageChange(page as number)}
+                      className={
+                        page === currentPage
+                          ? "bg-white text-black"
+                          : "border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
+                      }
+                    >
+                      {page}
+                    </Button>
+                  )
+                ))}
+
+                {/* Next Button */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Audit Log Details Modal */}
         {showModal && selectedLog && (

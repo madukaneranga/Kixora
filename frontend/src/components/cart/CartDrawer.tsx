@@ -5,13 +5,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../../stores/cartStore';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../ui/Button';
+import ConfirmDialog from '../ui/ConfirmDialog';
 import { Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { showSuccessToast, showErrorToast } from '../ui/CustomToast';
 
 const CartDrawer = () => {
   const { items, isOpen, closeCart, updateQuantity, removeItem, clearCart } = useCartStore();
   const { user } = useAuth();
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -25,13 +28,13 @@ const CartDrawer = () => {
       if (!success && newQuantity > 0) {
         const item = items.find(i => i.id === itemId);
         if (item) {
-          toast.error(`Only ${item.maxStock || 0} items available for ${item.title}`);
+          showErrorToast(`Only ${item.maxStock || 0} items available for ${item.title}`);
         } else {
-          toast.error('Not enough stock available');
+          showErrorToast('Not enough stock available');
         }
       }
     } catch (error) {
-      toast.error('Failed to update quantity');
+      showErrorToast('Failed to update quantity');
     } finally {
       setUpdatingItems(prev => {
         const newSet = new Set(prev);
@@ -42,19 +45,29 @@ const CartDrawer = () => {
   };
 
   const handleClearCart = () => {
+    console.log('handleClearCart called, items length:', items.length);
     if (items.length === 0) return;
+    console.log('Setting showClearConfirm to true');
+    setShowClearConfirm(true);
+  };
 
-    const confirmed = window.confirm(`Are you sure you want to remove all ${itemCount} ${itemCount === 1 ? 'item' : 'items'} from your cart?`);
-
-    if (confirmed) {
-      clearCart();
-      toast.success('Cart cleared successfully');
+  const confirmClearCart = async () => {
+    setClearing(true);
+    try {
+      await clearCart();
+      showSuccessToast('Cart cleared successfully');
+      setShowClearConfirm(false);
+    } catch (error) {
+      showErrorToast('Failed to clear cart');
+    } finally {
+      setClearing(false);
     }
   };
 
   return (
-    <Transition.Root show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={closeCart}>
+    <>
+      <Transition.Root show={isOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={closeCart}>
         <Transition.Child
           as={Fragment}
           enter="ease-in-out duration-500"
@@ -267,7 +280,21 @@ const CartDrawer = () => {
           </div>
         </div>
       </Dialog>
-    </Transition.Root>
+      </Transition.Root>
+
+      {/* Clear Cart Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        onConfirm={confirmClearCart}
+        title="Clear Cart"
+        message={`Are you sure you want to remove all ${itemCount} ${itemCount === 1 ? 'item' : 'items'} from your cart? This action cannot be undone.`}
+        confirmText="Clear Cart"
+        cancelText="Keep Items"
+        variant="danger"
+        loading={clearing}
+      />
+    </>
   );
 };
 

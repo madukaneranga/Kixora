@@ -47,7 +47,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) =>
             >
               <Dialog.Panel
                 as={motion.div}
-                className={`w-full ${sizeClasses[size]} transform overflow-hidden bg-white text-left align-middle shadow-xl transition-all`}
+                className={`w-full ${sizeClasses[size]} transform overflow-hidden  text-left align-middle shadow-xl transition-all`}
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}

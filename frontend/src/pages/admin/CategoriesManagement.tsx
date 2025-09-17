@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Pin, PinOff, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { supabase } from '../../lib/supabase';
+import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
+import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import toast from 'react-hot-toast';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
+import { showSuccessToast, showErrorToast } from '../../components/ui/CustomToast';
 
 interface Category {
   id: string;
@@ -17,11 +19,15 @@ interface Category {
 }
 
 const CategoriesManagement = () => {
+  const { user } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -31,13 +37,25 @@ const CategoriesManagement = () => {
   });
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (user) {
+      fetchCategories();
+    }
+  }, [user]);
 
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { data, error } = await supabaseAdmin
         .from('categories')
         .select('*')
         .order('created_at', { ascending: false });
@@ -46,7 +64,7 @@ const CategoriesManagement = () => {
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      toast.error('Failed to load categories');
+      showErrorToast('Failed to load categories');
     } finally {
       setLoading(false);
     }
@@ -74,7 +92,7 @@ const CategoriesManagement = () => {
     if (formData.is_pinned && !editingCategory) {
       const pinnedCount = categories.filter(cat => cat.is_pinned).length;
       if (pinnedCount >= 3) {
-        toast.error('You can only pin up to 3 categories for homepage display');
+        showErrorToast('You can only pin up to 3 categories for homepage display');
         return;
       }
     }
@@ -88,21 +106,30 @@ const CategoriesManagement = () => {
         is_pinned: formData.is_pinned
       };
 
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
       if (editingCategory) {
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
           .from('categories')
           .update(categoryData)
           .eq('id', editingCategory.id);
 
         if (error) throw error;
-        toast.success('Category updated successfully');
+        showSuccessToast('Category updated successfully');
       } else {
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
           .from('categories')
           .insert([categoryData]);
 
         if (error) throw error;
-        toast.success('Category created successfully');
+        showSuccessToast('Category created successfully');
       }
 
       setShowModal(false);
@@ -112,9 +139,9 @@ const CategoriesManagement = () => {
     } catch (error: any) {
       console.error('Error saving category:', error);
       if (error.code === '23505') {
-        toast.error('A category with this name or slug already exists');
+        showErrorToast('A category with this name or slug already exists');
       } else {
-        toast.error(error.message || 'Failed to save category');
+        showErrorToast(error.message || 'Failed to save category');
       }
     }
   };
@@ -124,13 +151,22 @@ const CategoriesManagement = () => {
     if (!currentPinned) {
       const pinnedCount = categories.filter(cat => cat.is_pinned).length;
       if (pinnedCount >= 3) {
-        toast.error('You can only pin up to 3 categories for homepage display');
+        showErrorToast('You can only pin up to 3 categories for homepage display');
         return;
       }
     }
 
     try {
-      const { error } = await supabase
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { error } = await supabaseAdmin
         .from('categories')
         .update({ is_pinned: !currentPinned })
         .eq('id', categoryId);
@@ -143,29 +179,48 @@ const CategoriesManagement = () => {
           : category
       ));
 
-      toast.success(`Category ${!currentPinned ? 'pinned' : 'unpinned'} successfully`);
+      showSuccessToast(`Category ${!currentPinned ? 'pinned' : 'unpinned'} successfully`);
     } catch (error) {
       console.error('Error toggling pin status:', error);
-      toast.error('Failed to update category');
+      showErrorToast('Failed to update category');
     }
   };
 
-  const deleteCategory = async (categoryId: string) => {
-    if (!confirm('Are you sure you want to delete this category? This action cannot be undone.')) return;
+  const handleDeleteCategory = (categoryId: string) => {
+    setDeletingCategoryId(categoryId);
+    setShowDeleteConfirm(true);
+  };
 
+  const confirmDeleteCategory = async () => {
+    if (!deletingCategoryId) return;
+
+    setDeleting(true);
     try {
-      const { error } = await supabase
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { error } = await supabaseAdmin
         .from('categories')
         .delete()
-        .eq('id', categoryId);
+        .eq('id', deletingCategoryId);
 
       if (error) throw error;
 
-      setCategories(categories.filter(category => category.id !== categoryId));
-      toast.success('Category deleted successfully');
+      setCategories(categories.filter(category => category.id !== deletingCategoryId));
+      showSuccessToast('Category deleted successfully');
+      setShowDeleteConfirm(false);
+      setDeletingCategoryId(null);
     } catch (error) {
       console.error('Error deleting category:', error);
-      toast.error('Failed to delete category');
+      showErrorToast('Failed to delete category');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -182,7 +237,7 @@ const CategoriesManagement = () => {
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `categories/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabaseAdmin.storage
         .from('product-images')
         .upload(filePath, file);
 
@@ -190,15 +245,15 @@ const CategoriesManagement = () => {
         throw uploadError;
       }
 
-      const { data } = supabase.storage
+      const { data } = supabaseAdmin.storage
         .from('product-images')
         .getPublicUrl(filePath);
 
       setFormData({ ...formData, image_url: filePath });
-      toast.success('Image uploaded successfully');
+      showSuccessToast('Image uploaded successfully');
     } catch (error: any) {
       console.error('Error uploading image:', error);
-      toast.error(error.message || 'Failed to upload image');
+      showErrorToast(error.message || 'Failed to upload image');
     } finally {
       setUploading(false);
     }
@@ -353,7 +408,7 @@ const CategoriesManagement = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => deleteCategory(category.id)}
+                        onClick={() => handleDeleteCategory(category.id)}
                         className="border-red-500 text-red-400 hover:bg-red-500 hover:text-white"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -481,6 +536,22 @@ const CategoriesManagement = () => {
             </div>
           </div>
         )}
+
+        {/* Delete Category Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={showDeleteConfirm}
+          onClose={() => {
+            setShowDeleteConfirm(false);
+            setDeletingCategoryId(null);
+          }}
+          onConfirm={confirmDeleteCategory}
+          title="Delete Category"
+          message={`Are you sure you want to delete this category? This action cannot be undone and will affect all products in this category.`}
+          confirmText="Delete Category"
+          cancelText="Cancel"
+          variant="danger"
+          loading={deleting}
+        />
       </div>
     </AdminLayout>
   );

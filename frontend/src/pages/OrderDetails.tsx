@@ -18,7 +18,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import Button from '../components/ui/Button';
-import toast from 'react-hot-toast';
+import { showErrorToast } from '../components/ui/CustomToast';
 
 interface OrderDetail {
   id: string;
@@ -117,7 +117,7 @@ const OrderDetails = () => {
       });
     } catch (error) {
       console.error('Error fetching order details:', error);
-      toast.error('Failed to load order details');
+      showErrorToast('Failed to load order details');
       navigate('/orders');
     } finally {
       setLoading(false);
@@ -185,7 +185,7 @@ const OrderDetails = () => {
               <div>
                 <h1 className="text-xl font-bold text-black flex items-center">
                   <Hash className="w-4 h-4 mr-1" />
-                  {order.order_number || `${order.id.slice(-8).toUpperCase()}`}
+                  {order.id.slice(-8).toUpperCase()}
                 </h1>
                 <p className="text-sm text-gray-600 flex items-center mt-1">
                   <Calendar className="w-3 h-3 mr-1" />

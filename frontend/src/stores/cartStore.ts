@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
+import { showErrorToast } from '../components/ui/CustomToast';
 
 export interface CartItem {
   id: string;
@@ -25,7 +26,7 @@ interface CartStore {
   addItem: (item: Omit<CartItem, 'id'>, userId?: string) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<boolean>;
   removeItem: (itemId: string, userId?: string) => Promise<void>;
-  clearCart: () => void;
+  clearCart: (userId?: string) => Promise<void>;
   openCart: () => void;
   closeCart: () => void;
   setUserId: (userId: string | null, isNewUser?: boolean) => void;
@@ -139,8 +140,18 @@ export const useCartStore = create<CartStore>()(
         }
       },
       
-      clearCart: () => {
+      clearCart: async (userId) => {
         set({ items: [] });
+
+        // Auto-sync to database if user is authenticated
+        const currentUserId = userId || get().currentUserId;
+        if (currentUserId) {
+          try {
+            await get().syncToDb(currentUserId);
+          } catch (error) {
+            console.warn('Could not sync cart clear to database:', error);
+          }
+        }
       },
       
       openCart: () => set({ isOpen: true }),
@@ -158,8 +169,7 @@ export const useCartStore = create<CartStore>()(
               get().syncToDb(userId);
             }
           } else {
-            // For existing users, load their cart from database and clear local
-            get().clearCart();
+            // For existing users, merge local cart with database cart
             get().mergeWithDbCart(userId);
           }
         } else if (prevUserId) {
@@ -189,10 +199,13 @@ export const useCartStore = create<CartStore>()(
                   sku,
                   size,
                   color,
+                  stock,
+                  is_active,
                   products (
                     id,
                     title,
                     price,
+                    is_active,
                     product_images (
                       storage_path
                     )
@@ -207,37 +220,121 @@ export const useCartStore = create<CartStore>()(
 
           if (cart?.cart_items) {
             const localItems = get().items;
-            const dbItems: CartItem[] = cart.cart_items.map((item: any) => ({
-              id: item.id,
-              productId: item.product_variants.products.id,
-              variantId: item.product_variant_id,
-              title: item.product_variants.products.title,
-              variant: {
-                size: item.product_variants.size || '',
-                color: item.product_variants.color || '',
-                sku: item.product_variants.sku,
-              },
-              price: item.price,
-              quantity: item.quantity,
-              image: item.product_variants.products.product_images?.[0]?.storage_path,
-            }));
+            const dbItems: CartItem[] = cart.cart_items
+              .filter((item: any) =>
+                item.product_variants?.is_active &&
+                item.product_variants?.products?.is_active
+              )
+              .map((item: any) => ({
+                id: item.id,
+                productId: item.product_variants.products.id,
+                variantId: item.product_variant_id,
+                title: item.product_variants.products.title,
+                variant: {
+                  size: item.product_variants.size || '',
+                  color: item.product_variants.color || '',
+                  sku: item.product_variants.sku,
+                },
+                price: item.price,
+                quantity: item.quantity,
+                image: item.product_variants.products.product_images?.[0]?.storage_path,
+                maxStock: item.product_variants.stock,
+              }));
 
-            // Merge logic: combine quantities for same variants
-            const mergedItems = [...dbItems];
+            // Merge logic with stock validation
+            const mergedItems: CartItem[] = [];
+            const adjustmentWarnings: string[] = [];
 
-            localItems.forEach(localItem => {
+            // First add all DB items
+            for (const dbItem of dbItems) {
+              const availableStock = dbItem.maxStock || 0;
+
+              if (availableStock > 0) {
+                mergedItems.push({
+                  ...dbItem,
+                  quantity: Math.min(dbItem.quantity, availableStock)
+                });
+
+                if (dbItem.quantity > availableStock) {
+                  adjustmentWarnings.push(
+                    `${dbItem.title} quantity reduced from ${dbItem.quantity} to ${availableStock} due to stock limitations`
+                  );
+                }
+              }
+            }
+
+            // Then merge local items
+            for (const localItem of localItems) {
               const existingIndex = mergedItems.findIndex(
                 dbItem => dbItem.variantId === localItem.variantId
               );
 
               if (existingIndex >= 0) {
-                mergedItems[existingIndex].quantity += localItem.quantity;
+                // Item exists in both - merge quantities with stock validation
+                const existing = mergedItems[existingIndex];
+                const desiredQty = existing.quantity + localItem.quantity;
+                const availableStock = existing.maxStock || 0;
+
+                if (availableStock > 0) {
+                  const finalQty = Math.min(desiredQty, availableStock);
+                  mergedItems[existingIndex].quantity = finalQty;
+
+                  if (desiredQty > availableStock) {
+                    adjustmentWarnings.push(
+                      `${existing.title} quantity adjusted from ${desiredQty} to ${finalQty} due to stock limitations`
+                    );
+                  }
+                }
               } else {
-                mergedItems.push(localItem);
+                // Item only exists locally - validate stock before adding
+                try {
+                  const stockPromise = supabase
+                    .from('product_variants')
+                    .select('stock, is_active, products(is_active)')
+                    .eq('id', localItem.variantId)
+                    .single();
+
+                  const { data: variant } = await Promise.race([stockPromise, timeoutPromise]) as any;
+
+                  if (variant?.is_active && variant?.products?.is_active) {
+                    const availableStock = variant.stock || 0;
+
+                    if (availableStock > 0) {
+                      const finalQty = Math.min(localItem.quantity, availableStock);
+
+                      mergedItems.push({
+                        ...localItem,
+                        quantity: finalQty,
+                        maxStock: availableStock
+                      });
+
+                      if (localItem.quantity > availableStock) {
+                        adjustmentWarnings.push(
+                          `${localItem.title} quantity reduced from ${localItem.quantity} to ${finalQty} due to stock limitations`
+                        );
+                      }
+                    }
+                  }
+                } catch (error) {
+                  console.warn(`Could not validate stock for ${localItem.title}:`, error);
+                  // Skip this item if we can't validate stock
+                }
               }
-            });
+            }
 
             set({ items: mergedItems });
+
+            // Show warnings to user if any adjustments were made
+            if (adjustmentWarnings.length > 0) {
+              console.warn('Cart merge adjustments:', adjustmentWarnings);
+
+              // Show toast notifications for adjustments
+              if (adjustmentWarnings.length === 1) {
+                showErrorToast(adjustmentWarnings[0]);
+              } else {
+                showErrorToast(`${adjustmentWarnings.length} items had quantity adjustments due to stock limitations`);
+              }
+            }
 
             // Sync back to DB
             await get().syncToDb(userId);

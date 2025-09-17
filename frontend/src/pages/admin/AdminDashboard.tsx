@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, ShoppingCart, Users, DollarSign, Eye } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { supabase } from '../../lib/supabase';
+import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
+import { useAuth } from '../../hooks/useAuth';
 
 interface DashboardStats {
   totalProducts: number;
@@ -23,6 +24,7 @@ interface RecentOrder {
 }
 
 const AdminDashboard = () => {
+  const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalProducts: 0,
     totalOrders: 0,
@@ -33,17 +35,29 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch stats in parallel
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Verify user is admin before using admin client
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      // Fetch stats in parallel using admin client
       const [productsRes, ordersRes, usersRes, recentOrdersRes] = await Promise.all([
-        supabase.from('products').select('id', { count: 'exact', head: true }),
-        supabase.from('orders').select('id, total', { count: 'exact' }),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase
+        supabaseAdmin.from('products').select('id', { count: 'exact', head: true }),
+        supabaseAdmin.from('orders').select('id, total', { count: 'exact' }),
+        supabaseAdmin.from('profiles').select('id', { count: 'exact', head: true }),
+        supabaseAdmin
           .from('orders')
           .select(`
             *,

@@ -6,7 +6,7 @@ import { useWishlistStore } from '../../stores/wishlistStore';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import Button from './Button';
-import toast from 'react-hot-toast';
+import { showSuccessToast, showErrorToast } from './CustomToast';
 
 interface Product {
   id: string;
@@ -108,7 +108,7 @@ const ThankYouPopup = ({
     const firstAvailableVariant = product.variants?.find(v => v.stock > 0);
 
     if (!firstAvailableVariant) {
-      toast.error('Product is out of stock');
+      showErrorToast('Product is out of stock');
       return;
     }
 
@@ -127,12 +127,12 @@ const ThankYouPopup = ({
       maxStock: firstAvailableVariant.stock,
     });
 
-    toast.success('Added to cart');
+    showSuccessToast('Added to cart');
   };
 
   const handleWishlistToggle = async (product: Product) => {
     if (!user) {
-      toast.error('Please sign in to add to wishlist');
+      showErrorToast('Please sign in to add to wishlist');
       return;
     }
 
@@ -142,11 +142,11 @@ const ThankYouPopup = ({
         toast.info('Already in wishlist');
       } else {
         await addToWishlist(user.id, product.id);
-        toast.success('Added to wishlist');
+        showSuccessToast('Added to wishlist');
       }
     } catch (error) {
       console.error('Wishlist error:', error);
-      toast.error('Something went wrong');
+      showErrorToast('Something went wrong');
     }
   };
 

@@ -1,9 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Eye, Filter } from 'lucide-react';
+import { Eye, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+
+// Add keyframes for smooth fading animation
+const blinkKeyframes = `
+  @keyframes slowBlink {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+  }
+`;
 import AdminLayout from '../../components/admin/AdminLayout';
 import { supabase } from '../../lib/supabase';
+import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
 import Button from '../../components/ui/Button';
-import toast from 'react-hot-toast';
+import { showSuccessToast, showErrorToast } from '../../components/ui/CustomToast';
+import { useAuth } from '../../hooks/useAuth';
 
 interface Order {
   id: string;
@@ -20,45 +31,86 @@ interface Order {
 }
 
 const OrdersManagement = () => {
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    if (user) {
+      fetchOrders();
+    }
+  }, [user]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      console.log('Fetching orders...');
 
-      const { data, error } = await supabase
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Verify user is admin before using admin client
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      // Build base query for counting
+      let countQuery = supabaseAdmin
+        .from('orders')
+        .select('*', { count: 'exact', head: true });
+
+      // Build query for fetching data
+      let dataQuery = supabaseAdmin
         .from('orders')
         .select(`
-          *,
-          profiles (
+          id,
+          total,
+          currency,
+          status,
+          created_at,
+          payment_method,
+          shipping_method,
+          user_id,
+          profiles:user_id (
             full_name,
             email
           )
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(
+          (currentPage - 1) * itemsPerPage,
+          currentPage * itemsPerPage - 1
+        );
 
-      console.log('Orders query result:', { data, error });
+      // Apply status filter to both queries
+      if (statusFilter !== 'all') {
+        countQuery = countQuery.eq('status', statusFilter);
+        dataQuery = dataQuery.eq('status', statusFilter);
+      }
+
+      // Execute both queries
+      const [{ count }, { data, error }] = await Promise.all([
+        countQuery,
+        dataQuery
+      ]);
 
       if (error) {
-        console.error('Orders query error:', error);
         throw error;
       }
 
       setOrders(data || []);
-      console.log('Orders set:', data?.length || 0, 'orders found');
+      setTotalCount(count || 0);
     } catch (error) {
       console.error('Error fetching orders:', error);
-      toast.error(`Failed to load orders: ${error.message || 'Unknown error'}`);
+      showErrorToast(`Failed to load orders: ${error.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -67,7 +119,18 @@ const OrdersManagement = () => {
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
       setUpdating(orderId);
-      const { error } = await supabase
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Verify user is admin before using admin client
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { error } = await supabaseAdmin
         .from('orders')
         .update({ status: newStatus })
         .eq('id', orderId);
@@ -80,18 +143,81 @@ const OrdersManagement = () => {
           : order
       ));
 
-      toast.success('Order status updated successfully');
+      showSuccessToast('Order status updated successfully');
     } catch (error) {
       console.error('Error updating order:', error);
-      toast.error('Failed to update order status');
+      showErrorToast('Failed to update order status');
     } finally {
       setUpdating(null);
     }
   };
 
-  const filteredOrders = statusFilter === 'all'
-    ? orders
-    : orders.filter(order => order.status === statusFilter);
+  // Add effect to refetch when pagination or filters change
+  useEffect(() => {
+    setCurrentPage(1); // Reset to first page when filter changes
+  }, [statusFilter]);
+
+  useEffect(() => {
+    if (user) {
+      fetchOrders();
+    }
+  }, [currentPage, itemsPerPage, statusFilter]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalCount);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const generatePageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const halfVisible = Math.floor(maxVisiblePages / 2);
+      let startPage = Math.max(1, currentPage - halfVisible);
+      let endPage = Math.min(totalPages, currentPage + halfVisible);
+
+      // Adjust to show exactly maxVisiblePages when possible
+      if (endPage - startPage + 1 < maxVisiblePages) {
+        if (startPage === 1) {
+          endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        } else {
+          startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+      }
+
+      // Add first page and ellipsis if needed
+      if (startPage > 1) {
+        pages.push(1);
+        if (startPage > 2) {
+          pages.push('...');
+        }
+      }
+
+      // Add visible page numbers
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      // Add ellipsis and last page if needed
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pages.push('...');
+        }
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -129,6 +255,8 @@ const OrdersManagement = () => {
 
   return (
     <AdminLayout>
+      {/* Inject blinking animation CSS */}
+      <style>{blinkKeyframes}</style>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
@@ -148,6 +276,20 @@ const OrdersManagement = () => {
                   {option.label}
                 </option>
               ))}
+            </select>
+
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="px-4 py-2 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white"
+            >
+              <option value={10} className="bg-black">10 per page</option>
+              <option value={20} className="bg-black">20 per page</option>
+              <option value={50} className="bg-black">50 per page</option>
+              <option value={100} className="bg-black">100 per page</option>
             </select>
           </div>
         </div>
@@ -182,7 +324,7 @@ const OrdersManagement = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[rgb(51,51,51)]">
-                {filteredOrders.map((order) => (
+                {orders.map((order) => (
                   <tr key={order.id} className="hover:bg-white/5">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                       #{order.id.slice(-8).toUpperCase()}
@@ -210,7 +352,23 @@ const OrdersManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-[rgb(94,94,94)]">
                       <div className="capitalize">{order.payment_method}</div>
-                      <div className="text-xs">{order.shipping_method}</div>
+                      <div className={`text-xs ${
+                        (order.status === 'pending' || order.status === 'processing')
+                          ? order.shipping_method?.toLowerCase().includes('express')
+                            ? 'text-red-400 font-medium'
+                            : 'text-yellow-400 font-medium'
+                          : ''
+                      }`}
+                        style={
+                          (order.status === 'pending' || order.status === 'processing')
+                            ? {
+                                animation: 'slowBlink 2s ease-in-out infinite'
+                              }
+                            : {}
+                        }
+                      >
+                        {order.shipping_method}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-[rgb(94,94,94)]">
                       {new Date(order.created_at).toLocaleDateString()}
@@ -235,13 +393,71 @@ const OrdersManagement = () => {
             </table>
           </div>
 
-          {filteredOrders.length === 0 && (
+          {orders.length === 0 && (
             <div className="px-6 py-12 text-center text-[rgb(94,94,94)]">
               <Filter className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>No orders found</p>
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {totalCount > itemsPerPage && (
+          <div className="bg-black border border-[rgb(51,51,51)] rounded-lg px-6 py-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+              <div className="text-sm text-[rgb(94,94,94)]">
+                Showing {startItem} to {endItem} of {totalCount} results
+              </div>
+
+              <div className="flex items-center space-x-2">
+                {/* Previous Button */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+
+                {/* Page Numbers */}
+                {generatePageNumbers().map((page, index) => (
+                  page === '...' ? (
+                    <span key={index} className="px-3 py-1 text-[rgb(94,94,94)]">
+                      {page}
+                    </span>
+                  ) : (
+                    <Button
+                      key={page}
+                      size="sm"
+                      variant={page === currentPage ? "default" : "outline"}
+                      onClick={() => handlePageChange(page as number)}
+                      className={
+                        page === currentPage
+                          ? "bg-white text-black"
+                          : "border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
+                      }
+                    >
+                      {page}
+                    </Button>
+                  )
+                ))}
+
+                {/* Next Button */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Order Details Modal */}
         {showModal && selectedOrder && (

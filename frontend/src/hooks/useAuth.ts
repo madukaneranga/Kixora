@@ -106,7 +106,30 @@ export function useAuth() {
 
   const signOut = () => supabase.auth.signOut();
 
+  const resetPassword = (email: string) =>
+    supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+  const updatePassword = (password: string) =>
+    supabase.auth.updateUser({ password });
+
+  const updateEmail = (email: string) =>
+    supabase.auth.updateUser({ email });
+
   const isAdmin = profile?.role === "admin";
 
-  return { user, profile, loading, isNewUser, signIn, signUp, signOut, isAdmin };
+  return {
+    user,
+    profile,
+    loading,
+    isNewUser,
+    signIn,
+    signUp,
+    signOut,
+    resetPassword,
+    updatePassword,
+    updateEmail,
+    isAdmin
+  };
 }

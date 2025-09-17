@@ -266,6 +266,47 @@ CREATE POLICY "admin_audit_logs_access" ON audit_logs
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
   );
 
+
+-- Admin can access all profiles
+CREATE POLICY "admin_profiles_access" ON profiles
+  FOR ALL TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- Admin can access all wishlists
+CREATE POLICY "admin_wishlists_access" ON wishlists
+  FOR ALL TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- Admin can access all carts
+CREATE POLICY "admin_carts_access" ON carts
+  FOR ALL TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- Admin can access all cart items
+CREATE POLICY "admin_cart_items_access" ON cart_items
+  FOR ALL TO authenticated
+  USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+  
 -- =====================================================
 -- GRANT TABLE PERMISSIONS
 -- =====================================================

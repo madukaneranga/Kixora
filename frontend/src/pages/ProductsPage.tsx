@@ -53,6 +53,7 @@ interface PriceRange {
 
 // Constants
 const AVAILABLE_COLORS = ['Black', 'White', 'Red', 'Blue', 'Grey', 'Navy', 'Beige'];
+const PRODUCTS_PER_PAGE = 12;
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest First' },
@@ -127,6 +128,10 @@ const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   // UI states
   const [showFilters, setShowFilters] = useState(false);
@@ -181,9 +186,49 @@ const ProductsPage = () => {
     }
   }, []);
 
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
+  const fetchProducts = useCallback(async (page = 1, loadMore = false) => {
+    if (loadMore) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+      setCurrentPage(1);
+      setHasMore(true);
+    }
+
     try {
+      // Get simple product count (no complex joins needed)
+      let countQuery = supabase
+        .from('products')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      // Apply basic filters for count (skip color filtering as it's client-side)
+      if (selectedCategory) {
+        // Join with categories for filtering
+        countQuery = supabase
+          .from('products')
+          .select(`
+            id,
+            categories!inner (slug)
+          `, { count: 'exact', head: true })
+          .eq('is_active', true)
+          .eq('categories.slug', selectedCategory);
+      }
+
+      if (priceRange.min) {
+        countQuery = countQuery.gte('price', parseFloat(priceRange.min));
+      }
+      if (priceRange.max) {
+        countQuery = countQuery.lte('price', parseFloat(priceRange.max));
+      }
+      if (searchQuery) {
+        countQuery = countQuery.ilike('title', `%${searchQuery}%`);
+      }
+
+      const { count } = await countQuery;
+      setTotalCount(count || 0);
+
+      // Then get the actual products with pagination
       let query = supabase
         .from('products')
         .select(`
@@ -215,14 +260,12 @@ const ProductsPage = () => {
       if (selectedCategory) {
         query = query.eq('categories.slug', selectedCategory);
       }
-
       if (priceRange.min) {
         query = query.gte('price', parseFloat(priceRange.min));
       }
       if (priceRange.max) {
         query = query.lte('price', parseFloat(priceRange.max));
       }
-
       if (searchQuery) {
         query = query.ilike('title', `%${searchQuery}%`);
       }
@@ -242,10 +285,15 @@ const ProductsPage = () => {
           query = query.order('created_at', { ascending: false });
       }
 
+      // Add pagination
+      const from = (page - 1) * PRODUCTS_PER_PAGE;
+      const to = from + PRODUCTS_PER_PAGE - 1;
+      query = query.range(from, to);
+
       const { data, error } = await query;
       if (error) throw error;
 
-      let filteredProducts = data?.map(product => ({
+      let fetchedProducts = data?.map(product => ({
         id: product.id,
         title: product.title,
         brand: product.brands?.name,
@@ -256,22 +304,52 @@ const ProductsPage = () => {
         variants: product.product_variants || []
       })) || [];
 
-      // Client-side filtering for colors
+      // Client-side filtering for colors (apply to fetched products only)
       if (selectedColors.length > 0) {
-        filteredProducts = filteredProducts.filter(product =>
+        fetchedProducts = fetchedProducts.filter(product =>
           product.variants?.some(variant =>
             selectedColors.includes(variant.color)
           )
         );
       }
 
-      setProducts(filteredProducts);
+      if (loadMore) {
+        setProducts(prev => [...prev, ...fetchedProducts]);
+        setCurrentPage(page);
+      } else {
+        setProducts(fetchedProducts);
+      }
+
+      // Check if there are more products to load
+      const loadedCount = loadMore ? products.length + fetchedProducts.length : fetchedProducts.length;
+      setHasMore(fetchedProducts.length === PRODUCTS_PER_PAGE);
+
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [selectedCategory, priceRange, selectedColors, sortBy, searchQuery]);
+  }, [selectedCategory, priceRange, selectedColors, sortBy, searchQuery, products.length]);
+
+  // Load more products function
+  const loadMoreProducts = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      fetchProducts(currentPage + 1, true);
+    }
+  }, [fetchProducts, currentPage, loadingMore, hasMore]);
+
+  // Infinite scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
+        loadMoreProducts();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadMoreProducts]);
 
   // Effects
   useEffect(() => {
@@ -343,6 +421,36 @@ const ProductsPage = () => {
       {/* Products Grid */}
       <div className="w-full">
         <ProductGrid products={products} loading={loading} />
+
+        {/* Loading more indicator */}
+        {loadingMore && (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+            <span className="ml-3 text-gray-600">Loading more products...</span>
+          </div>
+        )}
+
+        {/* End of results message */}
+        {!loading && !loadingMore && !hasMore && products.length > 0 && (
+          <div className="text-center py-8 text-gray-500">
+            <p>You've reached the end of our product catalog!</p>
+            <p className="text-sm mt-1">Showing all {products.length} products</p>
+          </div>
+        )}
+
+        {/* No products message */}
+        {!loading && !loadingMore && products.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No products found matching your criteria.</p>
+            <Button
+              variant="outline"
+              onClick={clearFilters}
+              className="mt-4"
+            >
+              Clear all filters
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

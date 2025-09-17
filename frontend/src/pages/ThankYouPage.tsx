@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import ProductCard from '../components/products/ProductCard';
 import logo from '../assests/logo.black.png';
+import { InlineLoading } from '../components/ui/Loading';
 
 interface Product {
   id: string;
@@ -34,6 +35,7 @@ const ThankYouPage = () => {
   const orderTotal = parseFloat(searchParams.get('total') || '0');
   const paymentMethod = searchParams.get('method') as 'payhere' | 'bank' | 'cod' || 'cod';
   const customerName = searchParams.get('name') || 'Customer';
+  const orderId = searchParams.get('orderId') || searchParams.get('order_id') || 'UNKNOWN';
 
   useEffect(() => {
     // Redirect if no order info
@@ -202,7 +204,7 @@ const ThankYouPage = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Order ID:</span>
-                  <span className="text-white font-mono">#{Math.random().toString(36).substr(2, 9).toUpperCase()}</span>
+                  <span className="text-white font-mono">#{orderId !== 'UNKNOWN' ? orderId.slice(-8).toUpperCase() : 'UNKNOWN'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Payment Method:</span>
@@ -314,7 +316,7 @@ const ThankYouPage = () => {
 
           {loading ? (
             <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+              <InlineLoading size="md" />
             </div>
           ) : products.length > 0 ? (
             <div className="relative">

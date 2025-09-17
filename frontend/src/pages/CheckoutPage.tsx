@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -10,7 +10,7 @@ import { useCartStore } from '../stores/cartStore';
 import { supabase } from '../lib/supabase';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import toast from 'react-hot-toast';
+import { showErrorToast } from '../components/ui/CustomToast';
 import logo from '../assests/logo.black.png';
 
 const checkoutSchema = yup.object({
@@ -57,6 +57,7 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { items, clearCart } = useCartStore();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [sameAsBilling, setSameAsBilling] = useState(true);
 
@@ -80,6 +81,15 @@ const CheckoutPage = () => {
   const watchedShippingMethod = watch('shippingMethod');
   const watchedPaymentMethod = watch('paymentMethod');
   const watchedSameAsBilling = watch('sameAsBilling');
+
+  useEffect(() => {
+    // Check for payment cancellation
+    if (searchParams.get('cancelled') === 'true') {
+      showErrorToast('Payment was cancelled. Please try again or choose a different payment method.');
+      // Remove the cancelled parameter from URL
+      navigate('/checkout', { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   useEffect(() => {
     console.log('Checkout useEffect (signed in):', {
@@ -258,26 +268,27 @@ const CheckoutPage = () => {
           total: total,
           paymentMethod: 'payhere',
           customerName: `${formData.firstName} ${formData.lastName}`,
+          orderId: order.id,
         }));
 
         // Clear cart before redirecting to PayHere
-        clearCart();
+        await clearCart();
       } else {
         // For bank transfer and COD, redirect to thank you page
-        const thankYouUrl = `/thank-you?total=${total}&method=${formData.paymentMethod}&name=${encodeURIComponent(`${formData.firstName} ${formData.lastName}`)}`;
+        const thankYouUrl = `/thank-you?total=${total}&method=${formData.paymentMethod}&name=${encodeURIComponent(`${formData.firstName} ${formData.lastName}`)}&orderId=${order.id}`;
 
         // Navigate first, then clear cart to avoid useEffect interference
         navigate(thankYouUrl);
 
         // Clear cart after navigation
-        setTimeout(() => {
-          clearCart();
+        setTimeout(async () => {
+          await clearCart();
         }, 100);
       }
 
     } catch (error: any) {
       console.error('Checkout error:', error);
-      toast.error(error.message || 'Failed to process checkout');
+      showErrorToast(error.message || 'Failed to process checkout');
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Mail } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { showSuccessToast, showErrorToast } from '../ui/CustomToast';
 import logo from '../../assests/logo.white.png';
 
 const Footer = () => {
@@ -12,12 +12,12 @@ const Footer = () => {
     e.preventDefault();
 
     if (!email) {
-      toast.error('Please enter your email address');
+      showErrorToast('Please enter your email address');
       return;
     }
 
     if (!/\S+@\S+\.\S+/.test(email)) {
-      toast.error('Please enter a valid email address');
+      showErrorToast('Please enter a valid email address');
       return;
     }
 
@@ -27,10 +27,10 @@ const Footer = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      toast.success('Successfully subscribed to our newsletter!');
+      showSuccessToast('Successfully subscribed to our newsletter!');
       setEmail('');
     } catch (error) {
-      toast.error('Failed to subscribe. Please try again.');
+      showErrorToast('Failed to subscribe. Please try again.');
     } finally {
       setIsSubscribing(false);
     }
@@ -157,9 +157,9 @@ const Footer = () => {
           </p>
           
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#" className="text-white hover:text-gray-300 text-sm transition-colors">
+            <Link to="/privacy-policy" className="text-white hover:text-gray-300 text-sm transition-colors">
               Privacy Policy
-            </a>
+            </Link>
             <a href="#" className="text-white hover:text-gray-300 text-sm transition-colors">
               Terms of Service
             </a>
