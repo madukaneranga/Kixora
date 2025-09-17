@@ -20,6 +20,9 @@ interface PaymentRequest {
     lastName: string;
     email: string;
     phone: string;
+    address: string;
+    city: string;
+    country: string;
   };
   items: Array<{
     itemNumber: string;
@@ -69,38 +72,48 @@ class PayHereService {
 
   /**
    * Generate PayHere payment hash according to official documentation
-   * Hash = MD5(merchant_id + order_id + amount + currency + merchant_secret)
+   * Hash = MD5(merchant_id + order_id + amount + currency + MD5(merchant_secret))
    */
   private async generateHash(
     orderId: string,
     amount: string,
     currency: string
   ): Promise<string> {
+    // Use Deno's std library for MD5
+    const crypto_std = await import("https://deno.land/std@0.177.0/crypto/mod.ts");
+    const encoder = new TextEncoder();
+
+    // Step 1: Hash the merchant secret
+    const secretData = encoder.encode(this.config.merchantSecret.toUpperCase());
+    const secretHashBuffer = await crypto_std.crypto.subtle.digest("MD5", secretData);
+    const secretHashArray = Array.from(new Uint8Array(secretHashBuffer));
+    const secretHash = secretHashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+
+    // Step 2: Create the main hash string with the hashed secret
     const hashString = [
       this.config.merchantId,
       orderId,
       amount,
       currency,
-      this.config.merchantSecret
+      secretHash
     ].join('').toUpperCase();
 
-    console.log('PayHere Hash Calculation:', {
+    console.log('PayHere Hash Calculation (Correct Format):', {
       merchantId: this.config.merchantId,
       orderId,
       amount,
       currency,
+      secretHash: secretHash.substring(0, 10) + '...',
       hashInput: hashString.substring(0, 50) + '...'
     });
 
-    // Use Deno's std library for MD5
-    const crypto_std = await import("https://deno.land/std@0.177.0/crypto/mod.ts");
-    const encoder = new TextEncoder();
+    // Step 3: Hash the combined string
     const data = encoder.encode(hashString);
     const hashBuffer = await crypto_std.crypto.subtle.digest("MD5", data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 
-    console.log('Generated PayHere hash:', hash);
+    console.log('Generated PayHere hash (with correct format):', hash);
     return hash;
   }
 
@@ -117,8 +130,32 @@ class PayHereService {
       throw new Error('Missing required customer information');
     }
 
+    if (!request.customerInfo.address || !request.customerInfo.city || !request.customerInfo.country) {
+      throw new Error('Missing required address information');
+    }
+
     if (!request.items || request.items.length === 0) {
       throw new Error('At least one item is required');
+    }
+
+    // Additional PayHere-specific validations
+    if (request.currency !== 'LKR' && request.currency !== 'USD' && request.currency !== 'GBP' && request.currency !== 'EUR' && request.currency !== 'AUD') {
+      throw new Error(`Unsupported currency: ${request.currency}. PayHere supports: LKR, USD, GBP, EUR, AUD`);
+    }
+
+    if (request.amount <= 0) {
+      throw new Error('Amount must be greater than 0');
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(request.customerInfo.email)) {
+      throw new Error(`Invalid email format: ${request.customerInfo.email}`);
+    }
+
+    // Validate phone number format (should include country code)
+    if (!request.customerInfo.phone.startsWith('+')) {
+      console.warn('Phone number should include country code (+94, etc.)');
     }
 
     const amount = request.amount.toFixed(2);
@@ -137,9 +174,9 @@ class PayHereService {
       last_name: request.customerInfo.lastName,
       email: request.customerInfo.email,
       phone: request.customerInfo.phone,
-      address: 'N/A',
-      city: 'Colombo',
-      country: 'Sri Lanka',
+      address: request.customerInfo.address,
+      city: request.customerInfo.city,
+      country: request.customerInfo.country,
       hash: hash,
       sandbox: !this.config.isProduction
     };
@@ -151,6 +188,26 @@ class PayHereService {
       isProduction: this.config.isProduction,
       sandbox: paymentData.sandbox,
       hash: paymentData.hash
+    });
+
+    console.log('Complete PayHere payment data for debugging:', {
+      merchant_id: paymentData.merchant_id,
+      return_url: paymentData.return_url,
+      cancel_url: paymentData.cancel_url,
+      notify_url: paymentData.notify_url,
+      order_id: paymentData.order_id,
+      items: paymentData.items,
+      currency: paymentData.currency,
+      amount: paymentData.amount,
+      first_name: paymentData.first_name,
+      last_name: paymentData.last_name,
+      email: paymentData.email,
+      phone: paymentData.phone,
+      address: paymentData.address,
+      city: paymentData.city,
+      country: paymentData.country,
+      hash: paymentData.hash,
+      sandbox: paymentData.sandbox
     });
 
     return paymentData;
@@ -240,6 +297,14 @@ serve(async (req) => {
     const returnUrl = Deno.env.get('PAYHERE_RETURN_URL') || `${origin}/payment/success`;
     const cancelUrl = Deno.env.get('PAYHERE_CANCEL_URL') || `${origin}/payment/cancel`;
     const notifyUrl = `${supabaseUrl}/functions/v1/payment-webhook`;
+
+    console.log('PayHere URL Configuration:', {
+      origin,
+      returnUrl,
+      cancelUrl,
+      notifyUrl,
+      supabaseUrl
+    });
 
     // Initialize PayHere service
     let payHereService: PayHereService;

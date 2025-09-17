@@ -26,7 +26,7 @@ class PayHereWebhookService {
 
   /**
    * Verify webhook signature according to PayHere documentation
-   * Hash = MD5(merchant_id + order_id + amount + merchant_secret + status_code)
+   * Hash = MD5(merchant_id + order_id + amount + MD5(merchant_secret) + status_code)
    */
   async verifyWebhookHash(
     orderId: string,
@@ -34,25 +34,35 @@ class PayHereWebhookService {
     statusCode: number,
     receivedHash: string
   ): Promise<boolean> {
+    // Use Deno's std library for MD5
+    const crypto_std = await import("https://deno.land/std@0.177.0/crypto/mod.ts");
+    const encoder = new TextEncoder();
+
+    // Step 1: Hash the merchant secret
+    const secretData = encoder.encode(this.merchantSecret.toUpperCase());
+    const secretHashBuffer = await crypto_std.crypto.subtle.digest("MD5", secretData);
+    const secretHashArray = Array.from(new Uint8Array(secretHashBuffer));
+    const secretHash = secretHashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+
+    // Step 2: Create the verification hash string
     const hashString = [
       this.merchantId,
       orderId,
       amount,
-      this.merchantSecret,
+      secretHash,
       statusCode
     ].join('').toUpperCase();
 
-    console.log('Webhook hash verification input:', {
+    console.log('Webhook hash verification input (correct format):', {
       merchantId: this.merchantId,
       orderId,
       amount,
       statusCode,
+      secretHash: secretHash.substring(0, 10) + '...',
       hashInput: hashString.substring(0, 50) + '...'
     });
 
-    // Use Deno's std library for MD5
-    const crypto_std = await import("https://deno.land/std@0.177.0/crypto/mod.ts");
-    const encoder = new TextEncoder();
+    // Step 3: Hash the combined string
     const data = encoder.encode(hashString);
     const hashBuffer = await crypto_std.crypto.subtle.digest("MD5", data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -60,7 +70,7 @@ class PayHereWebhookService {
 
     const isValid = calculatedHash === receivedHash.toUpperCase();
 
-    console.log('Webhook hash verification result:', {
+    console.log('Webhook hash verification result (correct format):', {
       calculatedHash,
       receivedHash: receivedHash.toUpperCase(),
       isValid

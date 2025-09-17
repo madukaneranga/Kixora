@@ -205,6 +205,9 @@ const CheckoutPage = () => {
             lastName: formData.lastName,
             email: user?.email || '',
             phone: `${formData.countryCode}${formData.phone}`,
+            address: formData.address,
+            city: formData.city,
+            country: formData.country,
           },
           items: items.map(item => ({
             itemNumber: item.variant.sku,
