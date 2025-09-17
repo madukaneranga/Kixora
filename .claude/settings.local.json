@@ -5,7 +5,8 @@
       "Bash(npx supabase functions deploy:*)",
       "Bash(taskkill:*)",
       "Bash(git checkout:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebFetch(domain:support.payhere.lk)"
     ],
     "deny": [],
     "ask": []

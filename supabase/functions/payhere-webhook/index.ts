@@ -26,40 +26,45 @@ class PayHereWebhookService {
 
   /**
    * Verify webhook signature according to PayHere documentation
-   * Hash = MD5(merchant_id + order_id + amount + MD5(merchant_secret) + status_code)
+   * Webhook Hash = MD5(merchant_id + order_id + payhere_amount + payhere_currency + status_code + MD5(merchant_secret))
+   * This is DIFFERENT from payment creation hash format
    */
   async verifyWebhookHash(
     orderId: string,
     amount: string,
+    currency: string,
     statusCode: number,
     receivedHash: string
   ): Promise<boolean> {
-    // Use Deno's std library for MD5
     const crypto_std = await import("https://deno.land/std@0.177.0/crypto/mod.ts");
     const encoder = new TextEncoder();
 
     // Step 1: Hash the merchant secret
-    const secretData = encoder.encode(this.merchantSecret.toUpperCase());
+    const secretStr = String(this.merchantSecret);
+    const secretData = encoder.encode(secretStr);
     const secretHashBuffer = await crypto_std.crypto.subtle.digest("MD5", secretData);
     const secretHashArray = Array.from(new Uint8Array(secretHashBuffer));
-    const secretHash = secretHashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+    const hashedSecret = secretHashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 
-    // Step 2: Create the verification hash string
-    const hashString = [
-      this.merchantId,
-      orderId,
-      amount,
-      secretHash,
-      statusCode
-    ].join('').toUpperCase();
+    // Step 2: Create the webhook hash string (DIFFERENT from payment hash)
+    // PayHere webhook format: merchant_id + order_id + payhere_amount + payhere_currency + status_code + MD5(merchant_secret)
+    const hashString = String(this.merchantId) +
+                      String(orderId) +
+                      String(amount) +
+                      String(currency) +
+                      String(statusCode) +
+                      hashedSecret;
 
-    console.log('Webhook hash verification input (correct format):', {
+    console.log('PayHere Webhook Hash Calculation (Production Ready):', {
       merchantId: this.merchantId,
       orderId,
       amount,
+      currency,
       statusCode,
-      secretHash: secretHash.substring(0, 10) + '...',
-      hashInput: hashString.substring(0, 50) + '...'
+      merchantSecretHash: hashedSecret,
+      concatenationOrder: 'merchant_id + order_id + amount + currency + status_code + MD5(secret)',
+      hashInput: hashString,
+      hashInputLength: hashString.length
     });
 
     // Step 3: Hash the combined string
@@ -70,11 +75,28 @@ class PayHereWebhookService {
 
     const isValid = calculatedHash === receivedHash.toUpperCase();
 
-    console.log('Webhook hash verification result (correct format):', {
+    console.log('PayHere Webhook Hash Verification Result:', {
       calculatedHash,
       receivedHash: receivedHash.toUpperCase(),
-      isValid
+      isValid,
+      orderId,
+      statusCode,
+      verificationTimestamp: new Date().toISOString()
     });
+
+    if (!isValid) {
+      console.error('❌ WEBHOOK SIGNATURE VERIFICATION FAILED', {
+        orderId,
+        expectedHash: calculatedHash,
+        receivedHash: receivedHash.toUpperCase(),
+        merchantId: this.merchantId,
+        amount,
+        currency,
+        statusCode
+      });
+    } else {
+      console.log('✅ WEBHOOK SIGNATURE VERIFIED SUCCESSFULLY', { orderId, statusCode });
+    }
 
     return isValid;
   }
@@ -83,23 +105,31 @@ class PayHereWebhookService {
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 serve(async (req) => {
+  console.log('🚀 PUBLIC PAYHERE WEBHOOK CALLED - Method:', req.method, 'URL:', req.url, 'Time:', new Date().toISOString());
+  console.log('Request headers:', Object.fromEntries(req.headers.entries()));
+
   if (req.method === 'OPTIONS') {
+    console.log('OPTIONS request handled for CORS');
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    console.log('=== PayHere Webhook Received ===');
+    console.log('=== PayHere Public Webhook Received ===');
 
-    // Initialize Supabase
+    // Initialize Supabase with service key (since this is a secure server-side operation)
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('Missing Supabase environment variables');
-      return new Response('Configuration error', { status: 500, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Configuration error' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -107,34 +137,43 @@ serve(async (req) => {
     // Get PayHere configuration
     const merchantId = Deno.env.get('PAYHERE_MERCHANT_ID');
     const merchantSecret = Deno.env.get('PAYHERE_SECRET');
-    const isProduction = Deno.env.get('PAYHERE_ENVIRONMENT') === 'production';
-
-    console.log('Webhook environment:', {
-      hasSupabaseUrl: !!supabaseUrl,
-      hasServiceKey: !!supabaseServiceKey,
-      hasMerchantId: !!merchantId,
-      hasSecret: !!merchantSecret,
-      isProduction
-    });
 
     if (!merchantId || !merchantSecret) {
       console.error('Missing PayHere configuration');
-      return new Response('Configuration error', { status: 500, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Configuration error' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     // Initialize webhook service
     const webhookService = new PayHereWebhookService(merchantId, merchantSecret);
 
-    // Parse webhook payload
-    const payload: WebhookPayload = await req.json();
+    // Parse webhook payload - PayHere sends form data, not JSON
+    const formData = await req.formData();
+    const payload: WebhookPayload = {
+      merchant_id: formData.get('merchant_id') as string,
+      order_id: formData.get('order_id') as string,
+      payhere_amount: formData.get('payhere_amount') as string,
+      payhere_currency: formData.get('payhere_currency') as string,
+      status_code: parseInt(formData.get('status_code') as string),
+      md5sig: formData.get('md5sig') as string,
+      method: formData.get('method') as string,
+      status_message: formData.get('status_message') as string,
+      card_holder_name: formData.get('card_holder_name') as string || undefined,
+      card_no: formData.get('card_no') as string || undefined,
+    };
     console.log('Webhook payload received:', {
       orderId: payload.order_id,
       amount: payload.payhere_amount,
       currency: payload.payhere_currency,
       statusCode: payload.status_code,
       method: payload.method,
-      merchantId: payload.merchant_id
+      merchantId: payload.merchant_id,
+      receivedHash: payload.md5sig
     });
+
+    console.log('All form data received:', Object.fromEntries(formData.entries()));
 
     // Verify merchant ID matches
     if (payload.merchant_id !== merchantId) {
@@ -142,20 +181,27 @@ serve(async (req) => {
         received: payload.merchant_id,
         expected: merchantId
       });
-      return new Response('Invalid merchant', { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Invalid merchant' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     // Verify webhook signature
     const isValidSignature = await webhookService.verifyWebhookHash(
       payload.order_id,
       payload.payhere_amount,
+      payload.payhere_currency,
       payload.status_code,
       payload.md5sig
     );
 
     if (!isValidSignature) {
       console.error('Invalid webhook signature');
-      return new Response('Invalid signature', { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     console.log('Webhook signature verified successfully');
@@ -169,7 +215,10 @@ serve(async (req) => {
 
     if (orderError || !order) {
       console.error('Order not found:', orderError?.message);
-      return new Response('Order not found', { status: 404, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Order not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     console.log('Order found for webhook:', order.id);
@@ -200,28 +249,35 @@ serve(async (req) => {
         console.log('Payment failed with unknown status:', payload.status_code);
     }
 
-    // Update order status
+    // Update order status (only existing columns)
     const { error: updateError } = await supabase
       .from('orders')
       .update({
         status: orderStatus,
         payment_status: paymentStatus,
         payment_provider_id: payload.order_id,
-        payment_method_details: {
-          method: payload.method,
-          status_message: payload.status_message,
-          card_holder_name: payload.card_holder_name,
-          card_no: payload.card_no,
-          webhook_received_at: new Date().toISOString(),
-          status_code: payload.status_code
-        },
         updated_at: new Date().toISOString(),
       })
       .eq('id', payload.order_id);
 
+    console.log('Order update attempted:', {
+      orderId: payload.order_id,
+      newStatus: orderStatus,
+      paymentStatus,
+      paymentProviderId: payload.order_id
+    });
+
     if (updateError) {
       console.error('Failed to update order:', updateError.message);
-      return new Response('Update failed', { status: 500, headers: corsHeaders });
+      console.error('Update error details:', updateError);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Order update failed',
+        details: updateError.message
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     console.log('Order updated successfully:', {
@@ -269,7 +325,7 @@ serve(async (req) => {
       }
     }
 
-    console.log('=== PayHere Webhook Processed Successfully ===');
+    console.log('=== PayHere Public Webhook Processed Successfully ===');
 
     return new Response(JSON.stringify({
       success: true,
@@ -282,7 +338,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('=== PayHere Webhook Processing Failed ===');
+    console.error('=== PayHere Public Webhook Processing Failed ===');
     console.error('Error details:', error.message);
     console.error('Stack trace:', error.stack);
 
