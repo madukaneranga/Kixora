@@ -196,6 +196,17 @@ const CheckoutPage = () => {
       // Handle different payment methods
       if (formData.paymentMethod === 'payhere') {
         // Create payment with PayHere
+        console.log('All form data received:', formData);
+        console.log('Form data for payment:', {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          address: formData.address,
+          city: formData.city,
+          country: formData.country,
+          phone: formData.phone,
+          countryCode: formData.countryCode
+        });
+
         const paymentData = {
           orderId: order.id,
           amount: total,
@@ -205,9 +216,9 @@ const CheckoutPage = () => {
             lastName: formData.lastName,
             email: user?.email || '',
             phone: `${formData.countryCode}${formData.phone}`,
-            address: formData.address,
-            city: formData.city,
-            country: formData.country,
+            address: formData.address || 'No 123, Main Street',
+            city: formData.city || 'Colombo',
+            country: formData.country || 'Sri Lanka',
           },
           items: items.map(item => ({
             itemNumber: item.variant.sku,
