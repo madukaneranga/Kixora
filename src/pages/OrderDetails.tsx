@@ -192,17 +192,23 @@ const OrderDetails = () => {
                   {new Date(order.created_at).toLocaleDateString()}
                 </p>
               </div>
-              <div className="flex gap-2 mt-3 sm:mt-0">
-                <span className="px-2 py-1 text-xs font-medium border border-black bg-white text-black">
-                  {order.status.toUpperCase()}
-                </span>
-                <span className={`px-2 py-1 text-xs font-medium border ${
-                  order.payment_status === 'paid'
-                    ? 'border-black bg-black text-white'
-                    : 'border-gray-400 bg-white text-gray-600'
-                }`}>
-                  {order.payment_status.toUpperCase()}
-                </span>
+              <div className="flex flex-col gap-1 mt-3 sm:mt-0 items-end">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">Order:</span>
+                  <span className="px-2 py-1 text-xs font-medium border border-black bg-white text-black">
+                    {order.status.toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">Payment:</span>
+                  <span className={`px-2 py-1 text-xs font-medium border ${
+                    order.payment_status === 'paid'
+                      ? 'border-black bg-black text-white'
+                      : 'border-gray-400 bg-white text-gray-600'
+                  }`}>
+                    {order.payment_status.toUpperCase()}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

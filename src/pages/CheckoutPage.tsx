@@ -215,13 +215,18 @@ const CheckoutPage = () => {
 
         // Use direct fetch to get better error details
         const session = (await supabase.auth.getSession()).data.session;
+
+        if (!session?.access_token) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+
         const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment`;
 
         const response = await fetch(functionUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`,
+            'Authorization': `Bearer ${session.access_token}`,
           },
           body: JSON.stringify(paymentData),
         });
