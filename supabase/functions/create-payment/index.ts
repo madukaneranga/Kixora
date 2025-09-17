@@ -83,28 +83,38 @@ class PayHereService {
     const crypto_std = await import("https://deno.land/std@0.177.0/crypto/mod.ts");
     const encoder = new TextEncoder();
 
-    // Step 1: Hash the merchant secret
-    const secretData = encoder.encode(this.config.merchantSecret.toUpperCase());
+    // Step 1: Hash the merchant secret (like the working example)
+    console.log('Step 1 - Hashing merchant secret...');
+    const secretStr = String(this.config.merchantSecret);
+    const secretData = encoder.encode(secretStr);
     const secretHashBuffer = await crypto_std.crypto.subtle.digest("MD5", secretData);
     const secretHashArray = Array.from(new Uint8Array(secretHashBuffer));
-    const secretHash = secretHashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+    const hashedSecret = secretHashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 
-    // Step 2: Create the main hash string with the hashed secret
-    const hashString = [
-      this.config.merchantId,
-      orderId,
-      amount,
-      currency,
-      secretHash
-    ].join('').toUpperCase();
+    console.log('Secret hash result:', {
+      originalSecret: this.config.merchantSecret.substring(0, 10) + '...',
+      hashedSecret: hashedSecret
+    });
 
-    console.log('PayHere Hash Calculation (Correct Format):', {
+    // Step 2: Format amount like the working example
+    const amountFormatted = parseFloat(amount).toFixed(2);
+
+    // Step 3: Create the main hash string (like the working example)
+    const hashString = String(this.config.merchantId) +
+                      String(orderId) +
+                      amountFormatted +
+                      String(currency) +
+                      hashedSecret;
+
+    console.log('PayHere Hash Calculation (Detailed Debug):', {
       merchantId: this.config.merchantId,
       orderId,
       amount,
       currency,
-      secretHash: secretHash.substring(0, 10) + '...',
-      hashInput: hashString.substring(0, 50) + '...'
+      merchantSecret: this.config.merchantSecret.substring(0, 10) + '...',
+      hashedSecret: hashedSecret,
+      hashInput: hashString,
+      hashInputLength: hashString.length
     });
 
     // Step 3: Hash the combined string
@@ -173,8 +183,15 @@ class PayHereService {
       console.warn('Phone number should include country code (+94, etc.)');
     }
 
-    const amount = request.amount.toFixed(2);
-    const hash = await this.generateHash(request.orderId, amount, request.currency);
+    // Format amount like the working example (simple toFixed)
+    const amountFormatted = parseFloat(request.amount.toString()).toFixed(2);
+
+    console.log('Amount formatting:', {
+      original: request.amount,
+      formatted: amountFormatted
+    });
+
+    const hash = await this.generateHash(request.orderId, amountFormatted, request.currency);
 
     const paymentData: PayHerePaymentData = {
       merchant_id: this.config.merchantId,
@@ -184,7 +201,7 @@ class PayHereService {
       order_id: request.orderId,
       items: request.items[0]?.itemName || 'Order Items',
       currency: request.currency,
-      amount: amount,
+      amount: amountFormatted,
       first_name: request.customerInfo.firstName,
       last_name: request.customerInfo.lastName,
       email: request.customerInfo.email,
@@ -192,8 +209,7 @@ class PayHereService {
       address: request.customerInfo.address,
       city: request.customerInfo.city,
       country: request.customerInfo.country,
-      hash: hash,
-      sandbox: !this.config.isProduction
+      hash: hash
     };
 
     console.log('PayHere payment data created:', {
@@ -232,9 +248,16 @@ class PayHereService {
    * Get the appropriate checkout URL based on environment
    */
   getCheckoutUrl(): string {
-    return this.config.isProduction
+    const url = this.config.isProduction
       ? 'https://www.payhere.lk/pay/checkout'
       : 'https://sandbox.payhere.lk/pay/checkout';
+
+    console.log('PayHere checkout URL:', {
+      isProduction: this.config.isProduction,
+      url: url
+    });
+
+    return url;
   }
 }
 
@@ -311,7 +334,11 @@ serve(async (req) => {
     const origin = req.headers.get('origin') || 'https://inkixora.com';
     const returnUrl = Deno.env.get('PAYHERE_RETURN_URL') || `${origin}/payment/success`;
     const cancelUrl = Deno.env.get('PAYHERE_CANCEL_URL') || `${origin}/payment/cancel`;
-    const notifyUrl = `${supabaseUrl}/functions/v1/payment-webhook`;
+    // For webhook to work, we need to configure it properly in Supabase settings
+    // or use a different approach for public webhook access
+    const notifyUrl = `${supabaseUrl}/functions/v1/payhere-webhook`;
+
+    console.log('Webhook URL configured:', notifyUrl);
 
     console.log('PayHere URL Configuration:', {
       origin,
