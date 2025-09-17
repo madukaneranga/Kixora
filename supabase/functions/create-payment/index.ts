@@ -130,8 +130,23 @@ class PayHereService {
       throw new Error('Missing required customer information');
     }
 
-    if (!request.customerInfo.address || !request.customerInfo.city || !request.customerInfo.country) {
-      throw new Error('Missing required address information');
+    console.log('Customer info received:', {
+      firstName: request.customerInfo.firstName,
+      lastName: request.customerInfo.lastName,
+      email: request.customerInfo.email,
+      phone: request.customerInfo.phone,
+      address: request.customerInfo.address,
+      city: request.customerInfo.city,
+      country: request.customerInfo.country
+    });
+
+    const missingAddressFields = [];
+    if (!request.customerInfo.address) missingAddressFields.push('address');
+    if (!request.customerInfo.city) missingAddressFields.push('city');
+    if (!request.customerInfo.country) missingAddressFields.push('country');
+
+    if (missingAddressFields.length > 0) {
+      throw new Error(`Missing required address information: ${missingAddressFields.join(', ')}`);
     }
 
     if (!request.items || request.items.length === 0) {
