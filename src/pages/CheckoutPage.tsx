@@ -220,7 +220,11 @@ const CheckoutPage = () => {
           throw new Error('Authentication required. Please log in again.');
         }
 
+        console.log('Creating payment with token:', session.access_token.substring(0, 20) + '...');
+
         const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment`;
+
+        console.log('Calling payment function at:', functionUrl);
 
         const response = await fetch(functionUrl, {
           method: 'POST',
@@ -230,6 +234,8 @@ const CheckoutPage = () => {
           },
           body: JSON.stringify(paymentData),
         });
+
+        console.log('Payment function response status:', response.status);
 
         if (!response.ok) {
           const errorText = await response.text();

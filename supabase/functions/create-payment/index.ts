@@ -36,10 +36,12 @@ serve(async (req) => {
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
 
     console.log('Environment check:', {
       hasSupabaseUrl: !!supabaseUrl,
-      hasServiceKey: !!supabaseServiceKey
+      hasServiceKey: !!supabaseServiceKey,
+      hasAnonKey: !!supabaseAnonKey
     })
 
     if (!supabaseUrl || !supabaseServiceKey) {
@@ -52,7 +54,17 @@ serve(async (req) => {
       })
     }
 
+    if (!supabaseAnonKey) {
+      console.log('Warning: SUPABASE_ANON_KEY not found, using service role for auth')
+    }
+
+    // Use service role for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Use anon key for auth operations if available, otherwise service role
+    const authClient = supabaseAnonKey
+      ? createClient(supabaseUrl, supabaseAnonKey)
+      : supabase
 
     // Get PayHere configuration
     const merchantId = Deno.env.get('PAYHERE_MERCHANT_ID')
@@ -95,15 +107,16 @@ serve(async (req) => {
     }
 
     // Get user from auth token
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    )
+    const token = authHeader.replace('Bearer ', '')
+    console.log('Auth token received:', token ? 'Present' : 'Missing')
+
+    const { data: { user }, error: authError } = await authClient.auth.getUser(token)
 
     if (authError || !user) {
       console.log('Authentication failed:', authError)
       return new Response(JSON.stringify({
         success: false,
-        error: 'Invalid or expired authentication token'
+        error: `Invalid or expired authentication token: ${authError?.message || 'User not found'}`
       }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
