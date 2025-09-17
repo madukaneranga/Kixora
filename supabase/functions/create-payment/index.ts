@@ -192,7 +192,7 @@ serve(async (req) => {
       city: 'Colombo',
       country: 'Sri Lanka',
       hash: hash,
-      sandbox: true
+      sandbox: false
     }
 
     // Update order with payment provider info
@@ -208,7 +208,6 @@ serve(async (req) => {
       success: true,
       paymentId: paymentRequest.orderId,
       paymentData: paymentData,
-      checkoutUrl: 'https://www.sandbox.payhere.lk/pay/checkout'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
