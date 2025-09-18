@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Truck, Clock, CreditCard, Building, Phone, Banknote, DollarSign } from 'lucide-react';
+import { ArrowLeft, Truck, Clock, CreditCard, Building, Phone, Banknote, Mail } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useCartStore } from '../stores/cartStore';
 import { supabase } from '../lib/supabase';
@@ -93,34 +93,20 @@ const CheckoutPage = () => {
   }, [searchParams, navigate]);
 
   useEffect(() => {
-    console.log('Checkout useEffect (signed in):', {
-      authLoading,
-      user: user ? { id: user.id, email: user.email } : null,
-      itemsLength: items.length,
-      items: items.map(item => ({ id: item.id, title: item.title, quantity: item.quantity }))
-    });
-
     // Don't redirect while auth is still loading
     if (authLoading) {
-      console.log('Checkout: Auth is loading, waiting...');
       return;
     }
 
     if (!user) {
-      console.log('Checkout: No user, redirecting to home');
       navigate('/');
       return;
     }
 
     if (items.length === 0) {
-      console.log('Checkout: Cart is empty, redirecting to home');
       navigate('/');
       return;
     }
-
-    console.log('Checkout: All checks passed, staying on checkout page');
-    // Pre-fill form with user data if available
-    // Note: user email not used in this simplified checkout
   }, [user, authLoading, items, navigate, setValue]);
 
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -196,16 +182,6 @@ const CheckoutPage = () => {
       // Handle different payment methods
       if (formData.paymentMethod === 'payhere') {
         // Create payment with PayHere
-        console.log('All form data received:', formData);
-        console.log('Form data for payment:', {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          address: formData.address,
-          city: formData.city,
-          country: formData.country,
-          phone: formData.phone,
-          countryCode: formData.countryCode
-        });
 
         const paymentData = {
           orderId: order.id,
@@ -235,11 +211,7 @@ const CheckoutPage = () => {
           throw new Error('Authentication required. Please log in again.');
         }
 
-        console.log('Creating payment with token:', session.access_token.substring(0, 20) + '...');
-
         const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment`;
-
-        console.log('Calling payment function at:', functionUrl);
 
         const response = await fetch(functionUrl, {
           method: 'POST',
@@ -249,8 +221,6 @@ const CheckoutPage = () => {
           },
           body: JSON.stringify(paymentData),
         });
-
-        console.log('Payment function response status:', response.status);
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -264,12 +234,6 @@ const CheckoutPage = () => {
         }
 
         const { paymentData: payHereData, environment } = responseData;
-
-        console.log('PayHere payment data received:', {
-          orderId: payHereData.order_id,
-          amount: payHereData.amount,
-          environment
-        });
 
         // Update order with PayHere payment ID
         await supabase
@@ -287,27 +251,23 @@ const CheckoutPage = () => {
           orderId: order.id,
         }));
 
-        console.log('Starting PayHere payment with SDK...');
-
         // Start PayHere payment using the service
         const paymentResult = await payHereService.startPayment(
           payHereData as PayHerePaymentData,
           {
             onCompleted: (orderId) => {
-              console.log('Payment completed callback:', orderId);
+              // Payment completed
             },
             onDismissed: () => {
-              console.log('Payment dismissed callback');
+              // Payment dismissed
             },
             onError: (error) => {
-              console.error('Payment error callback:', error);
+              // Payment error
             }
           }
         );
 
         if (paymentResult.success) {
-          console.log('Payment successful, clearing cart and redirecting...');
-
           // Clear cart after successful payment
           await clearCart();
 
@@ -330,7 +290,6 @@ const CheckoutPage = () => {
       }
 
     } catch (error: any) {
-      console.error('Checkout error:', error);
       showErrorToast(error.message || 'Failed to process checkout');
     } finally {
       setLoading(false);
@@ -382,6 +341,14 @@ const CheckoutPage = () => {
           {/* Left Column - Forms */}
           <div className="space-y-8">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+              {/* User Email Section */}
+              <div className="border border-[rgb(51,51,51)] rounded-lg p-4">
+                <div className="flex items-center">
+                  <Mail className="h-4 w-4 mr-2 text-[rgb(94,94,94)]" />
+                  <span className="text-white text-sm">{user?.email}</span>
+                </div>
+              </div>
+
               {/* Delivery Section */}
               <div>
                 <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
@@ -589,8 +556,14 @@ const CheckoutPage = () => {
                           <p className="text-[rgb(94,94,94)] text-sm">Credit/Debit Cards</p>
                         </div>
                       </div>
-                      PayHere
-<a href="https://www.payhere.lk" target="_blank"><img src="https://www.payhere.lk/downloads/images/payhere_short_banner.png" alt="PayHere" width="250"/></a>                    </div>
+                      <a href="https://www.payhere.lk" target="_blank" rel="noopener noreferrer">
+                        <img
+                          src="https://www.payhere.lk/downloads/images/payhere_short_banner.png"
+                          alt="PayHere"
+                          width="250"
+                          className="mt-2"
+                        />
+                      </a>                    </div>
                   </label>
 
                   <label className={`relative flex items-center p-4 cursor-pointer transition-all duration-200 border-b border-[rgb(51,51,51)] ${

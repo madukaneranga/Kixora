@@ -241,11 +241,11 @@ export const useCartStore = create<CartStore>()(
                 maxStock: item.product_variants.stock,
               }));
 
-            // Merge logic with stock validation
+            // Use database items as the source of truth to prevent duplication
             const mergedItems: CartItem[] = [];
             const adjustmentWarnings: string[] = [];
 
-            // First add all DB items
+            // Process DB items first with stock validation
             for (const dbItem of dbItems) {
               const availableStock = dbItem.maxStock || 0;
 
@@ -263,29 +263,13 @@ export const useCartStore = create<CartStore>()(
               }
             }
 
-            // Then merge local items
+            // Only add local items that don't exist in the database
             for (const localItem of localItems) {
-              const existingIndex = mergedItems.findIndex(
+              const existsInDb = mergedItems.some(
                 dbItem => dbItem.variantId === localItem.variantId
               );
 
-              if (existingIndex >= 0) {
-                // Item exists in both - merge quantities with stock validation
-                const existing = mergedItems[existingIndex];
-                const desiredQty = existing.quantity + localItem.quantity;
-                const availableStock = existing.maxStock || 0;
-
-                if (availableStock > 0) {
-                  const finalQty = Math.min(desiredQty, availableStock);
-                  mergedItems[existingIndex].quantity = finalQty;
-
-                  if (desiredQty > availableStock) {
-                    adjustmentWarnings.push(
-                      `${existing.title} quantity adjusted from ${desiredQty} to ${finalQty} due to stock limitations`
-                    );
-                  }
-                }
-              } else {
+              if (!existsInDb) {
                 // Item only exists locally - validate stock before adding
                 try {
                   const stockPromise = supabase
