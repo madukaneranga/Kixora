@@ -20,7 +20,7 @@ interface Order {
   id: string;
   total: number;
   currency: string;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   created_at: string;
   payment_method: string;
   shipping_method: string;
@@ -227,6 +227,8 @@ const OrdersManagement = () => {
         return 'text-red-400 bg-red-900/20 border-red-400/20';
       case 'shipped':
         return 'text-blue-400 bg-blue-900/20 border-blue-400/20';
+      case 'confirmed':
+        return 'text-emerald-400 bg-emerald-900/20 border-emerald-400/20';
       case 'processing':
         return 'text-purple-400 bg-purple-900/20 border-purple-400/20';
       default:
@@ -237,6 +239,7 @@ const OrdersManagement = () => {
   const statusOptions = [
     { value: 'all', label: 'All Orders' },
     { value: 'pending', label: 'Pending' },
+    { value: 'confirmed', label: 'Confirmed' },
     { value: 'processing', label: 'Processing' },
     { value: 'shipped', label: 'Shipped' },
     { value: 'delivered', label: 'Delivered' },
@@ -344,6 +347,7 @@ const OrdersManagement = () => {
                         className={`text-sm font-medium capitalize px-3 py-1 rounded-full border ${getStatusColor(order.status)} bg-black`}
                       >
                         <option value="pending" className="bg-black">Pending</option>
+                        <option value="confirmed" className="bg-black">Confirmed</option>
                         <option value="processing" className="bg-black">Processing</option>
                         <option value="shipped" className="bg-black">Shipped</option>
                         <option value="delivered" className="bg-black">Delivered</option>
@@ -353,14 +357,14 @@ const OrdersManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-[rgb(94,94,94)]">
                       <div className="capitalize">{order.payment_method}</div>
                       <div className={`text-xs ${
-                        (order.status === 'pending' || order.status === 'processing')
+                        (order.status === 'pending' || order.status === 'confirmed' || order.status === 'processing')
                           ? order.shipping_method?.toLowerCase().includes('express')
                             ? 'text-red-400 font-medium'
                             : 'text-yellow-400 font-medium'
                           : ''
                       }`}
                         style={
-                          (order.status === 'pending' || order.status === 'processing')
+                          (order.status === 'pending' || order.status === 'confirmed' || order.status === 'processing')
                             ? {
                                 animation: 'slowBlink 2s ease-in-out infinite'
                               }
