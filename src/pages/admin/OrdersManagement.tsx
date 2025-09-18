@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Eye, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Filter, ChevronLeft, ChevronRight, Package, MapPin, CreditCard, Clock, User, Truck, X } from 'lucide-react';
 
 // Add keyframes for smooth fading animation
 const blinkKeyframes = `
@@ -18,16 +18,45 @@ import { useAuth } from '../../hooks/useAuth';
 
 interface Order {
   id: string;
+  order_number: string;
+  user_id: string;
   total: number;
   currency: string;
-  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
+  payment_method?: string;
+  payment_provider?: string;
+  payment_provider_id?: string;
+  billing_address?: any; // JSONB
+  shipping_address?: any; // JSONB
+  shipping_method?: string;
+  shipping_cost?: number;
+  notes?: string;
   created_at: string;
-  payment_method: string;
-  shipping_method: string;
+  updated_at?: string;
   profiles: {
     full_name: string;
     email: string;
   };
+  order_items?: Array<{
+    id: string;
+    order_id: string;
+    product_variant_id: string;
+    product_title: string; // Snapshot at purchase time
+    variant_info: string; // JSONB string containing variant details
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+    created_at: string;
+    products: {
+      title: string;
+      image?: string;
+    };
+    variant_details?: any; // Parsed variant_info JSON
+    product_variants?: {
+      sku?: string;
+    };
+  }>;
 }
 
 const OrdersManagement = () => {
@@ -38,6 +67,7 @@ const OrdersManagement = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -113,6 +143,73 @@ const OrdersManagement = () => {
       showErrorToast(`Failed to load orders: ${error.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOrderDetails = async (orderId: string) => {
+    try {
+      setLoadingDetails(true);
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from('orders')
+        .select(`
+          *,
+          profiles:user_id (
+            full_name,
+            email
+          ),
+          order_items (
+            id,
+            quantity,
+            unit_price,
+            total_price,
+            product_title,
+            variant_info,
+            product_variant_id,
+            product_variants (
+              sku,
+              products (
+                product_images (
+                  storage_path
+                )
+              )
+            )
+          )
+        `)
+        .eq('id', orderId)
+        .single();
+
+      if (error) throw error;
+
+      // Format the data - using snapshot data from order_items
+      const formattedOrder = {
+        ...data,
+        order_items: data.order_items?.map((item: any) => ({
+          ...item,
+          products: {
+            title: item.product_title, // Use snapshot title
+            image: item.product_variants?.products?.product_images?.[0]?.storage_path
+          },
+          // Handle variant_info (already parsed JSONB object from Supabase)
+          variant_details: item.variant_info || null
+        }))
+      };
+
+      setSelectedOrder(formattedOrder);
+    } catch (error) {
+      console.error('Error fetching order details:', error);
+      showErrorToast('Failed to load order details');
+    } finally {
+      setLoadingDetails(false);
     }
   };
 
@@ -381,9 +478,9 @@ const OrdersManagement = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => {
-                          setSelectedOrder(order);
+                        onClick={async () => {
                           setShowModal(true);
+                          await fetchOrderDetails(order.id);
                         }}
                         className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
                       >
@@ -463,61 +560,368 @@ const OrdersManagement = () => {
           </div>
         )}
 
-        {/* Order Details Modal */}
-        {showModal && selectedOrder && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-black border border-[rgb(51,51,51)] rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="px-6 py-4 border-b border-[rgb(51,51,51)] flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-white">
-                  Order Details #{selectedOrder.id.slice(-8).toUpperCase()}
-                </h3>
+        {/* Comprehensive Order Details Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-black border border-[rgb(51,51,51)] rounded-lg w-full max-w-6xl max-h-[95vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-black border-b border-[rgb(51,51,51)] px-6 py-4 flex justify-between items-center z-10">
+                <div className="flex items-center space-x-3">
+                  <Package className="w-6 h-6 text-white" />
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">
+                      {selectedOrder?.order_number || `Order #${selectedOrder?.id?.slice(-8).toUpperCase()}` || 'Loading...'}
+                    </h3>
+                    {selectedOrder && (
+                      <p className="text-[rgb(94,94,94)] text-sm">
+                        Created {new Date(selectedOrder.created_at).toLocaleDateString()} at {new Date(selectedOrder.created_at).toLocaleTimeString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
                 <button
-                  onClick={() => setShowModal(false)}
-                  className="text-[rgb(94,94,94)] hover:text-white"
+                  onClick={() => {
+                    setShowModal(false);
+                    setSelectedOrder(null);
+                  }}
+                  className="text-[rgb(94,94,94)] hover:text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
                 >
-                  ×
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[rgb(94,94,94)] text-sm">Customer</p>
-                    <p className="text-white">{selectedOrder.profiles?.full_name}</p>
-                    <p className="text-[rgb(94,94,94)] text-sm">{selectedOrder.profiles?.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-[rgb(94,94,94)] text-sm">Total Amount</p>
-                    <p className="text-white text-lg font-semibold">
-                      {selectedOrder.currency} {selectedOrder.total.toLocaleString()}
-                    </p>
-                  </div>
+              {/* Loading State */}
+              {loadingDetails && !selectedOrder && (
+                <div className="flex items-center justify-center py-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+                  <span className="ml-4 text-white">Loading order details...</span>
                 </div>
+              )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[rgb(94,94,94)] text-sm">Status</p>
-                    <p className={`text-sm font-medium capitalize ${getStatusColor(selectedOrder.status).split(' ')[0]}`}>
-                      {selectedOrder.status}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[rgb(94,94,94)] text-sm">Payment Method</p>
-                    <p className="text-white capitalize">{selectedOrder.payment_method}</p>
-                  </div>
-                </div>
+              {/* Modal Content */}
+              {selectedOrder && (
+                <div className="p-6 space-y-8">
+                  {/* Status & Key Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Clock className="w-4 h-4 text-[rgb(94,94,94)]" />
+                        <p className="text-[rgb(94,94,94)] text-sm">Status</p>
+                      </div>
+                      <p className={`text-lg font-semibold capitalize ${getStatusColor(selectedOrder.status).split(' ')[0]}`}>
+                        {selectedOrder.status}
+                      </p>
+                    </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[rgb(94,94,94)] text-sm">Order Date</p>
-                    <p className="text-white">{new Date(selectedOrder.created_at).toLocaleString()}</p>
+                    <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <CreditCard className="w-4 h-4 text-[rgb(94,94,94)]" />
+                        <p className="text-[rgb(94,94,94)] text-sm">Total Amount</p>
+                      </div>
+                      <p className="text-white text-xl font-bold">
+                        {selectedOrder.currency} {selectedOrder.total.toLocaleString()}
+                      </p>
+                    </div>
+
+                    <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <CreditCard className="w-4 h-4 text-[rgb(94,94,94)]" />
+                        <p className="text-[rgb(94,94,94)] text-sm">Payment</p>
+                      </div>
+                      <p className="text-white capitalize">{selectedOrder.payment_method || 'N/A'}</p>
+                      <p className={`text-xs mt-1 font-medium ${
+                        selectedOrder.payment_status === 'paid' ? 'text-green-400' :
+                        selectedOrder.payment_status === 'failed' ? 'text-red-400' :
+                        selectedOrder.payment_status === 'refunded' ? 'text-purple-400' :
+                        'text-yellow-400'
+                      }`}>
+                        Status: {selectedOrder.payment_status}
+                      </p>
+                    </div>
+
+                    <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Truck className="w-4 h-4 text-[rgb(94,94,94)]" />
+                        <p className="text-[rgb(94,94,94)] text-sm">Shipping</p>
+                      </div>
+                      <p className="text-white capitalize">{selectedOrder.shipping_method}</p>
+                      {selectedOrder.tracking_number && (
+                        <p className="text-xs text-blue-400 mt-1">#{selectedOrder.tracking_number}</p>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[rgb(94,94,94)] text-sm">Shipping Method</p>
-                    <p className="text-white capitalize">{selectedOrder.shipping_method}</p>
+
+                  {/* Customer Information */}
+                  <div className="bg-[rgb(25,25,25)] p-6 rounded-lg border border-[rgb(51,51,51)]">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <User className="w-5 h-5 text-white" />
+                      <h4 className="text-lg font-semibold text-white">Customer Information</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-[rgb(94,94,94)] text-sm">Name</p>
+                        <p className="text-white">{selectedOrder.profiles?.full_name || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[rgb(94,94,94)] text-sm">Email</p>
+                        <p className="text-white">{selectedOrder.profiles?.email || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[rgb(94,94,94)] text-sm">Phone</p>
+                        <p className="text-white">{selectedOrder.profiles?.phone || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Order Items */}
+                  {selectedOrder.order_items && selectedOrder.order_items.length > 0 && (
+                    <div className="bg-[rgb(25,25,25)] p-6 rounded-lg border border-[rgb(51,51,51)]">
+                      <div className="flex items-center space-x-2 mb-4">
+                        <Package className="w-5 h-5 text-white" />
+                        <h4 className="text-lg font-semibold text-white">Order Items ({selectedOrder.order_items.length})</h4>
+                      </div>
+                      <div className="space-y-4">
+                        {selectedOrder.order_items.map((item) => (
+                          <div key={item.id} className="flex items-center space-x-4 p-4 bg-black rounded-lg border border-[rgb(51,51,51)]">
+                            {item.products.image && (
+                              <img
+                                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${item.products.image}`}
+                                alt={item.products.title}
+                                className="w-16 h-16 object-cover rounded-lg"
+                              />
+                            )}
+                            <div className="flex-1">
+                              <p className="text-white font-medium">{item.product_title}</p>
+                              <div className="flex items-center space-x-4 text-sm text-[rgb(94,94,94)] mt-1">
+                                {item.variant_details?.size && (
+                                  <span>Size: {item.variant_details.size}</span>
+                                )}
+                                {item.variant_details?.color && (
+                                  <span>Color: {item.variant_details.color}</span>
+                                )}
+                                {item.product_variants?.sku && (
+                                  <span>SKU: {item.product_variants.sku}</span>
+                                )}
+                                <span className="text-xs">Unit: {selectedOrder.currency} {item.unit_price.toLocaleString()}</span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-white">Qty: {item.quantity}</p>
+                              <p className="text-white font-semibold">
+                                {selectedOrder.currency} {item.total_price.toLocaleString()}
+                              </p>
+                              <p className="text-xs text-[rgb(94,94,94)]">
+                                @ {selectedOrder.currency} {item.unit_price.toLocaleString()} each
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Addresses */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Shipping Address */}
+                    {selectedOrder.shipping_address && (
+                      <div className="bg-[rgb(25,25,25)] p-6 rounded-lg border border-[rgb(51,51,51)]">
+                        <div className="flex items-center space-x-2 mb-4">
+                          <MapPin className="w-5 h-5 text-white" />
+                          <h4 className="text-lg font-semibold text-white">Shipping Address</h4>
+                        </div>
+                        <div className="text-white text-sm">
+                          {typeof selectedOrder.shipping_address === 'string' ? (
+                            <p className="text-xs">{selectedOrder.shipping_address}</p>
+                          ) : (
+                            <div className="space-y-1">
+                              {(selectedOrder.shipping_address.firstName || selectedOrder.shipping_address.lastName) && (
+                                <p className="text-xs">
+                                  <span className="text-gray-400">Name: </span>
+                                  <span className="text-white">{selectedOrder.shipping_address.firstName} {selectedOrder.shipping_address.lastName}</span>
+                                </p>
+                              )}
+
+                              {selectedOrder.shipping_address.address && (
+                                <p className="text-xs">
+                                  <span className="text-gray-400">Address: </span>
+                                  <span className="text-white">{selectedOrder.shipping_address.address}</span>
+                                </p>
+                              )}
+
+                              {(selectedOrder.shipping_address.city || selectedOrder.shipping_address.postalCode) && (
+                                <p className="text-xs">
+                                  <span className="text-gray-400">City: </span>
+                                  <span className="text-white">
+                                    {selectedOrder.shipping_address.city}
+                                    {selectedOrder.shipping_address.postalCode && ` ${selectedOrder.shipping_address.postalCode}`}
+                                  </span>
+                                </p>
+                              )}
+
+                              {selectedOrder.shipping_address.phone && (
+                                <p className="text-xs">
+                                  <span className="text-gray-400">Phone: </span>
+                                  <span className="text-white">{selectedOrder.shipping_address.phone}</span>
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Billing Address */}
+                    {selectedOrder.billing_address && (
+                      <div className="bg-[rgb(25,25,25)] p-6 rounded-lg border border-[rgb(51,51,51)]">
+                        <div className="flex items-center space-x-2 mb-4">
+                          <CreditCard className="w-5 h-5 text-white" />
+                          <h4 className="text-lg font-semibold text-white">Billing Address</h4>
+                        </div>
+                        <div className="text-white text-sm">
+                          {typeof selectedOrder.billing_address === 'string' ? (
+                            <p className="text-xs">{selectedOrder.billing_address}</p>
+                          ) : (
+                            <div className="space-y-1">
+                              {(selectedOrder.billing_address.firstName || selectedOrder.billing_address.lastName) && (
+                                <p className="text-xs">
+                                  <span className="text-gray-400">Name: </span>
+                                  <span className="text-white">{selectedOrder.billing_address.firstName} {selectedOrder.billing_address.lastName}</span>
+                                </p>
+                              )}
+
+                              {selectedOrder.billing_address.address && (
+                                <p className="text-xs">
+                                  <span className="text-gray-400">Address: </span>
+                                  <span className="text-white">{selectedOrder.billing_address.address}</span>
+                                </p>
+                              )}
+
+                              {(selectedOrder.billing_address.city || selectedOrder.billing_address.postalCode) && (
+                                <p className="text-xs">
+                                  <span className="text-gray-400">City: </span>
+                                  <span className="text-white">
+                                    {selectedOrder.billing_address.city}
+                                    {selectedOrder.billing_address.postalCode && ` ${selectedOrder.billing_address.postalCode}`}
+                                  </span>
+                                </p>
+                              )}
+
+                              {selectedOrder.billing_address.phone && (
+                                <p className="text-xs">
+                                  <span className="text-gray-400">Phone: </span>
+                                  <span className="text-white">{selectedOrder.billing_address.phone}</span>
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Order Totals Breakdown */}
+                  <div className="bg-[rgb(25,25,25)] p-6 rounded-lg border border-[rgb(51,51,51)]">
+                    <h4 className="text-lg font-semibold text-white mb-4">Order Summary</h4>
+                    <div className="space-y-2">
+                      {selectedOrder.subtotal && (
+                        <div className="flex justify-between text-[rgb(94,94,94)]">
+                          <span>Subtotal:</span>
+                          <span>{selectedOrder.currency} {selectedOrder.subtotal.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {selectedOrder.shipping_cost && (
+                        <div className="flex justify-between text-[rgb(94,94,94)]">
+                          <span>Shipping:</span>
+                          <span>{selectedOrder.currency} {selectedOrder.shipping_cost.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {selectedOrder.tax_amount && (
+                        <div className="flex justify-between text-[rgb(94,94,94)]">
+                          <span>Tax:</span>
+                          <span>{selectedOrder.currency} {selectedOrder.tax_amount.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {selectedOrder.discount_amount && (
+                        <div className="flex justify-between text-green-400">
+                          <span>Discount:</span>
+                          <span>-{selectedOrder.currency} {selectedOrder.discount_amount.toLocaleString()}</span>
+                        </div>
+                      )}
+                      <hr className="border-[rgb(51,51,51)]" />
+                      <div className="flex justify-between text-white text-lg font-semibold">
+                        <span>Total:</span>
+                        <span>{selectedOrder.currency} {selectedOrder.total.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Information */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-[rgb(25,25,25)] p-6 rounded-lg border border-[rgb(51,51,51)]">
+                      <h4 className="text-lg font-semibold text-white mb-4">Order Timestamps</h4>
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-[rgb(94,94,94)] text-sm">Created</p>
+                          <p className="text-white">{new Date(selectedOrder.created_at).toLocaleString()}</p>
+                        </div>
+                        {selectedOrder.updated_at && (
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm">Last Updated</p>
+                            <p className="text-white">{new Date(selectedOrder.updated_at).toLocaleString()}</p>
+                          </div>
+                        )}
+                        {selectedOrder.estimated_delivery && (
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm">Estimated Delivery</p>
+                            <p className="text-white">{new Date(selectedOrder.estimated_delivery).toLocaleDateString()}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Notes & Additional Info */}
+                    <div className="bg-[rgb(25,25,25)] p-6 rounded-lg border border-[rgb(51,51,51)]">
+                      <h4 className="text-lg font-semibold text-white mb-4">Additional Information</h4>
+                      <div className="space-y-2">
+                        {selectedOrder.order_number && (
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm">Order Number</p>
+                            <p className="text-white font-mono text-sm">{selectedOrder.order_number}</p>
+                          </div>
+                        )}
+                        {selectedOrder.payment_provider && (
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm">Payment Provider</p>
+                            <p className="text-white capitalize">{selectedOrder.payment_provider}</p>
+                          </div>
+                        )}
+                        {selectedOrder.payment_provider_id && (
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm">Payment Transaction ID</p>
+                            <p className="text-white font-mono text-sm">{selectedOrder.payment_provider_id}</p>
+                          </div>
+                        )}
+                        {selectedOrder.user_id && (
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm">Customer ID</p>
+                            <p className="text-white font-mono text-sm">{selectedOrder.user_id}</p>
+                          </div>
+                        )}
+                        {selectedOrder.notes && (
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm">Order Notes</p>
+                            <p className="text-white">{selectedOrder.notes}</p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-[rgb(94,94,94)] text-sm">Order ID (UUID)</p>
+                          <p className="text-white font-mono text-sm">{selectedOrder.id}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         )}
