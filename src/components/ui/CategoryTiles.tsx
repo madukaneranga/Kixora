@@ -36,7 +36,7 @@ const CategoryTiles = () => {
 
   if (loading) {
     return (
-      <div className="w-full py-12 px-4 bg-white">
+      <div className="w-full py-8 sm:py-10 px-4 bg-white">
         <div className="grid grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="aspect-[3/4] bg-gray-200 animate-pulse rounded-lg" />
@@ -46,7 +46,7 @@ const CategoryTiles = () => {
     );
   }
   return (
-    <div className="w-full py-12 px-4 bg-white">
+    <div className="w-full py-8 sm:py-10 px-4 bg-white">
       <div className="grid grid-cols-3 gap-4">
         {categories.map((category) => (
           <Link

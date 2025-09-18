@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import ProductCarousel from './ProductCarousel';
+import { useRef, useState, useEffect } from 'react';
+import ProductCard from '../products/ProductCard';
 import Button from '../ui/Button';
 
 interface PinnedCollection {
@@ -33,34 +34,63 @@ interface PinnedCollectionSectionProps {
 }
 
 const PinnedCollectionSection = ({ collection }: PinnedCollectionSectionProps) => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
   if (!collection || !collection.products || collection.products.length === 0) {
     return null;
   }
 
+  // Check scroll position
+  const updateScrollButtons = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  useEffect(() => {
+    updateScrollButtons();
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', updateScrollButtons);
+      window.addEventListener('resize', updateScrollButtons);
+      return () => {
+        container.removeEventListener('scroll', updateScrollButtons);
+        window.removeEventListener('resize', updateScrollButtons);
+      };
+    }
+  }, []);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const containerWidth = scrollContainerRef.current.clientWidth;
+      const scrollAmount = containerWidth * 0.8;
+      const newScrollLeft = scrollContainerRef.current.scrollLeft +
+        (direction === 'right' ? scrollAmount : -scrollAmount);
+
+      scrollContainerRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
-    <section className="py-12 sm:py-16 bg-white">
-      <div className="w-full px-4 sm:px-6 lg:px-8">
+    <section className="py-8 sm:py-10 bg-white">
+      <div className="w-full">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-end lg:justify-between mb-6 sm:mb-8"
+          className="flex flex-col lg:flex-row lg:items-end lg:justify-between mb-4 sm:mb-6 px-4 sm:px-6 lg:px-8"
         >
-          <div className="mb-6 lg:mb-0">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="flex items-center space-x-2 mb-2"
-            >
-              <div className="w-8 h-0.5 bg-black"></div>
-              <span className="text-sm font-medium text-gray-600 uppercase tracking-wide">
-                Featured Collection
-              </span>
-            </motion.div>
+          <div className="mb-4 lg:mb-0">
+            
 
             <motion.h2
               initial={{ opacity: 0, y: 10 }}
@@ -71,18 +101,6 @@ const PinnedCollectionSection = ({ collection }: PinnedCollectionSectionProps) =
             >
               {collection.name}
             </motion.h2>
-
-            {collection.description && (
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                className="text-lg text-gray-600 max-w-2xl leading-relaxed"
-              >
-                {collection.description}
-              </motion.p>
-            )}
           </div>
 
           <motion.div
@@ -104,14 +122,75 @@ const PinnedCollectionSection = ({ collection }: PinnedCollectionSectionProps) =
           </motion.div>
         </motion.div>
 
-        {/* Products Carousel */}
+        {/* Products Carousel with Navigation */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
+          className="relative w-full"
         >
-          <ProductCarousel products={collection.products} />
+          {/* Navigation Buttons */}
+          <div className="hidden md:block">
+            <button
+              onClick={() => scroll('left')}
+              disabled={!canScrollLeft}
+              className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white shadow-lg border border-gray-200 rounded-full flex items-center justify-center transition-all duration-200 ${
+                canScrollLeft
+                  ? 'text-black hover:bg-gray-50 hover:shadow-xl'
+                  : 'text-gray-300 cursor-not-allowed'
+              }`}
+            >
+              <ChevronLeft size={20} />
+            </button>
+
+            <button
+              onClick={() => scroll('right')}
+              disabled={!canScrollRight}
+              className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white shadow-lg border border-gray-200 rounded-full flex items-center justify-center transition-all duration-200 ${
+                canScrollRight
+                  ? 'text-black hover:bg-gray-50 hover:shadow-xl'
+                  : 'text-gray-300 cursor-not-allowed'
+              }`}
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+
+          {/* Custom Product Carousel */}
+          <div
+            ref={scrollContainerRef}
+            className="flex gap-3 md:gap-6 overflow-x-auto scrollbar-hide pb-4 scroll-smooth px-4 sm:px-6 lg:px-8"
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}
+          >
+            {collection.products.map((product, index) => (
+              <motion.div
+                key={product.id}
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="flex-none w-[calc(50%-6px)] sm:w-[calc(50%-8px)] md:w-[calc(33.333%-12px)] lg:w-[calc(25%-18px)] min-w-[160px] max-w-[320px]"
+              >
+                <ProductCard product={product} />
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Mobile scroll indicator dots */}
+          <div className="flex justify-center mt-4 sm:mt-6 md:hidden px-4">
+            <div className="flex space-x-2">
+              {Array.from({ length: Math.ceil(collection.products.length / 2) }).map((_, index) => (
+                <div
+                  key={index}
+                  className="w-2 h-2 bg-gray-300 rounded-full"
+                />
+              ))}
+            </div>
+          </div>
         </motion.div>
       </div>
     </section>

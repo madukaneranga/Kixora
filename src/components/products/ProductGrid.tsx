@@ -27,13 +27,15 @@ interface ProductGridProps {
 const ProductGrid = ({ products, loading = false }: ProductGridProps) => {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
         {[...Array(8)].map((_, index) => (
           <div key={index} className="animate-pulse">
-            <div className="bg-slate-200 aspect-square rounded-2xl mb-4"></div>
-            <div className="h-4 bg-slate-200 rounded mb-2"></div>
-            <div className="h-4 bg-slate-200 rounded w-2/3 mb-2"></div>
-            <div className="h-6 bg-slate-200 rounded w-1/2"></div>
+            <div className="bg-slate-200 aspect-[4/5] rounded-lg mb-4"></div>
+            <div className="space-y-2">
+              <div className="h-3 bg-slate-200 rounded"></div>
+              <div className="h-3 bg-slate-200 rounded w-3/4"></div>
+              <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+            </div>
           </div>
         ))}
       </div>
@@ -42,10 +44,10 @@ const ProductGrid = ({ products, loading = false }: ProductGridProps) => {
 
   if (products.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12 px-4">
         <div className="text-6xl mb-4">👟</div>
         <h3 className="text-xl font-semibold text-slate-900 mb-2">No products found</h3>
-        <p className="text-slate-600">Try adjusting your search or filter criteria</p>
+        <p className="text-slate-600 max-w-md mx-auto">Try adjusting your search or filter criteria</p>
       </div>
     );
   }
@@ -53,7 +55,7 @@ const ProductGrid = ({ products, loading = false }: ProductGridProps) => {
   return (
     <motion.div
       layout
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+      className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6"
     >
       <AnimatePresence>
         {products.map((product) => (

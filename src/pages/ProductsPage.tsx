@@ -383,7 +383,7 @@ const ProductsPage = () => {
           <Button
             variant="outline"
             onClick={() => setShowFilters(true)}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 h-10"
           >
             <SlidersHorizontal size={16} />
             <span>Filters {activeFilterCount > 0 && `(${activeFilterCount})`}</span>
@@ -392,7 +392,7 @@ const ProductsPage = () => {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="px-4 py-2 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="px-4 py-2 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500 h-10"
           >
             {SORT_OPTIONS.map(option => (
               <option key={option.value} value={option.value}>
@@ -447,7 +447,7 @@ const ProductsPage = () => {
             <Button
               variant="outline"
               onClick={clearFilters}
-              className="mt-4"
+              className="mt-4 h-10"
             >
               Clear all filters
             </Button>
