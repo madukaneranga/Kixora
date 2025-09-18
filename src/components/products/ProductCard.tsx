@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingCart } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Heart, ShoppingCart, Plus, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import { useWishlistStore } from '../../stores/wishlistStore';
 import { useCartStore } from '../../stores/cartStore';
@@ -38,6 +38,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [isHovered, setIsHovered] = useState(false);
+  const [showQuickAddModal, setShowQuickAddModal] = useState(false);
 
   // Determine which images to use (prioritize images array, fallback to single image)
   const productImages = product.images && product.images.length > 0
@@ -150,7 +151,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group bg-white shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+      className="group bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden"
     >
       <div
         className="relative aspect-[4/5] overflow-hidden"
@@ -198,13 +199,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
             </div>
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-              <ShoppingCart className="h-12 w-12 text-slate-400" />
+              <ShoppingCart className="h-8 w-8 sm:h-12 sm:w-12 text-slate-400" />
             </div>
           )}
         </Link>
 
         {product.featured && (
-          <div className="absolute top-4 left-4">
+          <div className="absolute top-3 left-3">
             <span className="bg-black text-white text-xs font-semibold px-2 py-1">
               Featured
             </span>
@@ -216,28 +217,42 @@ const ProductCard = ({ product }: ProductCardProps) => {
           whileTap={{ scale: 0.9 }}
           onClick={handleWishlistToggle}
           disabled={isLoading}
-          className={`absolute top-4 right-4 p-2 transition-colors ${
+          className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
             inWishlist
               ? 'bg-black text-white'
-              : 'bg-white/80 text-black hover:bg-black hover:text-white'
+              : 'bg-white/90 text-black hover:bg-black hover:text-white'
           }`}
         >
           <Heart size={16} fill={inWishlist ? 'currentColor' : 'none'} />
         </motion.button>
 
+        {/* Quick Add Button - Mobile Only */}
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setShowQuickAddModal(true);
+          }}
+          className="absolute bottom-3 right-3 w-9 h-9 bg-black text-white rounded-full shadow-lg flex items-center justify-center transition-colors hover:bg-gray-800 md:hidden"
+        >
+          <Plus size={16} />
+        </motion.button>
+
       </div>
 
-      <div className="p-4 pb-6 relative">
+      <div className="p-4 relative">
         <Link to={`/products/${product.id}`}>
           {product.brand && (
             <p className="text-xs text-gray-500 mb-1">{product.brand}</p>
           )}
-          <h3 className="font-medium text-sm text-black mb-1 line-clamp-2 group-hover:text-gray-700 transition-colors">
+          <h3 className="font-medium text-sm text-black mb-2 line-clamp-2 group-hover:text-gray-700 transition-colors">
             {product.title}
           </h3>
         </Link>
 
-        <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center justify-between mb-3">
           <p className="text-base font-semibold text-black">
             LKR {product.price.toLocaleString()}
           </p>
@@ -272,16 +287,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
           )}
         </div>
 
-        {/* Quick Add Overlay - Show on hover at bottom of card */}
-        <div className="absolute inset-x-0 -bottom-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 pointer-events-none group-hover:pointer-events-auto">
+
+        {/* Desktop/Tablet Hover Overlay - Hidden on mobile */}
+        <div className="hidden md:block absolute inset-x-0 -bottom-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 pointer-events-none group-hover:pointer-events-auto">
           <div className="bg-white shadow-xl border border-gray-200 p-4 space-y-3">
-            {/* Size Selection - Only show if product has size variants */}
             {hasSize && (
               <div>
                 <p className="text-xs font-medium text-gray-700 mb-2">Size</p>
                 <div className="flex space-x-1">
                   {availableSizes.map((size) => {
-                    // Enhanced stock checking for current color selection
                     const hasStock = product.variants?.some(v =>
                       v.size === size &&
                       (!hasColor || !selectedColor || v.color === selectedColor) &&
@@ -311,7 +325,6 @@ const ProductCard = ({ product }: ProductCardProps) => {
               </div>
             )}
 
-            {/* Color Selection - Only show if product has color variants */}
             {hasColor && (
               <div>
                 <p className="text-xs font-medium text-gray-700 mb-2">Color</p>
@@ -323,7 +336,6 @@ const ProductCard = ({ product }: ProductCardProps) => {
                     multiple={false}
                     size="sm"
                     disabledColors={availableColors.filter(color => {
-                      // Enhanced stock checking for current size selection
                       return !product.variants?.some(v =>
                         v.color === color &&
                         (!hasSize || !selectedSize || v.size === selectedSize) &&
@@ -335,7 +347,6 @@ const ProductCard = ({ product }: ProductCardProps) => {
               </div>
             )}
 
-            {/* Stock Status and Add to Cart Button */}
             {selectedVariant && (
               <div className="mb-2">
                 {selectedVariant.stock && selectedVariant.stock > 0 ? (
@@ -365,37 +376,168 @@ const ProductCard = ({ product }: ProductCardProps) => {
               }`}
             >
               {variantScenario === 'stock-only'
-                ? selectedVariant?.stock === 0
-                  ? 'Out of Stock'
-                  : 'Add to Cart'
+                ? selectedVariant?.stock === 0 ? 'Out of Stock' : 'Add to Cart'
                 : variantScenario === 'size-only'
-                ? !selectedSize
-                  ? 'Select Size'
-                  : !selectedVariant
-                  ? 'Variant Not Available'
-                  : selectedVariant.stock === 0
-                  ? 'Out of Stock'
-                  : 'Add to Cart'
+                ? !selectedSize ? 'Select Size' : selectedVariant?.stock === 0 ? 'Out of Stock' : 'Add to Cart'
                 : variantScenario === 'color-only'
-                ? !selectedColor
-                  ? 'Select Color'
-                  : !selectedVariant
-                  ? 'Variant Not Available'
-                  : selectedVariant.stock === 0
-                  ? 'Out of Stock'
-                  : 'Add to Cart'
+                ? !selectedColor ? 'Select Color' : selectedVariant?.stock === 0 ? 'Out of Stock' : 'Add to Cart'
                 : !selectedSize || !selectedColor
                 ? `Select ${!selectedSize && !selectedColor ? 'Size & Color' : !selectedSize ? 'Size' : 'Color'}`
-                : !selectedVariant
-                ? 'Variant Not Available'
-                : selectedVariant.stock === 0
-                ? 'Out of Stock'
-                : 'Add to Cart'
+                : selectedVariant?.stock === 0 ? 'Out of Stock' : 'Add to Cart'
               }
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Quick Add Modal - Mobile Only */}
+      <AnimatePresence>
+        {showQuickAddModal && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowQuickAddModal(false)}
+              className="fixed inset-0 bg-black/50 z-50 md:hidden"
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl z-50 md:hidden max-h-[80vh] overflow-y-auto"
+            >
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  {primaryImage && (
+                    <img
+                      src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${primaryImage}`}
+                      alt={product.title}
+                      className="w-12 h-12 object-cover rounded-lg"
+                    />
+                  )}
+                  <div>
+                    <h3 className="font-semibold text-sm text-black line-clamp-1">{product.title}</h3>
+                    <p className="text-base font-bold text-black">LKR {product.price.toLocaleString()}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowQuickAddModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-4 space-y-4">
+                {hasSize && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-3">Select Size</p>
+                    <div className="flex flex-wrap gap-2">
+                      {availableSizes.map((size) => {
+                        const hasStock = product.variants?.some(v =>
+                          v.size === size &&
+                          (!hasColor || !selectedColor || v.color === selectedColor) &&
+                          v.stock && v.stock > 0
+                        );
+                        return (
+                          <button
+                            key={size}
+                            onClick={() => setSelectedSize(size === selectedSize ? '' : size)}
+                            disabled={!hasStock}
+                            className={`px-4 py-3 text-sm border rounded-lg transition-colors min-w-[50px] ${
+                              selectedSize === size
+                                ? 'bg-black text-white border-black'
+                                : hasStock
+                                ? 'bg-white text-gray-700 border-gray-300 hover:border-black'
+                                : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {hasColor && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-3">Select Color</p>
+                    <ColorSelector
+                      colors={availableColors}
+                      selectedColors={selectedColor ? [selectedColor] : []}
+                      onColorSelect={(color) => setSelectedColor(color === selectedColor ? '' : color)}
+                      multiple={false}
+                      size="lg"
+                      disabledColors={availableColors.filter(color => {
+                        return !product.variants?.some(v =>
+                          v.color === color &&
+                          (!hasSize || !selectedSize || v.size === selectedSize) &&
+                          v.stock && v.stock > 0
+                        );
+                      })}
+                    />
+                  </div>
+                )}
+
+                {/* Stock Status */}
+                {selectedVariant && (
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    {selectedVariant.stock && selectedVariant.stock > 0 ? (
+                      selectedVariant.stock <= 10 && (
+                        <p className="text-sm text-orange-600 font-medium">
+                          Only {selectedVariant.stock} left in stock!
+                        </p>
+                      )
+                    ) : (
+                      <p className="text-sm text-red-600 font-medium">
+                        Out of Stock
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  onClick={async () => {
+                    await handleQuickAdd();
+                    setShowQuickAddModal(false);
+                  }}
+                  disabled={!canAddToCart}
+                  className={`min-h-[52px] text-base font-semibold ${
+                    canAddToCart
+                      ? 'bg-black text-white hover:bg-gray-900'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  {variantScenario === 'stock-only'
+                    ? selectedVariant?.stock === 0 ? 'Out of Stock' : 'Add to Cart'
+                    : variantScenario === 'size-only'
+                    ? !selectedSize ? 'Select Size' : selectedVariant?.stock === 0 ? 'Out of Stock' : 'Add to Cart'
+                    : variantScenario === 'color-only'
+                    ? !selectedColor ? 'Select Color' : selectedVariant?.stock === 0 ? 'Out of Stock' : 'Add to Cart'
+                    : !selectedSize || !selectedColor
+                    ? `Select ${!selectedSize && !selectedColor ? 'Size & Color' : !selectedSize ? 'Size' : 'Color'}`
+                    : selectedVariant?.stock === 0 ? 'Out of Stock' : 'Add to Cart'
+                  }
+                </Button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

@@ -93,7 +93,7 @@ const HomePage = () => {
       )}
 
       {/* Featured Products Section */}
-      <section className="py-12 sm:py-16 bg-white">
+      <section className="py-8 sm:py-10 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
           <motion.div
@@ -101,21 +101,10 @@ const HomePage = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="flex flex-col lg:flex-row lg:items-end lg:justify-between mb-6 sm:mb-8"
+            className="flex flex-col lg:flex-row lg:items-end lg:justify-between mb-4 sm:mb-6"
           >
-            <div className="mb-6 lg:mb-0">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                className="flex items-center space-x-2 mb-2"
-              >
-                <div className="w-8 h-0.5 bg-black"></div>
-                <span className="text-sm font-medium text-gray-600 uppercase tracking-wide">
-                  Featured Products
-                </span>
-              </motion.div>
+            <div className="mb-4 lg:mb-0">
+
 
               <motion.h2
                 initial={{ opacity: 0, y: 10 }}
@@ -126,16 +115,6 @@ const HomePage = () => {
               >
                 Popular Picks
               </motion.h2>
-
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                className="text-lg text-gray-600 max-w-2xl leading-relaxed"
-              >
-                Discover our most popular and highly-rated athletic footwear
-              </motion.p>
             </div>
 
             <motion.div
