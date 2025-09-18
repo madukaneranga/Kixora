@@ -83,47 +83,27 @@ class PayHereService {
     const crypto_std = await import("https://deno.land/std@0.177.0/crypto/mod.ts");
     const encoder = new TextEncoder();
 
-    // Step 1: Hash the merchant secret (like the working example)
-    console.log('Step 1 - Hashing merchant secret...');
+    // Hash the merchant secret
     const secretStr = String(this.config.merchantSecret);
     const secretData = encoder.encode(secretStr);
     const secretHashBuffer = await crypto_std.crypto.subtle.digest("MD5", secretData);
     const secretHashArray = Array.from(new Uint8Array(secretHashBuffer));
     const hashedSecret = secretHashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 
-    console.log('Secret hash result:', {
-      originalSecret: this.config.merchantSecret.substring(0, 10) + '...',
-      hashedSecret: hashedSecret
-    });
-
-    // Step 2: Format amount like the working example
+    // Format amount and create hash string
     const amountFormatted = parseFloat(amount).toFixed(2);
-
-    // Step 3: Create the main hash string (like the working example)
     const hashString = String(this.config.merchantId) +
                       String(orderId) +
                       amountFormatted +
                       String(currency) +
                       hashedSecret;
 
-    console.log('PayHere Hash Calculation (Detailed Debug):', {
-      merchantId: this.config.merchantId,
-      orderId,
-      amount,
-      currency,
-      merchantSecret: this.config.merchantSecret.substring(0, 10) + '...',
-      hashedSecret: hashedSecret,
-      hashInput: hashString,
-      hashInputLength: hashString.length
-    });
-
-    // Step 3: Hash the combined string
+    // Generate final hash
     const data = encoder.encode(hashString);
     const hashBuffer = await crypto_std.crypto.subtle.digest("MD5", data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 
-    console.log('Generated PayHere hash (with correct format):', hash);
     return hash;
   }
 
@@ -140,15 +120,6 @@ class PayHereService {
       throw new Error('Missing required customer information');
     }
 
-    console.log('Customer info received:', {
-      firstName: request.customerInfo.firstName,
-      lastName: request.customerInfo.lastName,
-      email: request.customerInfo.email,
-      phone: request.customerInfo.phone,
-      address: request.customerInfo.address,
-      city: request.customerInfo.city,
-      country: request.customerInfo.country
-    });
 
     const missingAddressFields = [];
     if (!request.customerInfo.address) missingAddressFields.push('address');
@@ -178,18 +149,8 @@ class PayHereService {
       throw new Error(`Invalid email format: ${request.customerInfo.email}`);
     }
 
-    // Validate phone number format (should include country code)
-    if (!request.customerInfo.phone.startsWith('+')) {
-      console.warn('Phone number should include country code (+94, etc.)');
-    }
-
-    // Format amount like the working example (simple toFixed)
+    // Format amount
     const amountFormatted = parseFloat(request.amount.toString()).toFixed(2);
-
-    console.log('Amount formatting:', {
-      original: request.amount,
-      formatted: amountFormatted
-    });
 
     const hash = await this.generateHash(request.orderId, amountFormatted, request.currency);
 
@@ -212,34 +173,6 @@ class PayHereService {
       hash: hash
     };
 
-    console.log('PayHere payment data created:', {
-      orderId: paymentData.order_id,
-      amount: paymentData.amount,
-      currency: paymentData.currency,
-      isProduction: this.config.isProduction,
-      sandbox: paymentData.sandbox,
-      hash: paymentData.hash
-    });
-
-    console.log('Complete PayHere payment data for debugging:', {
-      merchant_id: paymentData.merchant_id,
-      return_url: paymentData.return_url,
-      cancel_url: paymentData.cancel_url,
-      notify_url: paymentData.notify_url,
-      order_id: paymentData.order_id,
-      items: paymentData.items,
-      currency: paymentData.currency,
-      amount: paymentData.amount,
-      first_name: paymentData.first_name,
-      last_name: paymentData.last_name,
-      email: paymentData.email,
-      phone: paymentData.phone,
-      address: paymentData.address,
-      city: paymentData.city,
-      country: paymentData.country,
-      hash: paymentData.hash,
-      sandbox: paymentData.sandbox
-    });
 
     return paymentData;
   }
@@ -248,16 +181,9 @@ class PayHereService {
    * Get the appropriate checkout URL based on environment
    */
   getCheckoutUrl(): string {
-    const url = this.config.isProduction
+    return this.config.isProduction
       ? 'https://www.payhere.lk/pay/checkout'
       : 'https://sandbox.payhere.lk/pay/checkout';
-
-    console.log('PayHere checkout URL:', {
-      isProduction: this.config.isProduction,
-      url: url
-    });
-
-    return url;
   }
 }
 
@@ -274,7 +200,6 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== PayHere Payment Creation Started ===');
 
     // Initialize Supabase clients
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -282,7 +207,6 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('Missing Supabase environment variables');
       return new Response(JSON.stringify({
         success: false,
         error: 'Server configuration error'
@@ -303,24 +227,7 @@ serve(async (req) => {
     const payHereEnvironment = Deno.env.get('PAYHERE_ENVIRONMENT') || 'sandbox';
     const isProduction = payHereEnvironment?.toLowerCase() === 'production';
 
-    console.log('PayHere Environment Debug:', {
-      rawEnvironment: Deno.env.get('PAYHERE_ENVIRONMENT'),
-      payHereEnvironment,
-      isProduction
-    });
-
-    console.log('Environment Configuration:', {
-      hasSupabaseUrl: !!supabaseUrl,
-      hasServiceKey: !!supabaseServiceKey,
-      hasAnonKey: !!supabaseAnonKey,
-      hasMerchantId: !!merchantId,
-      hasSecret: !!merchantSecret,
-      payHereEnvironment,
-      isProduction
-    });
-
     if (!merchantId || !merchantSecret) {
-      console.error('Missing PayHere credentials');
       return new Response(JSON.stringify({
         success: false,
         error: 'Payment gateway configuration error'
@@ -334,19 +241,7 @@ serve(async (req) => {
     const origin = req.headers.get('origin') || 'https://inkixora.com';
     const returnUrl = Deno.env.get('PAYHERE_RETURN_URL') || `${origin}/payment/success`;
     const cancelUrl = Deno.env.get('PAYHERE_CANCEL_URL') || `${origin}/payment/cancel`;
-    // For webhook to work, we need to configure it properly in Supabase settings
-    // or use a different approach for public webhook access
     const notifyUrl = `${supabaseUrl}/functions/v1/payhere-webhook`;
-
-    console.log('Webhook URL configured:', notifyUrl);
-
-    console.log('PayHere URL Configuration:', {
-      origin,
-      returnUrl,
-      cancelUrl,
-      notifyUrl,
-      supabaseUrl
-    });
 
     // Initialize PayHere service
     let payHereService: PayHereService;
@@ -359,9 +254,7 @@ serve(async (req) => {
         cancelUrl,
         notifyUrl
       });
-      console.log('PayHere service initialized successfully');
     } catch (serviceError) {
-      console.error('PayHere service initialization failed:', serviceError.message);
       return new Response(JSON.stringify({
         success: false,
         error: `PayHere service error: ${serviceError.message}`
@@ -374,7 +267,6 @@ serve(async (req) => {
     // Authenticate user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.error('No authorization header provided');
       return new Response(JSON.stringify({
         success: false,
         error: 'Authentication required'
@@ -388,7 +280,6 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await authClient.auth.getUser(token);
 
     if (authError || !user) {
-      console.error('Authentication failed:', authError?.message);
       return new Response(JSON.stringify({
         success: false,
         error: 'Invalid authentication token'
@@ -398,16 +289,8 @@ serve(async (req) => {
       });
     }
 
-    console.log('User authenticated:', user.id);
-
     // Parse and validate request
     const paymentRequest: PaymentRequest = await req.json();
-    console.log('Payment request:', {
-      orderId: paymentRequest.orderId,
-      amount: paymentRequest.amount,
-      currency: paymentRequest.currency,
-      customerEmail: paymentRequest.customerInfo.email
-    });
 
     // Verify order exists and belongs to user
     const { data: order, error: orderError } = await supabase
@@ -419,7 +302,6 @@ serve(async (req) => {
       .single();
 
     if (orderError || !order) {
-      console.error('Order verification failed:', orderError?.message);
       return new Response(JSON.stringify({
         success: false,
         error: 'Order not found or invalid'
@@ -429,18 +311,42 @@ serve(async (req) => {
       });
     }
 
-    console.log('Order verified:', order.id);
-
     // Create PayHere payment data
-    let paymentData: PayHerePaymentData;
-    let checkoutUrl: string;
-
     try {
-      paymentData = await payHereService.createPaymentData(paymentRequest);
-      checkoutUrl = payHereService.getCheckoutUrl();
-      console.log('PayHere payment data created successfully');
+      const paymentData = await payHereService.createPaymentData(paymentRequest);
+      const checkoutUrl = payHereService.getCheckoutUrl();
+
+      // Update order with payment provider info
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          payment_provider: 'payhere',
+          payment_provider_id: paymentRequest.orderId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', paymentRequest.orderId);
+
+      if (updateError) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to update order'
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        paymentId: paymentRequest.orderId,
+        paymentData,
+        checkoutUrl,
+        environment: isProduction ? 'production' : 'sandbox'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+
     } catch (paymentError) {
-      console.error('PayHere payment data creation failed:', paymentError.message);
       return new Response(JSON.stringify({
         success: false,
         error: `Payment data creation failed: ${paymentError.message}`
@@ -450,44 +356,7 @@ serve(async (req) => {
       });
     }
 
-    // Update order with payment provider info
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({
-        payment_provider: 'payhere',
-        payment_provider_id: paymentRequest.orderId,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', paymentRequest.orderId);
-
-    if (updateError) {
-      console.error('Order update failed:', updateError.message);
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Failed to update order'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    console.log('=== PayHere Payment Creation Completed Successfully ===');
-
-    return new Response(JSON.stringify({
-      success: true,
-      paymentId: paymentRequest.orderId,
-      paymentData,
-      checkoutUrl,
-      environment: isProduction ? 'production' : 'sandbox'
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-
   } catch (error) {
-    console.error('=== PayHere Payment Creation Failed ===');
-    console.error('Error details:', error.message);
-    console.error('Stack trace:', error.stack);
-
     return new Response(JSON.stringify({
       success: false,
       error: 'Payment creation failed'
