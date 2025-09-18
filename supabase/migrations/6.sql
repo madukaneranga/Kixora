@@ -33,7 +33,7 @@ BEGIN
       v_order_status := 'pending';
       v_payment_status := 'pending';
     WHEN 'cod' THEN
-      v_order_status := 'confirmed';
+      v_order_status := 'pending';
       v_payment_status := 'pending';
     ELSE
       v_order_status := 'pending';

@@ -11,7 +11,7 @@ interface Order {
   id: string;
   total: number;
   currency: string;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   created_at: string;
   order_items: Array<{
     id: string;
@@ -210,6 +210,8 @@ const OrderDashboard = () => {
         return <X className="w-5 h-5 text-red-600" />;
       case 'shipped':
         return <Package className="w-5 h-5 text-blue-600" />;
+      case 'confirmed':
+        return <CheckCircle className="w-5 h-5 text-emerald-600" />;
       default:
         return <Clock className="w-5 h-5 text-orange-600" />;
     }
@@ -223,6 +225,8 @@ const OrderDashboard = () => {
         return 'text-red-600';
       case 'shipped':
         return 'text-blue-600';
+      case 'confirmed':
+        return 'text-emerald-600';
       default:
         return 'text-orange-600';
     }
@@ -328,6 +332,7 @@ const OrderDashboard = () => {
                             order.status === 'delivered' ? 'bg-green-100' :
                             order.status === 'cancelled' ? 'bg-red-100' :
                             order.status === 'shipped' ? 'bg-blue-100' :
+                            order.status === 'confirmed' ? 'bg-emerald-100' :
                             'bg-orange-100'
                           }`}>
                             {order.status}

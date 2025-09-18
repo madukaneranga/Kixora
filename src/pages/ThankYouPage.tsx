@@ -224,7 +224,7 @@ const ThankYouPage = () => {
                   }`}>
                     {paymentMethod === 'payhere' ? 'Paid' :
                      paymentMethod === 'bank' ? 'Awaiting Payment' :
-                     'Confirmed'}
+                     'Pending'}
                   </span>
                 </div>
                 <div className="flex justify-between">
