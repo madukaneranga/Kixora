@@ -60,7 +60,7 @@ const HeroSwiper = () => {
 
   if (loading) {
     return (
-      <section className="relative h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-[85vh] text-white overflow-hidden bg-black">
+      <section className="relative h-[50vh] sm:h-[65vh] md:h-[75vh] lg:h-[80vh] text-white overflow-hidden bg-black">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="animate-spin rounded-full h-16 w-16 sm:h-32 sm:w-32 border-b-2 border-white"></div>
         </div>
@@ -71,7 +71,7 @@ const HeroSwiper = () => {
   // Fallback for no collections
   if (collections.length === 0) {
     return (
-      <section className="relative h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-[85vh] text-white overflow-hidden">
+      <section className="relative h-[50vh] sm:h-[65vh] md:h-[75vh] lg:h-[80vh] text-white overflow-hidden">
         <div className="absolute inset-0">
           <img
             src="https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=1920"
@@ -81,17 +81,17 @@ const HeroSwiper = () => {
           <div className="absolute inset-0 bg-black/30"></div>
         </div>
 
-        <div className="absolute bottom-8 sm:bottom-16 md:bottom-24 lg:bottom-32 left-4 right-4 sm:left-8 sm:right-8 flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 lg:gap-0">
+        <div className="absolute bottom-16 sm:bottom-20 md:bottom-24 lg:bottom-28 left-4 right-4 sm:left-6 sm:right-6 md:left-8 md:right-8 flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4 sm:gap-6 lg:gap-0">
           <div className="flex flex-col justify-end">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl xl:text-9xl font-black leading-none tracking-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl xl:text-8xl font-black leading-[0.85] tracking-tight">
               COMING
               <br />
               <span className="text-white/90">SOON</span>
             </h1>
           </div>
 
-          <div className="flex flex-col justify-end space-y-4 sm:space-y-6 max-w-sm lg:text-right">
-            <p className="text-base sm:text-lg font-light leading-relaxed">
+          <div className="flex flex-col justify-end space-y-3 sm:space-y-4 lg:space-y-6 max-w-xs sm:max-w-sm lg:text-right">
+            <p className="text-xs sm:text-sm lg:text-base font-light leading-relaxed text-white/90">
               Our exclusive collections are being curated. Stay tuned for premium quality and exceptional style.
             </p>
           </div>
@@ -101,7 +101,7 @@ const HeroSwiper = () => {
   }
 
   return (
-    <section className="relative h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-[85vh] overflow-hidden">
+    <section className="relative h-[50vh] sm:h-[65vh] md:h-[75vh] lg:h-[80vh] overflow-hidden">
       <Swiper
         modules={[Navigation, Pagination, Autoplay, EffectFade]}
         effect="fade"
@@ -131,7 +131,7 @@ const HeroSwiper = () => {
 
       {/* Navigation Controls */}
       {collections.length > 1 && (
-        <div className="absolute bottom-4 sm:bottom-6 md:bottom-8 left-4 right-4 sm:left-8 sm:right-8 flex flex-col sm:flex-row sm:justify-between items-center z-10 gap-4 sm:gap-0">
+        <div className="absolute bottom-6 sm:bottom-8 md:bottom-12 lg:bottom-16 left-4 right-4 sm:left-6 sm:right-6 md:left-8 md:right-8 flex flex-col sm:flex-row sm:justify-between items-center z-10 gap-3 sm:gap-4">
           {/* Dots Navigation */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -143,8 +143,8 @@ const HeroSwiper = () => {
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
-                className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-all duration-300 ${
-                  index === activeIndex ? 'bg-white' : 'bg-white/40 hover:bg-white/60'
+                className={`w-3 h-3 sm:w-3 sm:h-3 rounded-full transition-all duration-300 touch-manipulation ${
+                  index === activeIndex ? 'bg-white scale-110' : 'bg-white/40 hover:bg-white/60'
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
@@ -160,14 +160,14 @@ const HeroSwiper = () => {
           >
             <button
               onClick={goToPrev}
-              className="w-10 h-10 sm:w-12 sm:h-12 bg-black/20 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors group"
+              className="w-11 h-11 sm:w-12 sm:h-12 bg-black/30 backdrop-blur-sm border border-white/30 rounded-full flex items-center justify-center hover:bg-white/10 transition-all duration-200 group touch-manipulation"
               aria-label="Previous slide"
             >
-              <ArrowRight size={16} className="sm:w-5 sm:h-5 rotate-180 group-hover:scale-110 transition-transform" />
+              <ArrowRight size={16} className="sm:w-5 sm:h-5 rotate-180 group-hover:scale-110 transition-transform text-white" />
             </button>
             <button
               onClick={goToNext}
-              className="w-10 h-10 sm:w-12 sm:h-12 bg-white/90 border border-white rounded-full flex items-center justify-center hover:bg-white transition-colors group"
+              className="w-11 h-11 sm:w-12 sm:h-12 bg-white/95 border border-white rounded-full flex items-center justify-center hover:bg-white transition-all duration-200 group touch-manipulation shadow-lg"
               aria-label="Next slide"
             >
               <ArrowRight size={16} className="sm:w-5 sm:h-5 text-black group-hover:scale-110 transition-transform" />
