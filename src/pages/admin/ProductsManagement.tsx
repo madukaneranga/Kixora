@@ -35,6 +35,12 @@ interface Product {
     size: string;
     color: string;
   }>;
+  product_images: Array<{
+    id: string;
+    storage_path: string;
+    alt_text: string | null;
+    is_primary: boolean;
+  }>;
 }
 
 interface Category {
@@ -125,7 +131,13 @@ const ProductsManagement = () => {
             *,
             categories (name),
             brands (name),
-            product_variants (id, stock, size, color)
+            product_variants (id, stock, size, color),
+            product_images (
+              id,
+              storage_path,
+              alt_text,
+              is_primary
+            )
           `)
           .is('deleted_at', null)
           .order('created_at', { ascending: false }),
@@ -746,9 +758,37 @@ const ProductsManagement = () => {
                 {products.map((product) => (
                   <tr key={product.id} className="hover:bg-white/5">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-white">{product.title}</div>
-                        <div className="text-sm text-[rgb(94,94,94)]">SKU: {product.sku}</div>
+                      <div className="flex items-center">
+                        {/* Product Image */}
+                        <div className="flex-shrink-0 h-12 w-12 mr-4">
+                          {(() => {
+                            // Find primary image or use first available
+                            const primaryImage = product.product_images?.find(img => img.is_primary);
+                            const displayImage = primaryImage || product.product_images?.[0];
+
+                            return displayImage ? (
+                              <img
+                                className="h-12 w-12 rounded-lg object-cover border border-[rgb(51,51,51)]"
+                                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${displayImage.storage_path}`}
+                                alt={displayImage.alt_text || product.title}
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  target.nextElementSibling!.classList.remove('hidden');
+                                }}
+                              />
+                            ) : null;
+                          })()}
+                          <div className={`h-12 w-12 rounded-lg bg-[rgb(51,51,51)] flex items-center justify-center ${product.product_images && product.product_images.length > 0 ? 'hidden' : ''}`}>
+                            <Package className="h-6 w-6 text-[rgb(94,94,94)]" />
+                          </div>
+                        </div>
+
+                        {/* Product Details */}
+                        <div>
+                          <div className="text-sm font-medium text-white">{product.title}</div>
+                          <div className="text-sm text-[rgb(94,94,94)]">SKU: {product.sku}</div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
@@ -1582,145 +1622,244 @@ const ProductsManagement = () => {
           loading={deleting}
         />
 
-        {/* Quick View Modal */}
+        {/* Product Detail View Modal */}
         {showQuickView && quickViewProduct && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-black border border-[rgb(51,51,51)] rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-black border border-[rgb(51,51,51)] rounded-lg w-full max-w-6xl max-h-[95vh] overflow-y-auto">
               {/* Header */}
-              <div className="px-6 py-4 border-b border-[rgb(51,51,51)] flex justify-between items-center">
+              <div className="sticky top-0 bg-black border-b border-[rgb(51,51,51)] px-6 py-4 flex justify-between items-center z-10">
                 <div>
-                  <h3 className="text-lg font-semibold text-white">{quickViewProduct.title}</h3>
-                  <p className="text-[rgb(94,94,94)] text-sm">Product Availability Overview</p>
+                  <h3 className="text-xl font-semibold text-white">{quickViewProduct.title}</h3>
+                  <p className="text-[rgb(94,94,94)] text-sm">SKU: {quickViewProduct.sku}</p>
                 </div>
                 <button
                   onClick={() => {
                     setShowQuickView(false);
                     setQuickViewProduct(null);
                   }}
-                  className="text-[rgb(94,94,94)] hover:text-white text-xl"
+                  className="text-[rgb(94,94,94)] hover:text-white text-xl p-1"
                 >
                   ×
                 </button>
               </div>
 
-              {/* Content */}
-              <div className="p-6">
-                {/* Product Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Package className="w-4 h-4 text-[rgb(94,94,94)]" />
-                      <p className="text-[rgb(94,94,94)] text-sm">Total Stock</p>
+              <div className="p-6 space-y-8">
+                {/* Product Images */}
+                {quickViewProduct.product_images && quickViewProduct.product_images.length > 0 && (
+                  <div>
+                    <h4 className="text-lg font-medium text-white mb-4">Product Images</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {quickViewProduct.product_images.map((image, index) => (
+                        <div key={image.id} className="relative group">
+                          <img
+                            src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${image.storage_path}`}
+                            alt={image.alt_text || `Product image ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg border border-[rgb(51,51,51)]"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23333"%3E%3C/rect%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%23666"%3ENo Image%3C/text%3E%3C/svg%3E';
+                            }}
+                          />
+                          {image.is_primary && (
+                            <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                              Primary
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                    <p className="text-2xl font-bold text-white">
-                      {getTotalStock(quickViewProduct.product_variants)}
-                    </p>
+                  </div>
+                )}
+
+                {/* Product Details Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Basic Information */}
+                  <div>
+                    <h4 className="text-lg font-medium text-white mb-4">Basic Information</h4>
+                    <div className="space-y-4">
+                      <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm mb-1">Product Title</p>
+                            <p className="text-white font-medium">{quickViewProduct.title}</p>
+                          </div>
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm mb-1">SKU</p>
+                            <p className="text-white font-mono">{quickViewProduct.sku}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm mb-1">Category</p>
+                            <p className="text-white">{quickViewProduct.categories?.name || 'No Category'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm mb-1">Brand</p>
+                            <p className="text-white">{quickViewProduct.brands?.name || 'No Brand'}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm mb-1">Base Price</p>
+                            <p className="text-white text-xl font-bold">LKR {quickViewProduct.price.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm mb-1">Status</p>
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              quickViewProduct.is_active
+                                ? 'bg-green-900/20 text-green-400 border border-green-400/20'
+                                : 'bg-red-900/20 text-red-400 border border-red-400/20'
+                            }`}>
+                              {quickViewProduct.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {quickViewProduct.description && (
+                        <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                          <p className="text-[rgb(94,94,94)] text-sm mb-2">Description</p>
+                          <p className="text-white text-sm leading-relaxed">{quickViewProduct.description}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Package className="w-4 h-4 text-[rgb(94,94,94)]" />
-                      <p className="text-[rgb(94,94,94)] text-sm">Variants</p>
-                    </div>
-                    <p className="text-2xl font-bold text-white">
-                      {quickViewProduct.product_variants.length}
-                    </p>
-                  </div>
+                  {/* Stock Summary */}
+                  <div>
+                    <h4 className="text-lg font-medium text-white mb-4">Stock Overview</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Package className="w-4 h-4 text-[rgb(94,94,94)]" />
+                          <p className="text-[rgb(94,94,94)] text-sm">Total Stock</p>
+                        </div>
+                        <p className="text-2xl font-bold text-white">
+                          {getTotalStock(quickViewProduct.product_variants)}
+                        </p>
+                      </div>
 
-                  <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Package className="w-4 h-4 text-[rgb(94,94,94)]" />
-                      <p className="text-[rgb(94,94,94)] text-sm">Base Price</p>
+                      <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Package className="w-4 h-4 text-[rgb(94,94,94)]" />
+                          <p className="text-[rgb(94,94,94)] text-sm">Variants</p>
+                        </div>
+                        <p className="text-2xl font-bold text-white">
+                          {quickViewProduct.product_variants.length}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-2xl font-bold text-white">
-                      LKR {quickViewProduct.price.toLocaleString()}
-                    </p>
+
+                    {/* Variants Table */}
+                    {quickViewProduct.product_variants.length > 0 ? (
+                      <div className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded-lg overflow-hidden">
+                        <div className="px-4 py-3 border-b border-[rgb(51,51,51)]">
+                          <h5 className="text-sm font-medium text-white">Product Variants</h5>
+                        </div>
+                        <div className="max-h-64 overflow-y-auto">
+                          <table className="w-full">
+                            <thead className="bg-[rgb(15,15,15)] sticky top-0">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                                  Size
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                                  Color
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                                  Stock
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                                  Status
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[rgb(51,51,51)]">
+                              {quickViewProduct.product_variants.map((variant, index) => (
+                                <tr key={index} className="hover:bg-white/5">
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-white">
+                                    {variant.size || '-'}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                    {variant.color ? (
+                                      <div className="flex items-center">
+                                        <div className="w-4 h-4 rounded border border-[rgb(51,51,51)] mr-2 overflow-hidden">
+                                          <img
+                                            src={availableColors.find(c => c.name === variant.color)?.image || ''}
+                                            alt={variant.color}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                              e.currentTarget.style.display = 'none';
+                                              e.currentTarget.parentElement!.style.backgroundColor = '#6b7280';
+                                            }}
+                                          />
+                                        </div>
+                                        <span className="text-white">{variant.color}</span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-white">-</span>
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-white">
+                                    <span className={`font-medium ${
+                                      variant.stock === 0 ? 'text-red-400' :
+                                      variant.stock < 10 ? 'text-yellow-400' :
+                                      'text-green-400'
+                                    }`}>
+                                      {variant.stock}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                      variant.stock === 0 ? 'bg-red-900/20 text-red-400 border border-red-400/20' :
+                                      variant.stock < 10 ? 'bg-yellow-900/20 text-yellow-400 border border-yellow-400/20' :
+                                      'bg-green-900/20 text-green-400 border border-green-400/20'
+                                    }`}>
+                                      {variant.stock === 0 ? 'Out of Stock' :
+                                       variant.stock < 10 ? 'Low Stock' :
+                                       'In Stock'}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded-lg p-8 text-center">
+                        <Package className="w-12 h-12 text-[rgb(94,94,94)] mx-auto mb-4 opacity-50" />
+                        <p className="text-[rgb(94,94,94)] text-sm">No variants found</p>
+                        <p className="text-[rgb(94,94,94)] text-xs mt-1">This is a simple product without variants</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Variants Table */}
-                {quickViewProduct.product_variants.length > 0 ? (
-                  <div className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded-lg overflow-hidden">
-                    <div className="px-4 py-3 border-b border-[rgb(51,51,51)]">
-                      <h4 className="text-sm font-medium text-white">Product Variants</h4>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-[rgb(15,15,15)]">
-                          <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
-                              Size
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
-                              Color
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
-                              Stock
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
-                              Status
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[rgb(51,51,51)]">
-                          {quickViewProduct.product_variants.map((variant, index) => (
-                            <tr key={index} className="hover:bg-white/5">
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-white">
-                                {variant.size || '-'}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm">
-                                {variant.color ? (
-                                  <div className="flex items-center">
-                                    <div className="w-4 h-4 rounded border border-[rgb(51,51,51)] mr-2 overflow-hidden">
-                                      <img
-                                        src={availableColors.find(c => c.name === variant.color)?.image || ''}
-                                        alt={variant.color}
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                          e.currentTarget.style.display = 'none';
-                                          e.currentTarget.parentElement!.style.backgroundColor = '#6b7280';
-                                        }}
-                                      />
-                                    </div>
-                                    <span className="text-white">{variant.color}</span>
-                                  </div>
-                                ) : (
-                                  <span className="text-white">-</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-white">
-                                <span className={`font-medium ${
-                                  variant.stock === 0 ? 'text-red-400' :
-                                  variant.stock < 10 ? 'text-yellow-400' :
-                                  'text-green-400'
-                                }`}>
-                                  {variant.stock}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  variant.stock === 0 ? 'bg-red-900/20 text-red-400 border border-red-400/20' :
-                                  variant.stock < 10 ? 'bg-yellow-900/20 text-yellow-400 border border-yellow-400/20' :
-                                  'bg-green-900/20 text-green-400 border border-green-400/20'
-                                }`}>
-                                  {variant.stock === 0 ? 'Out of Stock' :
-                                   variant.stock < 10 ? 'Low Stock' :
-                                   'In Stock'}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                {/* Additional Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                    <p className="text-[rgb(94,94,94)] text-sm mb-2">Created</p>
+                    <p className="text-white">{new Date(quickViewProduct.created_at).toLocaleString()}</p>
                   </div>
-                ) : (
-                  <div className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded-lg p-8 text-center">
-                    <Package className="w-12 h-12 text-[rgb(94,94,94)] mx-auto mb-4 opacity-50" />
-                    <p className="text-[rgb(94,94,94)] text-sm">No variants found</p>
-                    <p className="text-[rgb(94,94,94)] text-xs mt-1">This is a simple product without variants</p>
+
+                  <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                    <p className="text-[rgb(94,94,94)] text-sm mb-2">Featured Product</p>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      quickViewProduct.featured
+                        ? 'bg-yellow-900/20 text-yellow-400 border border-yellow-400/20'
+                        : 'bg-gray-900/20 text-gray-400 border border-gray-400/20'
+                    }`}>
+                      {quickViewProduct.featured ? 'Yes' : 'No'}
+                    </span>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
