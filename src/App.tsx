@@ -29,6 +29,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import OrdersManagement from './pages/admin/OrdersManagement';
 import ProductsManagement from './pages/admin/ProductsManagement';
 import CategoriesManagement from './pages/admin/CategoriesManagement';
+import CollectionsManagement from './pages/admin/CollectionsManagement';
 import UsersManagement from './pages/admin/UsersManagement';
 import AuditLogs from './pages/admin/AuditLogs';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
@@ -81,6 +82,7 @@ const AppLayout = () => {
           <Route path="/admin/orders" element={<ProtectedAdminRoute><OrdersManagement /></ProtectedAdminRoute>} />
           <Route path="/admin/products" element={<ProtectedAdminRoute><ProductsManagement /></ProtectedAdminRoute>} />
           <Route path="/admin/categories" element={<ProtectedAdminRoute><CategoriesManagement /></ProtectedAdminRoute>} />
+          <Route path="/admin/collections" element={<ProtectedAdminRoute><CollectionsManagement /></ProtectedAdminRoute>} />
           <Route path="/admin/users" element={<ProtectedAdminRoute><UsersManagement /></ProtectedAdminRoute>} />
           <Route path="/admin/audit" element={<ProtectedAdminRoute><AuditLogs /></ProtectedAdminRoute>} />
           {/* Add more routes as needed */}

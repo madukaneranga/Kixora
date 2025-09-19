@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Eye, UserCheck, UserX, Shield, User, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, UserCheck, UserX, Shield, User, Users, ChevronLeft, ChevronRight, LayoutDashboard, Search } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/ui/Button';
 import { showSuccessToast, showErrorToast } from '../../components/ui/CustomToast';
+import Breadcrumb from '../../components/ui/Breadcrumb';
 
 interface UserProfile {
   id: string;
@@ -32,6 +33,7 @@ const UsersManagement = () => {
   const [userStats, setUserStats] = useState<OrderStats | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -75,6 +77,14 @@ const UsersManagement = () => {
       if (roleFilter !== 'all') {
         countQuery = countQuery.eq('role', roleFilter);
         dataQuery = dataQuery.eq('role', roleFilter);
+      }
+
+      // Apply search filter to both queries
+      if (searchQuery.trim()) {
+        const searchTerm = `%${searchQuery.trim()}%`;
+        // Search in email and full_name fields
+        countQuery = countQuery.or(`email.ilike.${searchTerm},full_name.ilike.${searchTerm}`);
+        dataQuery = dataQuery.or(`email.ilike.${searchTerm},full_name.ilike.${searchTerm}`);
       }
 
       // Execute both queries
@@ -168,14 +178,14 @@ const UsersManagement = () => {
 
   // Add effect to refetch when pagination or filters change
   useEffect(() => {
-    setCurrentPage(1); // Reset to first page when filter changes
-  }, [roleFilter]);
+    setCurrentPage(1); // Reset to first page when filter or search changes
+  }, [roleFilter, searchQuery]);
 
   useEffect(() => {
     if (user) {
       fetchUsers();
     }
-  }, [currentPage, itemsPerPage, roleFilter]);
+  }, [currentPage, itemsPerPage, roleFilter, searchQuery]);
 
   // Pagination calculations
   const totalPages = Math.ceil(totalCount / itemsPerPage);
@@ -259,9 +269,24 @@ const UsersManagement = () => {
     );
   }
 
+  const breadcrumbItems = [
+    {
+      label: 'Admin',
+      path: '/admin',
+      icon: <LayoutDashboard size={16} />
+    },
+    {
+      label: 'Users Management',
+      icon: <Users size={16} />
+    }
+  ];
+
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Breadcrumb */}
+        <Breadcrumb items={breadcrumbItems} variant="white" />
+
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
@@ -270,6 +295,18 @@ const UsersManagement = () => {
           </div>
 
           <div className="flex items-center space-x-4">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-[rgb(94,94,94)]" />
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white placeholder-[rgb(94,94,94)] w-64"
+              />
+            </div>
+
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value as any)}
@@ -376,12 +413,17 @@ const UsersManagement = () => {
             </table>
           </div>
 
-          {users.length === 0 && (
+          {users.length === 0 && searchQuery ? (
+            <div className="px-6 py-12 text-center text-[rgb(94,94,94)]">
+              <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No users found matching "{searchQuery}"</p>
+            </div>
+          ) : users.length === 0 ? (
             <div className="px-6 py-12 text-center text-[rgb(94,94,94)]">
               <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>No users found</p>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Pagination */}
@@ -390,6 +432,7 @@ const UsersManagement = () => {
             <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
               <div className="text-sm text-[rgb(94,94,94)]">
                 Showing {startItem} to {endItem} of {totalCount} results
+                {searchQuery && <span className="text-orange-400"> matching "{searchQuery}"</span>}
               </div>
 
               <div className="flex items-center space-x-2">
@@ -444,7 +487,7 @@ const UsersManagement = () => {
 
         {/* User Details Modal */}
         {showModal && selectedUser && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-black border border-[rgb(51,51,51)] rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
               <div className="px-6 py-4 border-b border-[rgb(51,51,51)] flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-white">

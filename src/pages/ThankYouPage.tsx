@@ -1,12 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ArrowLeft, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import ProductCard from '../components/products/ProductCard';
 import logo from '../assests/logo.black.png';
 import { InlineLoading } from '../components/ui/Loading';
+import Breadcrumb from '../components/ui/Breadcrumb';
 
 interface Product {
   id: string;
@@ -164,6 +165,13 @@ const ThankYouPage = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        {/* Breadcrumb */}
+        <Breadcrumb
+          items={[{ label: 'Order Confirmation', icon: <CheckCircle size={16} /> }]}
+          variant="white"
+          className="mb-8"
+        />
+
         {/* Success Message */}
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
@@ -174,7 +182,7 @@ const ThankYouPage = () => {
             {paymentInfo.icon}
           </div>
 
-          <h1 className="text-3xl font-bold text-white mb-4">
+          <h1 className="text-xl md:text-2xl font-bold text-white mb-4">
             {paymentInfo.title}
           </h1>
 
@@ -187,7 +195,7 @@ const ThankYouPage = () => {
           </p>
 
           <div className="bg-white rounded-lg px-8 py-6 inline-block">
-            <p className="text-3xl font-bold text-black">
+            <p className="text-xl md:text-2xl font-bold text-black">
               LKR {orderTotal.toLocaleString()}
             </p>
             <p className="text-sm text-gray-600 mt-1">Order Total</p>
@@ -311,7 +319,7 @@ const ThankYouPage = () => {
 
         {/* You May Also Like Section */}
         <div>
-          <h2 className="text-2xl font-bold text-white mb-8 text-center">
+          <h2 className="text-lg md:text-xl font-bold text-white mb-6 text-center">
             You May Also Like
           </h2>
 

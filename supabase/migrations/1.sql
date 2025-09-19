@@ -68,6 +68,8 @@ CREATE TABLE products (
   is_active boolean DEFAULT true,
   is_featured boolean DEFAULT false,
   return_policy text,
+  deleted_at TIMESTAMPTZ NULL,
+  deleted_by UUID REFERENCES profiles(id),
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );

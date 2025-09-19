@@ -162,3 +162,66 @@ export const getProductImages = async (productId: string) => {
 
   return data || [];
 };
+
+// Collection image upload functions
+export const uploadCollectionImage = async (
+  file: File,
+  collectionId: string
+): Promise<string> => {
+  // Generate unique filename
+  const timestamp = Date.now();
+  const randomString = Math.random().toString(36).substring(7);
+  const fileExtension = file.name.split('.').pop() || 'jpg';
+  const fileName = `collection_${collectionId}_${timestamp}_${randomString}.${fileExtension}`;
+  const filePath = `collections/${fileName}`;
+
+  try {
+    // Upload file to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+      .from('collection-images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Upload error for collection image:', file.name, uploadError);
+      throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
+    }
+
+    // Get public URL
+    const { data: urlData } = supabaseAdmin.storage
+      .from('collection-images')
+      .getPublicUrl(filePath);
+
+    if (!urlData.publicUrl) {
+      throw new Error(`Failed to get public URL for ${file.name}`);
+    }
+
+    return urlData.publicUrl;
+
+  } catch (error) {
+    console.error('Error uploading collection image:', file.name, error);
+    throw error;
+  }
+};
+
+export const deleteCollectionImage = async (imageUrl: string): Promise<void> => {
+  try {
+    // Extract file path from URL
+    const url = new URL(imageUrl);
+    const pathSegments = url.pathname.split('/');
+    const filePath = pathSegments.slice(-2).join('/'); // collections/filename.jpg
+
+    // Delete file from storage
+    const { error } = await supabaseAdmin.storage
+      .from('collection-images')
+      .remove([filePath]);
+
+    if (error) {
+      console.error('Error deleting collection image from storage:', error);
+    }
+  } catch (error) {
+    console.error('Error in deleteCollectionImage:', error);
+  }
+};

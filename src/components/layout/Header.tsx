@@ -47,7 +47,7 @@ const Header = () => {
             <motion.img
               src={logo}
               alt="Kixora"
-              className="w-32 h-32 object-contain"
+              className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 object-contain"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             />
@@ -56,7 +56,7 @@ const Header = () => {
           <div className="flex-1"></div>
 
           {/* Right Side Controls */}
-          <div className="flex items-center space-x-1 sm:space-x-2">
+          <div className="flex items-center space-x-0.5">
             {/* Search */}
             <motion.div
               animate={{ width: isSearchOpen ? '300px' : '40px' }}
@@ -226,15 +226,17 @@ const Header = () => {
                 </AnimatePresence>
               </div>
             ) : (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setShowAuthModal(true)}
-                className="px-2 sm:px-4 text-xs sm:text-sm"
-              >
-                <span className="hidden sm:inline">Sign In</span>
-                <span className="sm:hidden">Sign</span>
-              </Button>
+              <div className="ml-3">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setShowAuthModal(true)}
+                  className="px-2 sm:px-4 text-xs sm:text-sm"
+                >
+                  <span className="hidden sm:inline">Sign In</span>
+                  <span className="sm:hidden">Sign</span>
+                </Button>
+              </div>
             )}
           </div>
         </div>

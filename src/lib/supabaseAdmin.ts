@@ -16,7 +16,14 @@ if (!supabaseServiceKey) {
 export const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
-    persistSession: false
+    persistSession: false,
+    storageKey: 'supabase-admin', // Use different storage key to avoid conflicts
+    storage: {
+      // Use memory-only storage to prevent conflicts with main client
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {}
+    }
   }
 })
 
@@ -48,3 +55,4 @@ export const executeAdminQuery = async (userId: string | undefined, queryFn: () 
 
   return await queryFn();
 }
+

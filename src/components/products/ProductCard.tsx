@@ -9,6 +9,7 @@ import Button from '../ui/Button';
 import ColorSelector from '../ui/ColorSelector';
 import { showSuccessToast, showErrorToast } from '../ui/CustomToast';
 import { getColorInfo } from '../../services/colorService';
+import { supabase } from '../../lib/supabase';
 
 interface ProductCardProps {
   product: {
@@ -33,7 +34,7 @@ interface ProductCardProps {
 const ProductCard = ({ product }: ProductCardProps) => {
   const { user } = useAuth();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlistStore();
-  const { addItem } = useCartStore();
+  const { addItem, items } = useCartStore();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>('');
@@ -72,12 +73,25 @@ const ProductCard = ({ product }: ProductCardProps) => {
     variantScenario === 'color-only' ? product.variants.find(v => v.color === selectedColor) :
     product.variants.find(v => v.size === selectedSize && v.color === selectedColor);
 
+  // Helper function to get current cart quantity for a variant
+  const getCurrentCartQuantity = (variantId: string): number => {
+    const cartItem = items.find(item => item.variantId === variantId);
+    return cartItem ? cartItem.quantity : 0;
+  };
+
+  // Helper function to check if we can add more to cart
+  const canAddMoreToCart = (variant: any): boolean => {
+    if (!variant || !variant.stock || variant.stock <= 0) return false;
+    const currentCartQty = getCurrentCartQuantity(variant.id);
+    return currentCartQty < variant.stock;
+  };
+
   // Check if add to cart should be enabled based on variant scenario
   const canAddToCart = !hasVariants ? false :
-    variantScenario === 'stock-only' ? selectedVariant && selectedVariant.stock > 0 :
-    variantScenario === 'size-only' ? selectedSize && selectedVariant && selectedVariant.stock > 0 :
-    variantScenario === 'color-only' ? selectedColor && selectedVariant && selectedVariant.stock > 0 :
-    selectedSize && selectedColor && selectedVariant && selectedVariant.stock > 0;
+    variantScenario === 'stock-only' ? selectedVariant && canAddMoreToCart(selectedVariant) :
+    variantScenario === 'size-only' ? selectedSize && selectedVariant && canAddMoreToCart(selectedVariant) :
+    variantScenario === 'color-only' ? selectedColor && selectedVariant && canAddMoreToCart(selectedVariant) :
+    selectedSize && selectedColor && selectedVariant && canAddMoreToCart(selectedVariant);
 
   const handleWishlistToggle = async () => {
     if (!user) {
@@ -120,31 +134,70 @@ const ProductCard = ({ product }: ProductCardProps) => {
       return;
     }
 
-    // Enhanced stock validation matching ProductDetailPage
-    if (!selectedVariant.stock || selectedVariant.stock < 1) {
-      showErrorToast('Not enough stock available');
-      return;
+    setIsLoading(true);
+    try {
+      // Fetch current stock from database to ensure accuracy
+      const { data: currentVariant, error } = await supabase
+        .from('product_variants')
+        .select('stock, is_active')
+        .eq('id', selectedVariant.id)
+        .single();
+
+      if (error) {
+        console.error('Error checking stock:', error);
+        showErrorToast('Unable to verify stock availability');
+        return;
+      }
+
+      if (!currentVariant.is_active) {
+        showErrorToast('This variant is no longer available');
+        return;
+      }
+
+      if (!currentVariant.stock || currentVariant.stock < 1) {
+        showErrorToast('Out of stock');
+        return;
+      }
+
+      // Check current cart quantity + new quantity against available stock
+      const currentCartQty = getCurrentCartQuantity(selectedVariant.id);
+      const newTotalQty = currentCartQty + 1;
+
+      if (newTotalQty > currentVariant.stock) {
+        if (currentCartQty >= currentVariant.stock) {
+          showErrorToast('You already have the maximum available quantity in your cart');
+        } else {
+          const remainingStock = currentVariant.stock - currentCartQty;
+          showErrorToast(`Only ${remainingStock} more can be added to cart (${currentCartQty} already in cart)`);
+        }
+        return;
+      }
+
+      await addItem({
+        productId: product.id,
+        variantId: selectedVariant.id,
+        title: product.title,
+        variant: {
+          size: selectedVariant.size,
+          color: selectedVariant.color,
+          sku: `${product.id}-${selectedVariant.id}`,
+        },
+        price: product.price,
+        quantity: 1,
+        image: primaryImage,
+        maxStock: currentVariant.stock,
+      }, user?.id);
+
+      showSuccessToast('Added to cart');
+      // Reset selections
+      setSelectedSize('');
+      setSelectedColor('');
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      showErrorToast('Failed to add to cart');
+    } finally {
+      setIsLoading(false);
     }
-
-    await addItem({
-      productId: product.id,
-      variantId: selectedVariant.id,
-      title: product.title,
-      variant: {
-        size: selectedVariant.size,
-        color: selectedVariant.color,
-        sku: `${product.id}-${selectedVariant.id}`,
-      },
-      price: product.price,
-      quantity: 1,
-      image: primaryImage,
-      maxStock: selectedVariant.stock,
-    }, user?.id);
-
-    showSuccessToast('Added to cart');
-    // Reset selections
-    setSelectedSize('');
-    setSelectedColor('');
   };
 
   return (
@@ -242,54 +295,55 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
       </div>
 
-      <div className="p-4 relative">
+      <div className="p-3 relative">
         <Link to={`/products/${product.id}`}>
           {product.brand && (
             <p className="text-xs text-gray-500 mb-1">{product.brand}</p>
           )}
-          <h3 className="font-medium text-sm text-black mb-2 line-clamp-2 group-hover:text-gray-700 transition-colors">
+          <h3 className="font-medium text-sm text-black mb-1.5 line-clamp-2 group-hover:text-gray-700 transition-colors">
             {product.title}
           </h3>
         </Link>
 
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-base font-semibold text-black">
+        <div className="mb-1.5">
+          <p className="text-sm font-semibold text-black">
             LKR {product.price.toLocaleString()}
           </p>
-
-          {product.variants && product.variants.length > 0 && (
-            <div className="flex gap-1">
-              {[...new Set(product.variants.slice(0, 4).map(v => v.color).filter(Boolean))].map((color) => {
-                const colorInfo = getColorInfo(color);
-                return colorInfo ? (
-                  <div
-                    key={color}
-                    className="w-4 h-4 rounded-full border border-gray-300 overflow-hidden"
-                    title={colorInfo.displayName}
-                  >
-                    <img
-                      src={colorInfo.image}
-                      alt={colorInfo.displayName}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div
-                    key={color}
-                    className="w-4 h-4 rounded-full border border-gray-300 bg-gray-200 flex items-center justify-center"
-                    title={color}
-                  >
-                    <span className="text-[8px] text-gray-500">?</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
+
+        {/* Colors at the bottom */}
+        {product.variants && product.variants.length > 0 && (
+          <div className="flex gap-1 mt-2">
+            {[...new Set(product.variants.slice(0, 4).map(v => v.color).filter(Boolean))].map((color) => {
+              const colorInfo = getColorInfo(color);
+              return colorInfo ? (
+                <div
+                  key={color}
+                  className="w-3 h-3 rounded-full border border-gray-300 overflow-hidden"
+                  title={colorInfo.displayName}
+                >
+                  <img
+                    src={colorInfo.image}
+                    alt={colorInfo.displayName}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div
+                  key={color}
+                  className="w-3 h-3 rounded-full border border-gray-300 bg-gray-200 flex items-center justify-center"
+                  title={color}
+                >
+                  <span className="text-[6px] text-gray-500">?</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
 
         {/* Desktop/Tablet Hover Overlay - Hidden on mobile */}
-        <div className="hidden md:block absolute inset-x-0 -bottom-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 pointer-events-none group-hover:pointer-events-auto">
+        <div className="hidden md:block absolute inset-x-0 -bottom-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 pointer-events-none group-hover:pointer-events-auto">
           <div className="bg-white shadow-xl border border-gray-200 p-4 space-y-3">
             {hasSize && (
               <div>
@@ -368,14 +422,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
               size="sm"
               fullWidth
               onClick={handleQuickAdd}
-              disabled={!canAddToCart}
+              disabled={!canAddToCart || isLoading}
               className={`text-xs ${
-                canAddToCart
+                canAddToCart && !isLoading
                   ? 'bg-black text-white hover:bg-gray-900'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
-              {variantScenario === 'stock-only'
+              {isLoading ? 'Adding...' :
+               variantScenario === 'stock-only'
                 ? selectedVariant?.stock === 0 ? 'Out of Stock' : 'Add to Cart'
                 : variantScenario === 'size-only'
                 ? !selectedSize ? 'Select Size' : selectedVariant?.stock === 0 ? 'Out of Stock' : 'Add to Cart'
@@ -400,7 +455,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowQuickAddModal(false)}
-              className="fixed inset-0 bg-black/50 z-50 md:hidden"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 md:hidden"
             />
 
             {/* Modal */}
@@ -412,7 +467,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               className="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl z-50 md:hidden max-h-[80vh] overflow-y-auto"
             >
               {/* Modal Header */}
-              <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+              <div className="sticky top-0 bg-white border-b border-gray-200 p-3 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   {primaryImage && (
                     <img
@@ -422,8 +477,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
                     />
                   )}
                   <div>
-                    <h3 className="font-semibold text-sm text-black line-clamp-1">{product.title}</h3>
-                    <p className="text-base font-bold text-black">LKR {product.price.toLocaleString()}</p>
+                    <h3 className="font-medium text-sm text-black line-clamp-1">{product.title}</h3>
+                    <p className="text-sm font-semibold text-black">LKR {product.price.toLocaleString()}</p>
                   </div>
                 </div>
                 <button
@@ -435,7 +490,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               </div>
 
               {/* Modal Content */}
-              <div className="p-4 space-y-4">
+              <div className="p-3 space-y-3">
                 {hasSize && (
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-3">Select Size</p>
@@ -506,23 +561,26 @@ const ProductCard = ({ product }: ProductCardProps) => {
               </div>
 
               {/* Modal Footer */}
-              <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
+              <div className="sticky bottom-0 bg-white border-t border-gray-200 p-3">
                 <Button
                   variant="primary"
                   size="lg"
                   fullWidth
                   onClick={async () => {
                     await handleQuickAdd();
-                    setShowQuickAddModal(false);
+                    if (!isLoading) {
+                      setShowQuickAddModal(false);
+                    }
                   }}
-                  disabled={!canAddToCart}
-                  className={`min-h-[52px] text-base font-semibold ${
-                    canAddToCart
+                  disabled={!canAddToCart || isLoading}
+                  className={`min-h-[44px] text-sm font-semibold ${
+                    canAddToCart && !isLoading
                       ? 'bg-black text-white hover:bg-gray-900'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  {variantScenario === 'stock-only'
+                  {isLoading ? 'Adding...' :
+                   variantScenario === 'stock-only'
                     ? selectedVariant?.stock === 0 ? 'Out of Stock' : 'Add to Cart'
                     : variantScenario === 'size-only'
                     ? !selectedSize ? 'Select Size' : selectedVariant?.stock === 0 ? 'Out of Stock' : 'Add to Cart'

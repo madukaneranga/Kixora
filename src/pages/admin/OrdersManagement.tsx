@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Eye, Filter, ChevronLeft, ChevronRight, Package, MapPin, CreditCard, Clock, User, Truck, X } from 'lucide-react';
+import { Eye, Filter, ChevronLeft, ChevronRight, Package, MapPin, CreditCard, Clock, User, Truck, X, LayoutDashboard } from 'lucide-react';
+import Breadcrumb from '../../components/ui/Breadcrumb';
 
 // Add keyframes for smooth fading animation
 const blinkKeyframes = `
@@ -105,6 +106,7 @@ const OrdersManagement = () => {
           total,
           currency,
           status,
+          payment_status,
           created_at,
           payment_method,
           shipping_method,
@@ -240,10 +242,62 @@ const OrdersManagement = () => {
           : order
       ));
 
+      // Also update the selected order if it's the same one
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder({
+          ...selectedOrder,
+          status: newStatus as any
+        });
+      }
+
       showSuccessToast('Order status updated successfully');
     } catch (error) {
       console.error('Error updating order:', error);
       showErrorToast('Failed to update order status');
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const updatePaymentStatus = async (orderId: string, newPaymentStatus: string) => {
+    try {
+      setUpdating(orderId);
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Verify user is admin before using admin client
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { error } = await supabaseAdmin
+        .from('orders')
+        .update({ payment_status: newPaymentStatus })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      setOrders(orders.map(order =>
+        order.id === orderId
+          ? { ...order, payment_status: newPaymentStatus as any }
+          : order
+      ));
+
+      // Also update the selected order if it's the same one
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder({
+          ...selectedOrder,
+          payment_status: newPaymentStatus as any
+        });
+      }
+
+      showSuccessToast('Payment status updated successfully');
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      showErrorToast('Failed to update payment status');
     } finally {
       setUpdating(null);
     }
@@ -353,11 +407,25 @@ const OrdersManagement = () => {
     );
   }
 
+  const breadcrumbItems = [
+    {
+      label: 'Admin',
+      path: '/admin',
+      icon: <LayoutDashboard size={16} />
+    },
+    {
+      label: 'Orders Management',
+      icon: <Package size={16} />
+    }
+  ];
+
   return (
     <AdminLayout>
       {/* Inject blinking animation CSS */}
       <style>{blinkKeyframes}</style>
       <div className="space-y-6">
+        {/* Breadcrumb */}
+        <Breadcrumb items={breadcrumbItems} variant="white" />
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
@@ -416,6 +484,9 @@ const OrdersManagement = () => {
                     Payment
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                    Shipping
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
                     Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
@@ -451,9 +522,27 @@ const OrdersManagement = () => {
                         <option value="cancelled" className="bg-black">Cancelled</option>
                       </select>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="text-[rgb(94,94,94)] capitalize mb-1">{order.payment_method}</div>
+                      <select
+                        value={order.payment_status || 'pending'}
+                        onChange={(e) => updatePaymentStatus(order.id, e.target.value)}
+                        disabled={updating === order.id}
+                        className={`text-xs font-medium capitalize px-2 py-1 rounded-full border bg-black ${
+                          order.payment_status === 'paid' ? 'text-green-400 border-green-400/20 bg-green-900/20' :
+                          order.payment_status === 'failed' ? 'text-red-400 border-red-400/20 bg-red-900/20' :
+                          order.payment_status === 'refunded' ? 'text-purple-400 border-purple-400/20 bg-purple-900/20' :
+                          'text-yellow-400 border-yellow-400/20 bg-yellow-900/20'
+                        }`}
+                      >
+                        <option value="pending" className="bg-black">Pending</option>
+                        <option value="paid" className="bg-black">Paid</option>
+                        <option value="failed" className="bg-black">Failed</option>
+                        <option value="refunded" className="bg-black">Refunded</option>
+                      </select>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-[rgb(94,94,94)]">
-                      <div className="capitalize">{order.payment_method}</div>
-                      <div className={`text-xs ${
+                      <div className={`capitalize ${
                         (order.status === 'pending' || order.status === 'confirmed' || order.status === 'processing')
                           ? order.shipping_method?.toLowerCase().includes('express')
                             ? 'text-red-400 font-medium'
@@ -562,7 +651,7 @@ const OrdersManagement = () => {
 
         {/* Comprehensive Order Details Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-black border border-[rgb(51,51,51)] rounded-lg w-full max-w-6xl max-h-[95vh] overflow-y-auto">
               {/* Modal Header */}
               <div className="sticky top-0 bg-black border-b border-[rgb(51,51,51)] px-6 py-4 flex justify-between items-center z-10">
@@ -608,9 +697,19 @@ const OrdersManagement = () => {
                         <Clock className="w-4 h-4 text-[rgb(94,94,94)]" />
                         <p className="text-[rgb(94,94,94)] text-sm">Status</p>
                       </div>
-                      <p className={`text-lg font-semibold capitalize ${getStatusColor(selectedOrder.status).split(' ')[0]}`}>
-                        {selectedOrder.status}
-                      </p>
+                      <select
+                        value={selectedOrder.status}
+                        onChange={(e) => updateOrderStatus(selectedOrder.id, e.target.value)}
+                        disabled={updating === selectedOrder.id}
+                        className={`text-sm font-medium capitalize px-3 py-2 rounded border bg-black w-full ${getStatusColor(selectedOrder.status).replace('text-', 'text-').replace('bg-', 'bg-').replace('border-', 'border-')}`}
+                      >
+                        <option value="pending" className="bg-black">Pending</option>
+                        <option value="confirmed" className="bg-black">Confirmed</option>
+                        <option value="processing" className="bg-black">Processing</option>
+                        <option value="shipped" className="bg-black">Shipped</option>
+                        <option value="delivered" className="bg-black">Delivered</option>
+                        <option value="cancelled" className="bg-black">Cancelled</option>
+                      </select>
                     </div>
 
                     <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
@@ -628,15 +727,23 @@ const OrdersManagement = () => {
                         <CreditCard className="w-4 h-4 text-[rgb(94,94,94)]" />
                         <p className="text-[rgb(94,94,94)] text-sm">Payment</p>
                       </div>
-                      <p className="text-white capitalize">{selectedOrder.payment_method || 'N/A'}</p>
-                      <p className={`text-xs mt-1 font-medium ${
-                        selectedOrder.payment_status === 'paid' ? 'text-green-400' :
-                        selectedOrder.payment_status === 'failed' ? 'text-red-400' :
-                        selectedOrder.payment_status === 'refunded' ? 'text-purple-400' :
-                        'text-yellow-400'
-                      }`}>
-                        Status: {selectedOrder.payment_status}
-                      </p>
+                      <p className="text-white capitalize mb-2">{selectedOrder.payment_method || 'N/A'}</p>
+                      <select
+                        value={selectedOrder.payment_status || 'pending'}
+                        onChange={(e) => updatePaymentStatus(selectedOrder.id, e.target.value)}
+                        disabled={updating === selectedOrder.id}
+                        className={`text-xs font-medium capitalize px-2 py-1 rounded border bg-black w-full ${
+                          selectedOrder.payment_status === 'paid' ? 'text-green-400 border-green-400/20 bg-green-900/20' :
+                          selectedOrder.payment_status === 'failed' ? 'text-red-400 border-red-400/20 bg-red-900/20' :
+                          selectedOrder.payment_status === 'refunded' ? 'text-purple-400 border-purple-400/20 bg-purple-900/20' :
+                          'text-yellow-400 border-yellow-400/20 bg-yellow-900/20'
+                        }`}
+                      >
+                        <option value="pending" className="bg-black">Pending</option>
+                        <option value="paid" className="bg-black">Paid</option>
+                        <option value="failed" className="bg-black">Failed</option>
+                        <option value="refunded" className="bg-black">Refunded</option>
+                      </select>
                     </div>
 
                     <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
@@ -668,7 +775,7 @@ const OrdersManagement = () => {
                       </div>
                       <div>
                         <p className="text-[rgb(94,94,94)] text-sm">Phone</p>
-                        <p className="text-white">{selectedOrder.profiles?.phone || 'N/A'}</p>
+                        <p className="text-white">{selectedOrder.shipping_address?.phone || 'N/A'}</p>
                       </div>
                     </div>
                   </div>

@@ -10,6 +10,7 @@ import Input from '../components/ui/Input';
 import { showSuccessToast, showErrorToast } from '../components/ui/CustomToast';
 import logoWhite from '../assests/logo.white.png';
 import { InlineLoading } from '../components/ui/Loading';
+import Breadcrumb from '../components/ui/Breadcrumb';
 
 const ProfilePage = () => {
   const { user, profile, updatePassword } = useAuth();
@@ -160,10 +161,22 @@ const ProfilePage = () => {
     );
   }
 
+  const breadcrumbItems = [
+    {
+      label: 'Profile',
+      icon: <User size={16} />
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-black">
+      {/* Breadcrumb */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <Breadcrumb items={breadcrumbItems} variant="white" className="mb-6" />
+      </div>
+
       {/* Header with Logo */}
-      <div className="flex justify-center pt-8 pb-4">
+      <div className="flex justify-center pb-4">
         <img
           src={logoWhite}
           alt="Kixora"

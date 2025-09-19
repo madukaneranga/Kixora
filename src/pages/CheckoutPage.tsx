@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Truck, Clock, CreditCard, Building, Phone, Banknote, Mail } from 'lucide-react';
+import { ArrowLeft, Truck, Clock, CreditCard, Building, Phone, Banknote, Mail, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useCartStore } from '../stores/cartStore';
 import { supabase } from '../lib/supabase';
@@ -13,6 +13,7 @@ import Input from '../components/ui/Input';
 import { showErrorToast } from '../components/ui/CustomToast';
 import logo from '../assests/logo.black.png';
 import { payHereService, PayHerePaymentData } from '../services/payhere';
+import Breadcrumb from '../components/ui/Breadcrumb';
 
 const checkoutSchema = yup.object({
   country: yup.string().required('Country is required'),
@@ -337,6 +338,13 @@ const CheckoutPage = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        {/* Breadcrumb */}
+        <Breadcrumb
+          items={[{ label: 'Checkout', icon: <ShoppingCart size={16} /> }]}
+          variant="white"
+          className="mb-8"
+        />
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Left Column - Forms */}
           <div className="space-y-8">

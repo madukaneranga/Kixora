@@ -9,6 +9,7 @@ import {
   ClipboardList,
   LogOut,
   Home,
+  Grid3X3,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../ui/Button';
@@ -36,6 +37,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { path: '/admin/orders', label: 'Orders', icon: ShoppingCart },
     { path: '/admin/products', label: 'Products', icon: Package },
     { path: '/admin/categories', label: 'Categories', icon: FolderOpen },
+    { path: '/admin/collections', label: 'Collections', icon: Grid3X3 },
     { path: '/admin/users', label: 'Users', icon: Users },
     { path: '/admin/audit', label: 'Audit Logs', icon: ClipboardList },
   ];

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Package, X, Clock, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Package, X, Clock, CheckCircle, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import Button from '../components/ui/Button';
 import { showErrorToast } from '../components/ui/CustomToast';
+import Breadcrumb from '../components/ui/Breadcrumb';
 
 interface Order {
   id: string;
@@ -34,6 +35,7 @@ const OrderDashboard = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'arrived' | 'cancelled'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -50,13 +52,7 @@ const OrderDashboard = () => {
 
   const fetchOrders = async () => {
     try {
-      // Build base query for counting
-      let countQuery = supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user!.id);
-
-      // Build query for fetching data
+      // Build query for fetching all data (we'll filter client-side for search)
       let dataQuery = supabase
         .from('orders')
         .select(`
@@ -76,30 +72,46 @@ const OrderDashboard = () => {
           )
         `)
         .eq('user_id', user!.id)
-        .order('created_at', { ascending: false })
-        .range(
-          (currentPage - 1) * itemsPerPage,
-          currentPage * itemsPerPage - 1
-        );
+        .order('created_at', { ascending: false });
 
-      // Apply status filter to both queries
+      // Apply status filter
       if (selectedFilter === 'arrived') {
-        countQuery = countQuery.eq('status', 'delivered');
         dataQuery = dataQuery.eq('status', 'delivered');
       } else if (selectedFilter === 'cancelled') {
-        countQuery = countQuery.eq('status', 'cancelled');
         dataQuery = dataQuery.eq('status', 'cancelled');
       }
 
-      // Execute both queries
-      const [{ count }, { data, error }] = await Promise.all([
-        countQuery,
-        dataQuery
-      ]);
+      const { data, error } = await dataQuery;
 
       if (error) throw error;
-      setOrders(data || []);
-      setTotalCount(count || 0);
+
+      let filteredOrders = data || [];
+
+      // Apply search filter client-side
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        filteredOrders = filteredOrders.filter(order =>
+          // Search in order ID
+          order.id.toLowerCase().includes(query) ||
+          // Search in product titles
+          order.order_items.some(item =>
+            item.product_title.toLowerCase().includes(query)
+          ) ||
+          // Search in order total
+          order.total.toString().includes(query) ||
+          // Search in order status
+          order.status.toLowerCase().includes(query)
+        );
+      }
+
+      // Apply pagination to filtered results
+      const totalFilteredCount = filteredOrders.length;
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+
+      setOrders(paginatedOrders);
+      setTotalCount(totalFilteredCount);
     } catch (error) {
       console.error('Error fetching orders:', error);
       showErrorToast('Failed to load orders');
@@ -110,14 +122,14 @@ const OrderDashboard = () => {
 
   // Add effect to refetch when pagination or filters change
   useEffect(() => {
-    setCurrentPage(1); // Reset to first page when filter changes
-  }, [selectedFilter]);
+    setCurrentPage(1); // Reset to first page when filter or search changes
+  }, [selectedFilter, searchQuery]);
 
   useEffect(() => {
     if (user) {
       fetchOrders();
     }
-  }, [currentPage, selectedFilter]);
+  }, [currentPage, selectedFilter, searchQuery]);
 
   const fetchOrderCounts = async () => {
     try {
@@ -241,20 +253,43 @@ const OrderDashboard = () => {
     );
   }
 
+  const breadcrumbItems = [
+    {
+      label: 'My Orders',
+      icon: <Package size={16} />
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumb */}
+        <Breadcrumb items={breadcrumbItems} className="mb-6" />
+
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Orders</h1>
-          <p className="text-gray-600">Track and manage your orders</p>
+        <div className="mb-6">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">My Orders</h1>
+          <p className="text-sm text-gray-600">Track and manage your orders</p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Sidebar */}
           <div className="lg:w-64 flex-shrink-0">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Filter Orders</h3>
+              <h3 className="font-semibold text-gray-900 mb-4">Search & Filter</h3>
+
+              {/* Search Input */}
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search orders, products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm"
+                />
+              </div>
+
               <div className="space-y-2">
                 <button
                   onClick={() => setSelectedFilter('all')}

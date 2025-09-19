@@ -16,7 +16,8 @@ import {
   AlertCircle,
   Clock,
   MapPin,
-  CreditCard
+  CreditCard,
+  Package
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
@@ -26,6 +27,7 @@ import { useWishlistStore } from '../stores/wishlistStore';
 import Button from '../components/ui/Button';
 import ColorSelector from '../components/ui/ColorSelector';
 import { showSuccessToast, showErrorToast } from '../components/ui/CustomToast';
+import Breadcrumb from '../components/ui/Breadcrumb';
 
 interface Product {
   id: string;
@@ -153,6 +155,7 @@ const ProductDetailPage = () => {
         `)
         .eq('id', id)
         .eq('is_active', true)
+        .is('deleted_at', null)
         .single();
 
       if (error) throw error;
@@ -207,6 +210,7 @@ const ProductDetailPage = () => {
         `)
         .eq('category_id', product.category_id)
         .eq('is_active', true)
+        .is('deleted_at', null)
         .neq('id', product.id)
         .limit(4);
 
@@ -372,31 +376,26 @@ const ProductDetailPage = () => {
   const ratingDistribution = getRatingDistribution();
   const currentVariant = getSelectedVariant();
 
+  // Generate breadcrumb items
+  const breadcrumbItems = [
+    {
+      label: 'Products',
+      path: '/products',
+      icon: <Package size={16} />
+    },
+    ...(product.categories ? [{
+      label: product.categories.name,
+      path: `/products?category=${product.categories.slug}`
+    }] : []),
+    {
+      label: product.title
+    }
+  ];
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Breadcrumb */}
-      <nav className="flex items-center space-x-2 text-sm text-slate-600 mb-8">
-        <button onClick={() => navigate('/')} className="hover:text-black">
-          Home
-        </button>
-        <ChevronRight size={16} />
-        <button onClick={() => navigate('/products')} className="hover:text-black">
-          Products
-        </button>
-        <ChevronRight size={16} />
-        {product.categories && (
-          <>
-            <button 
-              onClick={() => navigate(`/products?category=${product.categories?.slug}`)}
-              className="hover:text-black"
-            >
-              {product.categories.name}
-            </button>
-            <ChevronRight size={16} />
-          </>
-        )}
-        <span className="text-slate-900 font-medium">{product.title}</span>
-      </nav>
+      <Breadcrumb items={breadcrumbItems} className="mb-8" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
         {/* Product Images */}
@@ -479,7 +478,7 @@ const ProductDetailPage = () => {
           {/* Header */}
           <div>
             <div className="flex items-start justify-between mb-2">
-              <h1 className="text-3xl font-bold text-slate-900">{product.title}</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-slate-900">{product.title}</h1>
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
@@ -518,7 +517,7 @@ const ProductDetailPage = () => {
 
             {/* Price */}
             <div className="mb-6">
-              <span className="text-3xl font-bold text-slate-900">
+              <span className="text-2xl md:text-3xl font-bold text-slate-900">
                 LKR {getCurrentPrice().toLocaleString()}
               </span>
               {currentVariant?.price_override && currentVariant.price_override !== product.price && (
@@ -777,7 +776,7 @@ const ProductDetailPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div>
                         <div className="text-center">
-                          <div className="text-4xl font-bold text-slate-900 mb-2">
+                          <div className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
                             {averageRating.toFixed(1)}
                           </div>
                           <div className="flex items-center justify-center mb-2">

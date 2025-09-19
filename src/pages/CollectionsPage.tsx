@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Grid3X3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fetchAllCollections } from '../services/collectionsService';
 import { Collection } from '../types/collection';
+import Breadcrumb from '../components/ui/Breadcrumb';
 
 const CollectionsPage = () => {
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -27,7 +28,7 @@ const CollectionsPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           <div className="animate-pulse">
             <div className="h-12 bg-gray-200 w-1/3 mb-4"></div>
             <div className="h-6 bg-gray-200 w-2/3 mb-12"></div>
@@ -42,18 +43,27 @@ const CollectionsPage = () => {
     );
   }
 
+  const breadcrumbItems = [
+    {
+      label: 'Collections',
+      icon: <Grid3X3 size={16} />
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header Section */}
-      <section className="py-20 bg-white">
+      <section className="py-8 sm:py-12 lg:py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Breadcrumb */}
+          <Breadcrumb items={breadcrumbItems} className="mb-6" />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            className="text-center mb-8 sm:mb-12"
           >
-            <h1 className="text-5xl lg:text-6xl font-bold text-black mb-6">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-black mb-4 sm:mb-6">
               Our Collections
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -81,7 +91,7 @@ const CollectionsPage = () => {
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-50 transition-all duration-300"></div>
                     <div className="absolute bottom-0 left-0 p-6">
-                      <h3 className="text-3xl font-bold text-white mb-2">
+                      <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
                         {collection.name}
                       </h3>
                       {collection.description && (
@@ -105,7 +115,7 @@ const CollectionsPage = () => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-16"
+              className="text-center py-8 sm:py-12"
             >
               <div className="text-6xl mb-4">👟</div>
               <h3 className="text-2xl font-semibold text-black mb-4">No Collections Available</h3>
@@ -123,7 +133,7 @@ const CollectionsPage = () => {
 
       {/* Call to Action Section */}
       {collections.length > 0 && (
-        <section className="py-20 bg-black text-white">
+        <section className="py-8 sm:py-12 lg:py-16 bg-black text-white">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -131,7 +141,7 @@ const CollectionsPage = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <h2 className="text-4xl font-bold mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">
                 Can't Find What You're Looking For?
               </h2>
               <p className="text-xl text-gray-300 mb-8 leading-relaxed">
