@@ -171,8 +171,8 @@ const ProfilePage = () => {
   return (
     <div className="min-h-screen bg-black">
       {/* Breadcrumb */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <Breadcrumb items={breadcrumbItems} variant="white" className="mb-6" />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-8">
+        <Breadcrumb items={breadcrumbItems} variant="white" className="mb-4 sm:mb-6" />
       </div>
 
       {/* Header with Logo */}
@@ -180,25 +180,25 @@ const ProfilePage = () => {
         <img
           src={logoWhite}
           alt="Kixora"
-          className="h-16 sm:h-20 md:h-24 w-auto"
+          className="h-12 sm:h-16 md:h-20 lg:h-24 w-auto"
         />
       </div>
 
-      <div className="max-w-4xl mx-auto pt-8 pb-8 px-4">
+      <div className="max-w-4xl mx-auto pt-4 sm:pt-8 pb-8 px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-black rounded-xl overflow-hidden shadow-2xl border border-white/10"
         >
           {/* Main Content - Two Column Layout */}
-          <div className="p-8">
-            <div className="grid lg:grid-cols-3 gap-8">
+          <div className="p-4 sm:p-6 lg:p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
 
               {/* Left Column - Profile Info */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                 {/* Header */}
-                <div className="flex items-center justify-between pb-4">
-                  <h1 className="text-xl font-bold text-white">Profile</h1>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 gap-3 sm:gap-0">
+                  <h1 className="text-lg sm:text-xl font-bold text-white">Profile</h1>
                   {!isEditing ? (
                     <Button
                       variant="ghost"
@@ -210,12 +210,12 @@ const ProfilePage = () => {
                       Edit
                     </Button>
                   ) : (
-                    <div className="flex space-x-2">
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={handleCancel}
-                        className="text-gray-400 hover:text-white hover:bg-white/10 border-white/20"
+                        className="text-gray-400 hover:text-white hover:bg-white/10 border-white/20 w-full sm:w-auto"
                       >
                         <X className="w-4 h-4 mr-1" />
                         Cancel
@@ -224,7 +224,7 @@ const ProfilePage = () => {
                         size="sm"
                         onClick={handleSave}
                         disabled={loading}
-                        className="!bg-white !text-black hover:!bg-gray-200 font-medium"
+                        className="!bg-white !text-black hover:!bg-gray-200 font-medium w-full sm:w-auto"
                       >
                         <Save className="w-4 h-4 mr-1" />
                         {loading ? 'Saving...' : 'Save'}
@@ -234,7 +234,7 @@ const ProfilePage = () => {
                 </div>
 
                 {/* Profile Details Grid */}
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   {/* Full Name */}
                   <div className="space-y-2">
                     <label className="block text-xs font-semibold text-white uppercase tracking-wide">
@@ -266,7 +266,7 @@ const ProfilePage = () => {
                     </label>
                     <div className="flex items-center space-x-3 p-3 bg-white/5 border border-white/10 rounded-lg min-w-0">
                       <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <span className="text-sm text-white font-medium truncate">
+                      <span className="text-sm text-white font-medium truncate break-all">
                         {user.email}
                       </span>
                     </div>
@@ -328,12 +328,12 @@ const ProfilePage = () => {
                           onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                           className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 text-sm"
                         />
-                        <div className="flex space-x-2">
+                        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                           <Button
                             size="sm"
                             onClick={handlePasswordChange}
                             disabled={passwordLoading}
-                            className="!bg-white !text-black hover:!bg-gray-200 !text-xs font-medium"
+                            className="!bg-white !text-black hover:!bg-gray-200 !text-xs font-medium w-full sm:w-auto"
                           >
                             {passwordLoading ? 'Updating...' : 'Update'}
                           </Button>
@@ -341,7 +341,7 @@ const ProfilePage = () => {
                             variant="ghost"
                             size="sm"
                             onClick={handleCancelPasswordChange}
-                            className="text-gray-400 hover:text-white hover:bg-white/10 border-white/20 !text-xs"
+                            className="text-gray-400 hover:text-white hover:bg-white/10 border-white/20 !text-xs w-full sm:w-auto"
                           >
                             Cancel
                           </Button>
@@ -353,20 +353,20 @@ const ProfilePage = () => {
               </div>
 
               {/* Right Column - Profile Avatar & Stats */}
-              <div className="lg:col-span-1">
-                <div className="space-y-6">
+              <div className="lg:col-span-1 order-first lg:order-last">
+                <div className="space-y-4 sm:space-y-6">
                   {/* Profile Avatar */}
                   <div className="text-center">
-                    <div className="w-20 h-20 bg-white text-black rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white text-black rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
                       {(isEditing ? formData.full_name : profile?.full_name) ? (
-                        <span className="text-xl font-bold">
+                        <span className="text-lg sm:text-xl font-bold">
                           {getInitials(isEditing ? formData.full_name : profile?.full_name || '')}
                         </span>
                       ) : (
-                        <User className="w-10 h-10" />
+                        <User className="w-8 h-8 sm:w-10 sm:h-10" />
                       )}
                     </div>
-                    <h2 className="text-sm font-bold text-white mb-2">
+                    <h2 className="text-sm sm:text-base font-bold text-white mb-2 break-words">
                       {isEditing ? (formData.full_name || 'User') : (profile?.full_name || 'User')}
                     </h2>
                     {profile?.role === 'admin' && (
@@ -382,18 +382,18 @@ const ProfilePage = () => {
                     <h3 className="text-sm font-semibold text-white text-center">
                       Quick Stats
                     </h3>
-                    <div className="space-y-2">
+                    <div className="space-y-2 sm:space-y-3">
                       <Link to="/orders">
                         <motion.div
-                          className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors cursor-pointer group"
+                          className="flex items-center justify-between p-3 sm:p-4 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors cursor-pointer group min-h-[48px]"
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                         >
-                          <div className="flex items-center">
-                            <Package className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors mr-2" />
-                            <span className="text-sm font-medium text-white">Orders</span>
+                          <div className="flex items-center min-w-0">
+                            <Package className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors mr-2 flex-shrink-0" />
+                            <span className="text-sm font-medium text-white truncate">Orders</span>
                           </div>
-                          <div className="text-lg font-bold text-white">
+                          <div className="text-lg font-bold text-white flex-shrink-0 ml-2">
                             {statsLoading ? <InlineLoading size="sm" /> : stats.ordersCount}
                           </div>
                         </motion.div>
@@ -401,15 +401,15 @@ const ProfilePage = () => {
 
                       <Link to="/wishlist">
                         <motion.div
-                          className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors cursor-pointer group"
+                          className="flex items-center justify-between p-3 sm:p-4 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors cursor-pointer group min-h-[48px]"
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                         >
-                          <div className="flex items-center">
-                            <Heart className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors mr-2" />
-                            <span className="text-sm font-medium text-white">Wishlist</span>
+                          <div className="flex items-center min-w-0">
+                            <Heart className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors mr-2 flex-shrink-0" />
+                            <span className="text-sm font-medium text-white truncate">Wishlist</span>
                           </div>
-                          <div className="text-lg font-bold text-white">
+                          <div className="text-lg font-bold text-white flex-shrink-0 ml-2">
                             {statsLoading ? <InlineLoading size="sm" /> : stats.wishlistCount}
                           </div>
                         </motion.div>

@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 interface CategoryTile {
   slug: string;
   name: string;
+  description?: string;
   image_url: string;
 }
 
@@ -20,7 +21,7 @@ const CategoryTiles = () => {
     try {
       const { data, error } = await supabase
         .from('categories')
-        .select('slug, name, image_url')
+        .select('slug, name, description, image_url')
         .eq('is_pinned', true)
         .limit(3);
 
@@ -36,18 +37,18 @@ const CategoryTiles = () => {
 
   if (loading) {
     return (
-      <div className="w-full py-8 sm:py-10 px-4 bg-white">
-        <div className="grid grid-cols-3 gap-4">
+      <div className="w-full py-4 sm:py-6 px-4 bg-white">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="aspect-[3/4] bg-gray-200 animate-pulse rounded-lg" />
+            <div key={i} className="aspect-[3/4] bg-gray-200 animate-pulse" />
           ))}
         </div>
       </div>
     );
   }
   return (
-    <div className="w-full py-8 sm:py-10 px-4 bg-white">
-      <div className="grid grid-cols-3 gap-4">
+    <div className="w-full py-4 sm:py-6 px-4 bg-white">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {categories.map((category) => (
           <Link
             key={category.slug}
@@ -60,8 +61,17 @@ const CategoryTiles = () => {
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
             />
             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/5 transition-colors duration-300" />
-            <div className="absolute bottom-4 left-4">
-              <h3 className="text-white text-xl font-semibold">{category.name}</h3>
+
+            {/* Black bar overlay at bottom */}
+            <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm px-3 py-2">
+              <h3 className="text-white text-base sm:text-lg md:text-xl font-semibold leading-tight">
+                {category.name}
+              </h3>
+              {category.description && (
+                <p className="text-gray-200 text-xs sm:text-sm leading-tight mt-1 line-clamp-2">
+                  {category.description}
+                </p>
+              )}
             </div>
           </Link>
         ))}

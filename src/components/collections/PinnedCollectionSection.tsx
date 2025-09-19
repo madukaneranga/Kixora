@@ -87,21 +87,17 @@ const PinnedCollectionSection = ({ collection }: PinnedCollectionSectionProps) =
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="flex flex-col lg:flex-row lg:items-end lg:justify-between mb-4 sm:mb-6 px-4 sm:px-6 lg:px-8"
+          className="flex items-center justify-between mb-4 sm:mb-6 px-6 sm:px-8 lg:px-10"
         >
-          <div className="mb-4 lg:mb-0">
-            
-
-            <motion.h2
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-xl sm:text-2xl md:text-3xl font-bold text-black mb-4"
-            >
-              {collection.name}
-            </motion.h2>
-          </div>
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-black"
+          >
+            {collection.name}
+          </motion.h2>
 
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -113,10 +109,12 @@ const PinnedCollectionSection = ({ collection }: PinnedCollectionSectionProps) =
             <Link to={`/collections/${collection.slug}`}>
               <Button
                 variant="outline"
-                className="flex items-center space-x-2 hover:bg-black hover:text-white transition-colors duration-300"
+                className="flex items-center space-x-1 sm:space-x-2 hover:bg-black hover:text-white transition-colors duration-300 text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2"
               >
-                <span>View Collection</span>
-                <ArrowRight size={16} />
+                <span className="hidden sm:inline">View Collection</span>
+                <span className="sm:hidden">View</span>
+                <ArrowRight size={14} className="sm:hidden" />
+                <ArrowRight size={16} className="hidden sm:inline" />
               </Button>
             </Link>
           </motion.div>

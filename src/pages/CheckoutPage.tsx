@@ -314,15 +314,16 @@ const CheckoutPage = () => {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <div className="relative py-6">
+      <div className="relative py-4 sm:py-6">
         {/* Continue Shopping - Top Left */}
-        <div className="absolute left-4 top-6 sm:left-8">
+        <div className="absolute left-4 top-4 sm:left-8 sm:top-6">
           <Link
             to="/"
             className="flex items-center text-white hover:text-gray-300 transition-colors"
           >
-            <ArrowLeft className="h-5 w-5 mr-2" />
-            <span className="text-sm font-medium">Continue Shopping</span>
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+            <span className="text-xs sm:text-sm font-medium hidden xs:inline">Continue Shopping</span>
+            <span className="text-xs sm:text-sm font-medium xs:hidden">Back</span>
           </Link>
         </div>
 
@@ -331,7 +332,7 @@ const CheckoutPage = () => {
           <img
             src={logo}
             alt="Kixora"
-            className="h-16 w-auto brightness-0 invert"
+            className="h-12 sm:h-16 w-auto brightness-0 invert"
           />
         </div>
       </div>
@@ -342,25 +343,25 @@ const CheckoutPage = () => {
         <Breadcrumb
           items={[{ label: 'Checkout', icon: <ShoppingCart size={16} /> }]}
           variant="white"
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
           {/* Left Column - Forms */}
-          <div className="space-y-8">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 sm:space-y-8">
               {/* User Email Section */}
-              <div className="border border-[rgb(51,51,51)] rounded-lg p-4">
-                <div className="flex items-center">
-                  <Mail className="h-4 w-4 mr-2 text-[rgb(94,94,94)]" />
-                  <span className="text-white text-sm">{user?.email}</span>
+              <div className="border border-[rgb(51,51,51)] rounded-lg p-3 sm:p-4">
+                <div className="flex items-center min-w-0">
+                  <Mail className="h-4 w-4 mr-2 text-[rgb(94,94,94)] flex-shrink-0" />
+                  <span className="text-white text-sm truncate">{user?.email}</span>
                 </div>
               </div>
 
               {/* Delivery Section */}
               <div>
-                <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
-                  <Truck className="h-5 w-5 mr-2" />
+                <h2 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-6 flex items-center">
+                  <Truck className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                   Delivery
                 </h2>
                 <div className="space-y-4">
@@ -381,7 +382,7 @@ const CheckoutPage = () => {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input
                       label="First Name"
                       variant="dark"
@@ -410,7 +411,7 @@ const CheckoutPage = () => {
                     error={errors.apartment?.message}
                   />
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input
                       label="City"
                       variant="dark"
@@ -425,7 +426,7 @@ const CheckoutPage = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-[rgb(94,94,94)] mb-2">
                         Country Code
@@ -451,12 +452,12 @@ const CheckoutPage = () => {
 
               {/* Shipping Method */}
               <div>
-                <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
-                  <Clock className="h-5 w-5 mr-2" />
+                <h2 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-6 flex items-center">
+                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                   Shipping Method
                 </h2>
                 <div className="border-2 border-[rgb(51,51,51)] rounded-lg overflow-hidden">
-                  <label className={`relative flex items-center p-4 cursor-pointer transition-all duration-200 border-b border-[rgb(51,51,51)] last:border-b-0 ${
+                  <label className={`relative flex items-center p-3 sm:p-4 cursor-pointer transition-all duration-200 border-b border-[rgb(51,51,51)] last:border-b-0 ${
                     watchedShippingMethod === 'standard'
                       ? 'bg-white/5'
                       : 'hover:bg-white/2'
@@ -476,21 +477,21 @@ const CheckoutPage = () => {
                         <div className="w-2 h-2 rounded-full bg-white"></div>
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center">
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-white font-medium flex items-center">
-                            <Truck className="w-4 h-4 mr-2" />
-                            Standard
+                            <Truck className="w-4 h-4 mr-2 flex-shrink-0" />
+                            <span className="truncate">Standard</span>
                           </p>
                           <p className="text-[rgb(94,94,94)] text-sm">2-4 business days</p>
                         </div>
-                        <p className="text-white font-medium">Rs 399</p>
+                        <p className="text-white font-medium flex-shrink-0 ml-2">Rs 399</p>
                       </div>
                     </div>
                   </label>
 
-                  <label className={`relative flex items-center p-4 cursor-pointer transition-all duration-200 ${
+                  <label className={`relative flex items-center p-3 sm:p-4 cursor-pointer transition-all duration-200 ${
                     watchedShippingMethod === 'express'
                       ? 'bg-white/5'
                       : 'hover:bg-white/2'
@@ -510,16 +511,16 @@ const CheckoutPage = () => {
                         <div className="w-2 h-2 rounded-full bg-white"></div>
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center">
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-white font-medium flex items-center">
-                            <Clock className="w-4 h-4 mr-2" />
-                            Express
+                            <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
+                            <span className="truncate">Express</span>
                           </p>
                           <p className="text-[rgb(94,94,94)] text-sm">Within Colombo</p>
                         </div>
-                        <p className="text-white font-medium">Rs 699</p>
+                        <p className="text-white font-medium flex-shrink-0 ml-2">Rs 699</p>
                       </div>
                     </div>
                   </label>
@@ -531,12 +532,12 @@ const CheckoutPage = () => {
 
               {/* Payment Method */}
               <div>
-                <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
-                  <CreditCard className="h-5 w-5 mr-2" />
+                <h2 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-6 flex items-center">
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                   Payment
                 </h2>
                 <div className="border-2 border-[rgb(51,51,51)] rounded-lg overflow-hidden">
-                  <label className={`relative flex items-center p-4 cursor-pointer transition-all duration-200 border-b border-[rgb(51,51,51)] ${
+                  <label className={`relative flex items-center p-3 sm:p-4 cursor-pointer transition-all duration-200 border-b border-[rgb(51,51,51)] ${
                     watchedPaymentMethod === 'payhere'
                       ? 'bg-white/5'
                       : 'hover:bg-white/2'
@@ -556,25 +557,24 @@ const CheckoutPage = () => {
                         <div className="w-2 h-2 rounded-full bg-white"></div>
                       )}
                     </div>
-                    <div className="flex-1 flex items-center justify-between">
-                      <div className="flex items-center">
-                        <CreditCard className="w-4 h-4 mr-3 text-white" />
-                        <div>
+                    <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                      <div className="flex items-center min-w-0">
+                        <CreditCard className="w-4 h-4 mr-3 text-white flex-shrink-0" />
+                        <div className="min-w-0">
                           <p className="text-white font-medium">PayHere</p>
                           <p className="text-[rgb(94,94,94)] text-sm">Credit/Debit Cards</p>
                         </div>
                       </div>
-                      <a href="https://www.payhere.lk" target="_blank" rel="noopener noreferrer">
+                      <a href="https://www.payhere.lk" target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
                         <img
                           src="https://www.payhere.lk/downloads/images/payhere_short_banner.png"
                           alt="PayHere"
-                          width="250"
-                          className="mt-2"
+                          className="max-w-[150px] sm:max-w-[200px] h-auto"
                         />
                       </a>                    </div>
                   </label>
 
-                  <label className={`relative flex items-center p-4 cursor-pointer transition-all duration-200 border-b border-[rgb(51,51,51)] ${
+                  <label className={`relative flex items-center p-3 sm:p-4 cursor-pointer transition-all duration-200 border-b border-[rgb(51,51,51)] ${
                     watchedPaymentMethod === 'bank'
                       ? 'bg-white/5'
                       : 'hover:bg-white/2'
@@ -594,16 +594,16 @@ const CheckoutPage = () => {
                         <div className="w-2 h-2 rounded-full bg-white"></div>
                       )}
                     </div>
-                    <div className="flex items-center">
-                      <Building className="w-4 h-4 mr-3 text-white" />
-                      <div>
+                    <div className="flex items-center min-w-0">
+                      <Building className="w-4 h-4 mr-3 text-white flex-shrink-0" />
+                      <div className="min-w-0">
                         <p className="text-white font-medium">Bank Transfer</p>
                         <p className="text-[rgb(94,94,94)] text-sm">Direct bank transfer</p>
                       </div>
                     </div>
                   </label>
 
-                  <label className={`relative flex items-center p-4 cursor-pointer transition-all duration-200 ${
+                  <label className={`relative flex items-center p-3 sm:p-4 cursor-pointer transition-all duration-200 ${
                     watchedPaymentMethod === 'cod'
                       ? 'bg-white/5'
                       : 'hover:bg-white/2'
@@ -623,9 +623,9 @@ const CheckoutPage = () => {
                         <div className="w-2 h-2 rounded-full bg-white"></div>
                       )}
                     </div>
-                    <div className="flex items-center">
-                      <Banknote className="w-4 h-4 mr-3 text-white" />
-                      <div>
+                    <div className="flex items-center min-w-0">
+                      <Banknote className="w-4 h-4 mr-3 text-white flex-shrink-0" />
+                      <div className="min-w-0">
                         <p className="text-white font-medium">Cash on Delivery</p>
                         <p className="text-[rgb(94,94,94)] text-sm">Pay when you receive</p>
                       </div>
@@ -639,8 +639,8 @@ const CheckoutPage = () => {
 
               {/* Billing Address */}
               <div>
-                <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
-                  <Building className="h-5 w-5 mr-2" />
+                <h2 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-6 flex items-center">
+                  <Building className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                   Billing Address
                 </h2>
                 <div className="space-y-4">
@@ -664,7 +664,7 @@ const CheckoutPage = () => {
                       exit={{ opacity: 0, height: 0 }}
                       className="space-y-4"
                     >
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Input
                           label="First Name"
                           variant="dark"
@@ -684,7 +684,7 @@ const CheckoutPage = () => {
                         {...register('billingAddress')}
                         error={errors.billingAddress?.message}
                       />
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Input
                           label="City"
                           variant="dark"
@@ -709,22 +709,22 @@ const CheckoutPage = () => {
                 loading={loading}
                 fullWidth
                 size="lg"
-                className="bg-black text-white border-2 border-white hover:bg-white hover:text-black font-bold py-4 text-lg transition-colors duration-200 rounded-lg"
+                className="bg-black text-white border-2 border-white hover:bg-white hover:text-black font-bold py-3 sm:py-4 text-base sm:text-lg transition-colors duration-200 rounded-lg min-h-[48px] sm:min-h-[56px]"
               >
-                PAY NOW - LKR {total.toLocaleString()}
+                <span className="truncate">PAY NOW - LKR {total.toLocaleString()}</span>
               </Button>
             </form>
           </div>
 
           {/* Right Column - Order Summary */}
-          <div className="lg:sticky lg:top-8 lg:h-fit">
-            <div className="border border-[rgb(51,51,51)] rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-white mb-6">Order Summary</h2>
+          <div className="lg:sticky lg:top-8 lg:h-fit order-first lg:order-last">
+            <div className="border border-[rgb(51,51,51)] rounded-lg p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-6">Order Summary</h2>
 
-              <div className="space-y-4 mb-6">
+              <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
                 {items.map((item) => (
-                  <div key={item.id} className="flex items-start space-x-4">
-                    <div className="w-16 h-16 bg-gray-800 rounded-lg flex-shrink-0">
+                  <div key={item.id} className="flex items-start space-x-3 sm:space-x-4">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-800 rounded-lg flex-shrink-0">
                       {item.image && (
                         <img
                           src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${item.image}`}
@@ -733,30 +733,30 @@ const CheckoutPage = () => {
                         />
                       )}
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-white text-sm">{item.title}</h3>
-                      <p className="text-sm text-gray-400">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-white text-xs sm:text-sm truncate">{item.title}</h3>
+                      <p className="text-xs sm:text-sm text-gray-400">
                         {item.variant.color} • Size {item.variant.size}
                       </p>
-                      <p className="text-sm text-gray-400">Qty: {item.quantity}</p>
+                      <p className="text-xs sm:text-sm text-gray-400">Qty: {item.quantity}</p>
                     </div>
-                    <p className="font-medium text-white">
+                    <p className="font-medium text-white text-xs sm:text-sm flex-shrink-0">
                       LKR {(item.price * item.quantity).toLocaleString()}
                     </p>
                   </div>
                 ))}
               </div>
 
-              <div className="border-t border-[rgb(51,51,51)] pt-6 space-y-3">
-                <div className="flex justify-between text-white">
+              <div className="border-t border-[rgb(51,51,51)] pt-4 sm:pt-6 space-y-2 sm:space-y-3">
+                <div className="flex justify-between text-white text-sm sm:text-base">
                   <span>Subtotal</span>
                   <span>LKR {subtotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-white">
+                <div className="flex justify-between text-white text-sm sm:text-base">
                   <span>Shipping</span>
                   <span>LKR {shipping.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-xl font-semibold text-white pt-3 border-t border-[rgb(51,51,51)]">
+                <div className="flex justify-between text-lg sm:text-xl font-semibold text-white pt-2 sm:pt-3 border-t border-[rgb(51,51,51)]">
                   <span>Total</span>
                   <span>LKR {total.toLocaleString()}</span>
                 </div>
