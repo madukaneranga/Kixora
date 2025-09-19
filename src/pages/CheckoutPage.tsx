@@ -727,7 +727,7 @@ const CheckoutPage = () => {
                     <div className="w-16 h-16 bg-gray-800 rounded-lg flex-shrink-0">
                       {item.image && (
                         <img
-                          src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${item.image}`}
+                          src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${item.image}`}
                           alt={item.title}
                           className="w-full h-full object-cover rounded-lg"
                         />

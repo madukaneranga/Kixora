@@ -355,7 +355,7 @@ const OrderDetails = () => {
                   <div className="w-12 h-12 bg-gray-100 border border-gray-200 flex-shrink-0">
                     {item.product_variants?.products?.product_images?.[0]?.storage_path ? (
                       <img
-                        src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${item.product_variants.products.product_images[0].storage_path}`}
+                        src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${item.product_variants.products.product_images[0].storage_path}`}
                         alt={item.product_title}
                         className="w-full h-full object-cover"
                       />

@@ -55,7 +55,7 @@ const CategoryTiles = () => {
             className="group relative block aspect-[3/4] overflow-hidden hover:opacity-90 transition-opacity duration-300"
           >
             <img
-              src={category.image_url}
+              src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${category.image_url}`}
               alt=""
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
             />
