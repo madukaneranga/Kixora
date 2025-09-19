@@ -769,7 +769,7 @@ const ProductsManagement = () => {
                             return displayImage ? (
                               <img
                                 className="h-12 w-12 rounded-lg object-cover border border-[rgb(51,51,51)]"
-                                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${displayImage.storage_path}`}
+                                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${displayImage.storage_path}`}
                                 alt={displayImage.alt_text || product.title}
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
@@ -1652,7 +1652,7 @@ const ProductsManagement = () => {
                       {quickViewProduct.product_images.map((image, index) => (
                         <div key={image.id} className="relative group">
                           <img
-                            src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${image.storage_path}`}
+                            src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${image.storage_path}`}
                             alt={image.alt_text || `Product image ${index + 1}`}
                             className="w-full h-32 object-cover rounded-lg border border-[rgb(51,51,51)]"
                             onError={(e) => {

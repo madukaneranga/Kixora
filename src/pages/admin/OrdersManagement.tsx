@@ -792,7 +792,7 @@ const OrdersManagement = () => {
                           <div key={item.id} className="flex items-center space-x-4 p-4 bg-black rounded-lg border border-[rgb(51,51,51)]">
                             {item.products.image && (
                               <img
-                                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${item.products.image}`}
+                                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${item.products.image}`}
                                 alt={item.products.title}
                                 className="w-16 h-16 object-cover rounded-lg"
                               />

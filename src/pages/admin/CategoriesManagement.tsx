@@ -239,7 +239,7 @@ const CategoriesManagement = () => {
       const filePath = `categories/${fileName}`;
 
       const { error: uploadError } = await supabaseAdmin.storage
-        .from('product-images')
+        .from('kixora')
         .upload(filePath, file);
 
       if (uploadError) {
@@ -247,7 +247,7 @@ const CategoriesManagement = () => {
       }
 
       const { data } = supabaseAdmin.storage
-        .from('product-images')
+        .from('kixora')
         .getPublicUrl(filePath);
 
       setFormData({ ...formData, image_url: filePath });
@@ -381,7 +381,7 @@ const CategoriesManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {category.image_url ? (
                         <img
-                          src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${category.image_url}`}
+                          src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${category.image_url}`}
                           alt={category.name}
                           className="w-12 h-12 object-cover rounded"
                         />
@@ -508,7 +508,7 @@ const CategoriesManagement = () => {
                     {formData.image_url && (
                       <div className="mt-2">
                         <img
-                          src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${formData.image_url}`}
+                          src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${formData.image_url}`}
                           alt="Preview"
                           className="w-20 h-20 object-cover rounded"
                         />

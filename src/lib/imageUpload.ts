@@ -27,7 +27,7 @@ export const uploadProductImages = async (
     try {
       // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-        .from('product-images')
+        .from('kixora')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -40,7 +40,7 @@ export const uploadProductImages = async (
 
       // Get public URL
       const { data: urlData } = supabaseAdmin.storage
-        .from('product-images')
+        .from('kixora')
         .getPublicUrl(filePath);
 
       if (!urlData.publicUrl) {
@@ -101,7 +101,7 @@ export const cleanupUploadedImages = async (
   for (const image of uploadedImages) {
     try {
       await supabaseAdmin.storage
-        .from('product-images')
+        .from('kixora')
         .remove([image.url]);
     } catch (error) {
       console.error('Error cleaning up image:', image.url, error);
@@ -126,7 +126,7 @@ export const deleteProductImages = async (productId: string): Promise<void> => {
       // Delete files from storage
       const storagePaths = images.map(img => img.storage_path);
       const { error: storageError } = await supabaseAdmin.storage
-        .from('product-images')
+        .from('kixora')
         .remove(storagePaths);
 
       if (storageError) {
@@ -178,7 +178,7 @@ export const uploadCollectionImage = async (
   try {
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-      .from('collection-images')
+      .from('kixora')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false
@@ -191,7 +191,7 @@ export const uploadCollectionImage = async (
 
     // Get public URL
     const { data: urlData } = supabaseAdmin.storage
-      .from('collection-images')
+      .from('kixora')
       .getPublicUrl(filePath);
 
     if (!urlData.publicUrl) {
@@ -215,7 +215,7 @@ export const deleteCollectionImage = async (imageUrl: string): Promise<void> => 
 
     // Delete file from storage
     const { error } = await supabaseAdmin.storage
-      .from('collection-images')
+      .from('kixora')
       .remove([filePath]);
 
     if (error) {

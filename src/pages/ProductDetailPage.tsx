@@ -407,7 +407,7 @@ const ProductDetailPage = () => {
                 key={selectedImageIndex}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${product.product_images[selectedImageIndex]?.storage_path}`}
+                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${product.product_images[selectedImageIndex]?.storage_path}`}
                 alt={product.product_images[selectedImageIndex]?.alt_text || product.title}
                 className={`w-full h-full object-cover transition-transform duration-300 ${isZoomed ? 'scale-150 cursor-zoom-out' : 'cursor-zoom-in'}`}
                 onClick={() => setIsZoomed(!isZoomed)}
@@ -463,7 +463,7 @@ const ProductDetailPage = () => {
                   }`}
                 >
                   <img
-                    src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${image.storage_path}`}
+                    src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${image.storage_path}`}
                     alt={image.alt_text || product.title}
                     className="w-full h-full object-cover"
                   />
@@ -936,7 +936,7 @@ const ProductDetailPage = () => {
                   <div className="relative aspect-square overflow-hidden">
                     {relatedProduct.image ? (
                       <img
-                        src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${relatedProduct.image}`}
+                        src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${relatedProduct.image}`}
                         alt={relatedProduct.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />

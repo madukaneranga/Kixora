@@ -92,44 +92,30 @@ const CollectionDetailPage = () => {
 
       {/* Hero Section */}
       <section
-        className="relative py-12 sm:py-16 lg:py-24 bg-black text-white overflow-hidden"
+        className="relative h-[40vh] sm:h-[45vh] lg:h-[50vh] bg-black text-white overflow-hidden flex flex-col"
         style={{
           backgroundImage: collection.image_url ? `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${collection.image_url})` : undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full h-full flex flex-col justify-end py-6 sm:py-8 lg:py-12">
+          {/* Title and Description - Bottom Left */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-center"
+            className="max-w-4xl"
           >
-            {/* Back Button */}
-            <Link
-              to="/collections"
-              className="inline-flex items-center text-white/80 hover:text-white transition-colors mb-8 group"
-            >
-              <ArrowLeft size={20} className="mr-2 group-hover:-translate-x-1 transition-transform" />
-              Back to Collections
-            </Link>
-
-            <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black leading-tight mb-4 sm:mb-6 uppercase">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black leading-tight mb-3 sm:mb-4 uppercase tracking-tight">
               {collection.name}
             </h1>
 
             {collection.description && (
-              <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
+              <p className="text-base sm:text-lg lg:text-xl text-white/90 leading-relaxed max-w-2xl">
                 {collection.description}
               </p>
             )}
-
-            <div className="mt-8">
-              <p className="text-lg text-white/70">
-                {products.length} {products.length === 1 ? 'Product' : 'Products'}
-              </p>
-            </div>
           </motion.div>
         </div>
       </section>
@@ -174,21 +160,22 @@ const CollectionDetailPage = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 lg:mb-6">
               Discover More Collections
             </h2>
-            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
+            <p className="text-base sm:text-lg lg:text-xl text-gray-300 mb-6 sm:mb-8 leading-relaxed px-2">
               Explore our other curated collections for more premium footwear options.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/collections">
-                <button className="inline-flex items-center px-8 py-4 bg-white text-black font-semibold hover:bg-gray-100 transition-colors">
+            <div className="flex flex-col gap-3 sm:gap-4 max-w-md mx-auto sm:max-w-none sm:flex-row sm:justify-center">
+              <Link to="/collections" className="w-full sm:w-auto">
+                <button className="w-full sm:w-auto inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-white text-black font-semibold hover:bg-gray-100 transition-colors rounded-lg text-sm sm:text-base min-h-[48px]">
                   <span>View All Collections</span>
-                  <ArrowRight size={20} className="ml-2" />
+                  <ArrowRight size={16} className="ml-2 sm:hidden" />
+                  <ArrowRight size={20} className="ml-2 hidden sm:inline" />
                 </button>
               </Link>
-              <Link to="/products">
-                <button className="inline-flex items-center px-8 py-4 border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors">
+              <Link to="/products" className="w-full sm:w-auto">
+                <button className="w-full sm:w-auto inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors rounded-lg text-sm sm:text-base min-h-[48px]">
                   Browse Products
                 </button>
               </Link>

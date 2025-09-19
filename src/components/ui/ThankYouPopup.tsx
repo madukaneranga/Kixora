@@ -283,7 +283,7 @@ const ThankYouPopup = ({
                           <div className="relative h-48 bg-gray-100">
                             {product.image ? (
                               <img
-                                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${product.image}`}
+                                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${product.image}`}
                                 alt={product.title}
                                 className="w-full h-full object-cover"
                               />

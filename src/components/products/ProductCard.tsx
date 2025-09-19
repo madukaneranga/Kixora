@@ -217,7 +217,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               {/* Primary Image */}
               <motion.img
                 key="primary"
-                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${primaryImage}`}
+                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${primaryImage}`}
                 alt={product.title}
                 className="absolute inset-0 w-full h-full object-cover"
                 initial={false}
@@ -235,7 +235,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               {secondaryImage && (
                 <motion.img
                   key="secondary"
-                  src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${secondaryImage}`}
+                  src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${secondaryImage}`}
                   alt={`${product.title} - Alternative view`}
                   className="absolute inset-0 w-full h-full object-cover"
                   initial={false}
@@ -471,7 +471,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
                 <div className="flex items-center space-x-3">
                   {primaryImage && (
                     <img
-                      src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${primaryImage}`}
+                      src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${primaryImage}`}
                       alt={product.title}
                       className="w-12 h-12 object-cover rounded-lg"
                     />
