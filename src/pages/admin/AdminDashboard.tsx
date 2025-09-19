@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, ShoppingCart, Users, DollarSign, Eye } from 'lucide-react';
+import { Package, ShoppingCart, Users, DollarSign, Eye, LayoutDashboard } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
 import { useAuth } from '../../hooks/useAuth';
+import Breadcrumb from '../../components/ui/Breadcrumb';
 
 interface DashboardStats {
   totalProducts: number;
@@ -111,9 +112,23 @@ const AdminDashboard = () => {
     );
   }
 
+  const breadcrumbItems = [
+    {
+      label: 'Admin',
+      path: '/admin',
+      icon: <LayoutDashboard size={16} />
+    },
+    {
+      label: 'Dashboard'
+    }
+  ];
+
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Breadcrumb */}
+        <Breadcrumb items={breadcrumbItems} variant="white" />
+
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-white mb-2">Dashboard</h1>

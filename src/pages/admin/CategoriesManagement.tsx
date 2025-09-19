@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Pin, PinOff, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, Pin, PinOff, Upload, LayoutDashboard, Grid3X3 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
 import { useAuth } from '../../hooks/useAuth';
@@ -7,6 +7,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { showSuccessToast, showErrorToast } from '../../components/ui/CustomToast';
+import Breadcrumb from '../../components/ui/Breadcrumb';
 
 interface Category {
   id: string;
@@ -298,9 +299,24 @@ const CategoriesManagement = () => {
     );
   }
 
+  const breadcrumbItems = [
+    {
+      label: 'Admin',
+      path: '/admin',
+      icon: <LayoutDashboard size={16} />
+    },
+    {
+      label: 'Categories Management',
+      icon: <Grid3X3 size={16} />
+    }
+  ];
+
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Breadcrumb */}
+        <Breadcrumb items={breadcrumbItems} variant="white" />
+
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
@@ -313,7 +329,7 @@ const CategoriesManagement = () => {
 
           <Button
             onClick={() => openEditModal()}
-            className="bg-white text-black hover:bg-gray-200"
+            className="bg-[rgb(51,51,51)] text-white hover:bg-[rgb(64,64,64)] border border-[rgb(94,94,94)]"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Category
@@ -409,7 +425,7 @@ const CategoriesManagement = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => handleDeleteCategory(category.id)}
-                        className="border-red-500 text-red-400 hover:bg-red-500 hover:text-white"
+                        className="border-red-500 text-red-400 hover:bg-red-500 hover:text-white transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -430,7 +446,7 @@ const CategoriesManagement = () => {
 
         {/* Add/Edit Category Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-black border border-[rgb(51,51,51)] rounded-lg w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
               <div className="px-6 py-4 border-b border-[rgb(51,51,51)] flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-white">
@@ -519,7 +535,7 @@ const CategoriesManagement = () => {
                 <div className="flex space-x-4 pt-4">
                   <Button
                     type="submit"
-                    className="bg-white text-black hover:bg-gray-200"
+                    className="bg-[rgb(51,51,51)] text-white hover:bg-[rgb(64,64,64)] border border-[rgb(94,94,94)]"
                   >
                     {editingCategory ? 'Update Category' : 'Create Category'}
                   </Button>

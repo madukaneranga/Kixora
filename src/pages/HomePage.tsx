@@ -59,6 +59,7 @@ const HomePage = () => {
         `)
         .eq('featured', true)
         .eq('is_active', true)
+        .is('deleted_at', null)
         .limit(8);
 
       if (error) throw error;
@@ -111,7 +112,7 @@ const HomePage = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-3xl sm:text-4xl font-bold text-black mb-4"
+                className="text-xl sm:text-2xl md:text-3xl font-bold text-black mb-3"
               >
                 Popular Picks
               </motion.h2>

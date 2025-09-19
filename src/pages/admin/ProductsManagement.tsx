@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Eye, ToggleLeft, ToggleRight, Package } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, ToggleLeft, ToggleRight, Package, LayoutDashboard } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
 import { useAuth } from '../../hooks/useAuth';
@@ -8,6 +8,7 @@ import Input from '../../components/ui/Input';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { showSuccessToast, showErrorToast } from '../../components/ui/CustomToast';
 import { uploadProductImages, saveProductImages, deleteProductImages, getProductImages } from '../../lib/imageUpload';
+import Breadcrumb from '../../components/ui/Breadcrumb';
 
 interface Product {
   id: string;
@@ -20,6 +21,8 @@ interface Product {
   is_active: boolean;
   featured: boolean;
   created_at: string;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
   categories: {
     name: string;
   } | null;
@@ -31,6 +34,12 @@ interface Product {
     stock: number;
     size: string;
     color: string;
+  }>;
+  product_images: Array<{
+    id: string;
+    storage_path: string;
+    alt_text: string | null;
+    is_primary: boolean;
   }>;
 }
 
@@ -56,6 +65,11 @@ const ProductsManagement = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showQuickView, setShowQuickView] = useState(false);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [showDeletedHistory, setShowDeletedHistory] = useState(false);
+  const [deletedProducts, setDeletedProducts] = useState<Product[]>([]);
+  const [updating, setUpdating] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -117,8 +131,15 @@ const ProductsManagement = () => {
             *,
             categories (name),
             brands (name),
-            product_variants (id, stock, size, color)
+            product_variants (id, stock, size, color),
+            product_images (
+              id,
+              storage_path,
+              alt_text,
+              is_primary
+            )
           `)
+          .is('deleted_at', null)
           .order('created_at', { ascending: false }),
         supabaseAdmin.from('categories').select('id, name').order('name'),
         supabaseAdmin.from('brands').select('id, name').order('name')
@@ -352,18 +373,21 @@ const ProductsManagement = () => {
         throw new Error('Access denied: Admin privileges required');
       }
 
-      // Delete product images first
-      await deleteProductImages(deletingProductId);
-
+      // Soft delete: Update the product with deleted_at timestamp and deleted_by user
       const { error } = await supabaseAdmin
         .from('products')
-        .delete()
+        .update({
+          deleted_at: new Date().toISOString(),
+          deleted_by: user.id,
+          is_active: false // Also mark as inactive
+        })
         .eq('id', deletingProductId);
 
       if (error) throw error;
 
+      // Remove from current products list (since we filter out deleted products)
       setProducts(products.filter(product => product.id !== deletingProductId));
-      showSuccessToast('Product deleted successfully');
+      showSuccessToast('Product moved to trash successfully');
       setShowDeleteConfirm(false);
       setDeletingProductId(null);
     } catch (error) {
@@ -571,6 +595,85 @@ const ProductsManagement = () => {
     return variants.reduce((total, variant) => total + (variant.stock || 0), 0);
   };
 
+  const openQuickView = (product: Product) => {
+    setQuickViewProduct(product);
+    setShowQuickView(true);
+  };
+
+  const fetchDeletedProducts = async () => {
+    try {
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from('products')
+        .select(`
+          *,
+          categories (name),
+          brands (name),
+          product_variants (id, stock, size, color),
+          profiles!deleted_by (
+            full_name,
+            email
+          )
+        `)
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false });
+
+      if (error) throw error;
+
+      setDeletedProducts(data || []);
+      setShowDeletedHistory(true);
+    } catch (error) {
+      console.error('Error fetching deleted products:', error);
+      showErrorToast('Failed to load deleted products');
+    }
+  };
+
+  const restoreProduct = async (productId: string) => {
+    try {
+      setUpdating(productId);
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { error } = await supabaseAdmin
+        .from('products')
+        .update({
+          deleted_at: null,
+          deleted_by: null,
+          is_active: true
+        })
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      // Remove from deleted products list
+      setDeletedProducts(deletedProducts.filter(product => product.id !== productId));
+      showSuccessToast('Product restored successfully');
+
+      // Refresh main products list
+      fetchData();
+    } catch (error) {
+      console.error('Error restoring product:', error);
+      showErrorToast('Failed to restore product');
+    } finally {
+      setUpdating(null);
+    }
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -581,9 +684,24 @@ const ProductsManagement = () => {
     );
   }
 
+  const breadcrumbItems = [
+    {
+      label: 'Admin',
+      path: '/admin',
+      icon: <LayoutDashboard size={16} />
+    },
+    {
+      label: 'Products Management',
+      icon: <Package size={16} />
+    }
+  ];
+
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Breadcrumb */}
+        <Breadcrumb items={breadcrumbItems} variant="white" />
+
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
@@ -591,13 +709,23 @@ const ProductsManagement = () => {
             <p className="text-[rgb(94,94,94)]">Manage your product catalog</p>
           </div>
 
-          <Button
-            onClick={() => openEditModal()}
-            className="bg-[rgb(51,51,51)] text-white hover:bg-[rgb(64,64,64)] border border-[rgb(94,94,94)]"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Product
-          </Button>
+          <div className="flex space-x-3">
+            <Button
+              onClick={fetchDeletedProducts}
+              variant="outline"
+              className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              View Deleted
+            </Button>
+            <Button
+              onClick={() => openEditModal()}
+              className="bg-[rgb(51,51,51)] text-white hover:bg-[rgb(64,64,64)] border border-[rgb(94,94,94)]"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Product
+            </Button>
+          </div>
         </div>
 
         {/* Products Table */}
@@ -630,9 +758,37 @@ const ProductsManagement = () => {
                 {products.map((product) => (
                   <tr key={product.id} className="hover:bg-white/5">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-white">{product.title}</div>
-                        <div className="text-sm text-[rgb(94,94,94)]">SKU: {product.sku}</div>
+                      <div className="flex items-center">
+                        {/* Product Image */}
+                        <div className="flex-shrink-0 h-12 w-12 mr-4">
+                          {(() => {
+                            // Find primary image or use first available
+                            const primaryImage = product.product_images?.find(img => img.is_primary);
+                            const displayImage = primaryImage || product.product_images?.[0];
+
+                            return displayImage ? (
+                              <img
+                                className="h-12 w-12 rounded-lg object-cover border border-[rgb(51,51,51)]"
+                                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${displayImage.storage_path}`}
+                                alt={displayImage.alt_text || product.title}
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  target.nextElementSibling!.classList.remove('hidden');
+                                }}
+                              />
+                            ) : null;
+                          })()}
+                          <div className={`h-12 w-12 rounded-lg bg-[rgb(51,51,51)] flex items-center justify-center ${product.product_images && product.product_images.length > 0 ? 'hidden' : ''}`}>
+                            <Package className="h-6 w-6 text-[rgb(94,94,94)]" />
+                          </div>
+                        </div>
+
+                        {/* Product Details */}
+                        <div>
+                          <div className="text-sm font-medium text-white">{product.title}</div>
+                          <div className="text-sm text-[rgb(94,94,94)]">SKU: {product.sku}</div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
@@ -666,6 +822,15 @@ const ProductsManagement = () => {
                       <Button
                         size="sm"
                         variant="outline"
+                        onClick={() => openQuickView(product)}
+                        className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
+                        title="Quick view variants"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => openEditModal(product)}
                         className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
                       >
@@ -696,7 +861,7 @@ const ProductsManagement = () => {
 
         {/* Add/Edit Product Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-black border border-[rgb(51,51,51)] rounded-lg w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
               {/* Header */}
               <div className="px-6 py-4 border-b border-[rgb(51,51,51)] flex justify-between items-center">
@@ -919,115 +1084,217 @@ const ProductsManagement = () => {
                     {productType === 'variable' && (
                       <div className="space-y-6">
                         {/* Help Text */}
-                        {variants.length === 0 && (
-                          <div className="bg-blue-900/20 border border-blue-400/20 rounded-lg p-4">
-                            <div className="flex items-start text-blue-400">
-                              <Package className="w-5 h-5 mr-2 mt-0.5" />
-                              <div className="text-sm">
-                                <p className="font-medium mb-2">Manual Variant Management</p>
-                                <ul className="text-xs space-y-1 text-blue-300">
-                                  <li>• Add variants one by one for better control</li>
-                                  <li>• Each variant can have a size, color, or both</li>
-                                  <li>• Set individual stock quantities</li>
-                                  <li>• Use asset images for color selection</li>
-                                </ul>
+                        <div className="bg-blue-900/20 border border-blue-400/20 rounded-lg p-4">
+                          <div className="flex items-start text-blue-400">
+                            <Package className="w-5 h-5 mr-2 mt-0.5" />
+                            <div className="text-sm">
+                              <p className="font-medium mb-2">Variant Management</p>
+                              <ul className="text-xs space-y-1 text-blue-300">
+                                <li>• Add variants using the form below</li>
+                                <li>• Each variant can have a size, color, or both</li>
+                                <li>• Set individual stock quantities</li>
+                                <li>• Remove variants directly from the table</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Add Variant Form */}
+                        <div className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded-lg p-4">
+                          <h4 className="text-sm font-medium text-white mb-4">Add New Variant</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            {/* Size Input */}
+                            <div>
+                              <label className="block text-xs font-medium text-[rgb(94,94,94)] mb-2">Size</label>
+                              <input
+                                type="text"
+                                placeholder="e.g., S, M, L, 6, 7, 8"
+                                id="newVariantSize"
+                                className="w-full px-3 py-2 bg-black text-white border border-[rgb(51,51,51)] rounded focus:outline-none focus:border-white text-sm"
+                              />
+                            </div>
+
+                            {/* Color Selection */}
+                            <div>
+                              <label className="block text-xs font-medium text-[rgb(94,94,94)] mb-2">Color</label>
+                              <div className="grid grid-cols-5 gap-1">
+                                {availableColors.map((color) => (
+                                  <button
+                                    key={color.name}
+                                    type="button"
+                                    id={`color-${color.name}`}
+                                    onClick={(e) => {
+                                      // Remove selected class from all buttons
+                                      availableColors.forEach(c => {
+                                        const btn = document.getElementById(`color-${c.name}`);
+                                        if (btn) btn.classList.remove('border-white', 'shadow-lg', 'scale-110');
+                                        if (btn) btn.classList.add('border-[rgb(51,51,51)]');
+                                      });
+                                      // Add selected class to clicked button
+                                      e.currentTarget.classList.remove('border-[rgb(51,51,51)]');
+                                      e.currentTarget.classList.add('border-white', 'shadow-lg', 'scale-110');
+                                      // Store selected color
+                                      e.currentTarget.setAttribute('data-selected', color.name);
+                                    }}
+                                    className="w-8 h-8 rounded border-2 border-[rgb(51,51,51)] hover:border-[rgb(94,94,94)] transition-all overflow-hidden"
+                                    title={color.name}
+                                  >
+                                    <img
+                                      src={color.image}
+                                      alt={color.name}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        e.currentTarget.parentElement!.style.backgroundColor = '#6b7280';
+                                      }}
+                                    />
+                                  </button>
+                                ))}
                               </div>
+                            </div>
+
+                            {/* Stock Input */}
+                            <div>
+                              <label className="block text-xs font-medium text-[rgb(94,94,94)] mb-2">Stock</label>
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                                id="newVariantStock"
+                                className="w-full px-3 py-2 bg-black text-white border border-[rgb(51,51,51)] rounded focus:outline-none focus:border-white text-sm"
+                              />
+                            </div>
+
+                            {/* Add Button */}
+                            <div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => {
+                                  const sizeInput = document.getElementById('newVariantSize') as HTMLInputElement;
+                                  const stockInput = document.getElementById('newVariantStock') as HTMLInputElement;
+
+                                  const size = sizeInput.value.trim();
+                                  const stock = parseInt(stockInput.value) || 0;
+
+                                  // Get selected color from clicked button
+                                  const selectedColorBtn = availableColors.find(c => {
+                                    const btn = document.getElementById(`color-${c.name}`);
+                                    return btn && btn.getAttribute('data-selected');
+                                  });
+                                  const color = selectedColorBtn?.name || '';
+
+                                  if (!size && !color) {
+                                    showErrorToast('Please specify at least a size or color');
+                                    return;
+                                  }
+
+                                  addVariant();
+                                  const newIndex = variants.length;
+                                  updateVariant(newIndex, 'size', size);
+                                  updateVariant(newIndex, 'color', color);
+                                  updateVariant(newIndex, 'stock', stock);
+
+                                  // Clear form
+                                  sizeInput.value = '';
+                                  stockInput.value = '';
+
+                                  // Clear color selection
+                                  availableColors.forEach(c => {
+                                    const btn = document.getElementById(`color-${c.name}`);
+                                    if (btn) {
+                                      btn.classList.remove('border-white', 'shadow-lg', 'scale-110');
+                                      btn.classList.add('border-[rgb(51,51,51)]');
+                                      btn.removeAttribute('data-selected');
+                                    }
+                                  });
+                                }}
+                                className="w-full bg-[rgb(51,51,51)] text-white hover:bg-[rgb(64,64,64)] border border-[rgb(94,94,94)]"
+                              >
+                                <Plus className="w-4 h-4 mr-1" />
+                                Add
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Variants Table */}
+                        {variants.length > 0 && (
+                          <div className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded-lg overflow-hidden">
+                            <div className="px-4 py-3 border-b border-[rgb(51,51,51)]">
+                              <h4 className="text-sm font-medium text-white">Product Variants ({variants.length})</h4>
+                            </div>
+                            <div className="overflow-x-auto">
+                              <table className="w-full">
+                                <thead className="bg-[rgb(15,15,15)]">
+                                  <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                                      Size
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                                      Color
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                                      Stock
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                                      Actions
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[rgb(51,51,51)]">
+                                  {variants.map((variant, index) => (
+                                    <tr key={index} className="hover:bg-white/5">
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-white">
+                                        {variant.size || '-'}
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                        {variant.color ? (
+                                          <div className="flex items-center">
+                                            <div className="w-4 h-4 rounded border border-[rgb(51,51,51)] mr-2 overflow-hidden">
+                                              <img
+                                                src={availableColors.find(c => c.name === variant.color)?.image || ''}
+                                                alt={variant.color}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                  e.currentTarget.style.display = 'none';
+                                                  e.currentTarget.parentElement!.style.backgroundColor = '#6b7280';
+                                                }}
+                                              />
+                                            </div>
+                                            <span className="text-white">{variant.color}</span>
+                                          </div>
+                                        ) : (
+                                          <span className="text-white">-</span>
+                                        )}
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-white">
+                                        {variant.stock}
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                        <button
+                                          type="button"
+                                          onClick={() => removeVariant(index)}
+                                          className="text-red-400 hover:text-red-300 transition-colors"
+                                          title="Remove variant"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
                             </div>
                           </div>
                         )}
 
-                        {/* Add Variant Button */}
-                        <div className="flex justify-between items-center">
-                          <label className="block text-sm font-medium text-white">Product Variants</label>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={addVariant}
-                            className="bg-[rgb(51,51,51)] text-white hover:bg-[rgb(64,64,64)] border border-[rgb(94,94,94)]"
-                          >
-                            <Plus className="w-4 h-4 mr-1" />
-                            Add Variant
-                          </Button>
-                        </div>
-
-                        {/* Variants List */}
-                        {variants.length > 0 && (
-                          <div className="space-y-4">
-                            {variants.map((variant, index) => (
-                              <div key={index} className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded-lg p-4">
-                                <div className="flex justify-between items-start mb-4">
-                                  <h4 className="text-sm font-medium text-white">Variant {index + 1}</h4>
-                                  <button
-                                    type="button"
-                                    onClick={() => removeVariant(index)}
-                                    className="text-red-400 hover:text-red-300 text-sm"
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  {/* Size Input */}
-                                  <div>
-                                    <label className="block text-xs font-medium text-[rgb(94,94,94)] mb-2">Size</label>
-                                    <input
-                                      type="text"
-                                      placeholder="e.g., S, M, L, 6, 7, 8"
-                                      value={variant.size}
-                                      onChange={(e) => updateVariant(index, 'size', e.target.value)}
-                                      className="w-full px-3 py-2 bg-black text-white border border-[rgb(51,51,51)] rounded focus:outline-none focus:border-white text-sm"
-                                    />
-                                  </div>
-
-                                  {/* Color Selection */}
-                                  <div>
-                                    <label className="block text-xs font-medium text-[rgb(94,94,94)] mb-2">Color</label>
-                                    <div className="grid grid-cols-5 gap-1">
-                                      {availableColors.map((color) => (
-                                        <button
-                                          key={color.name}
-                                          type="button"
-                                          onClick={() => updateVariant(index, 'color', color.name)}
-                                          className={`w-8 h-8 rounded border-2 transition-all overflow-hidden ${
-                                            variant.color === color.name
-                                              ? 'border-white shadow-lg scale-110'
-                                              : 'border-[rgb(51,51,51)] hover:border-[rgb(94,94,94)]'
-                                          }`}
-                                          title={color.name}
-                                        >
-                                          <img
-                                            src={color.image}
-                                            alt={color.name}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                              // Fallback to solid color if image fails to load
-                                              e.currentTarget.style.display = 'none';
-                                              e.currentTarget.parentElement!.style.backgroundColor = color.name.toLowerCase();
-                                            }}
-                                          />
-                                        </button>
-                                      ))}
-                                    </div>
-                                    {variant.color && (
-                                      <p className="text-xs text-white mt-1">Selected: {variant.color}</p>
-                                    )}
-                                  </div>
-
-                                  {/* Stock Input */}
-                                  <div>
-                                    <label className="block text-xs font-medium text-[rgb(94,94,94)] mb-2">Stock</label>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      placeholder="0"
-                                      value={variant.stock}
-                                      onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value) || 0)}
-                                      className="w-full px-3 py-2 bg-black text-white border border-[rgb(51,51,51)] rounded focus:outline-none focus:border-white text-sm"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
+                        {/* Empty State */}
+                        {variants.length === 0 && (
+                          <div className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded-lg p-8 text-center">
+                            <Package className="w-12 h-12 text-[rgb(94,94,94)] mx-auto mb-4 opacity-50" />
+                            <p className="text-[rgb(94,94,94)] text-sm">No variants added yet</p>
+                            <p className="text-[rgb(94,94,94)] text-xs mt-1">Use the form above to add your first variant</p>
                           </div>
                         )}
                       </div>
@@ -1061,6 +1328,14 @@ const ProductsManagement = () => {
                                         className="w-full h-full object-cover"
                                       />
                                     </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => setExistingImages(prev => prev.filter(img => img.id !== image.id))}
+                                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                      title="Remove existing image"
+                                    >
+                                      ×
+                                    </button>
                                     {image.is_primary && (
                                       <div className="absolute bottom-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
                                         Primary
@@ -1070,7 +1345,7 @@ const ProductsManagement = () => {
                                 ))}
                               </div>
                               <p className="text-xs text-[rgb(94,94,94)]">
-                                Add new images below to replace existing ones. All current images will be replaced with new uploads.
+                                Hover over images to remove them individually. Add new images below to expand your gallery.
                               </p>
                             </div>
                           ) : (
@@ -1216,35 +1491,63 @@ const ProductsManagement = () => {
                       <div className="text-sm">
                         <span className="text-[rgb(94,94,94)]">Images:</span>
                         <span className="text-white ml-2">
-                          {images.length > 0 ? `${images.length} image${images.length > 1 ? 's' : ''} selected` : 'No images'}
+                          {(() => {
+                            const totalImages = images.length + existingImages.length;
+                            if (totalImages === 0) return 'No images';
+                            const parts = [];
+                            if (existingImages.length > 0) parts.push(`${existingImages.length} existing`);
+                            if (images.length > 0) parts.push(`${images.length} new`);
+                            return `${totalImages} image${totalImages > 1 ? 's' : ''} (${parts.join(', ')})`;
+                          })()}
                         </span>
                       </div>
                     </div>
 
                     {/* Image Preview in Review */}
-                    {images.length > 0 && (
+                    {(images.length > 0 || existingImages.length > 0) && (
                       <div>
                         <h4 className="text-sm font-medium text-white mb-3">Image Preview</h4>
-                        <div className="flex gap-2 overflow-x-auto">
-                          {images.slice(0, 5).map((image, index) => (
-                            <div key={index} className="relative flex-shrink-0">
+                        <div className="flex gap-2 flex-wrap">
+                          {/* Show existing images first */}
+                          {existingImages.slice(0, 5).map((image, index) => (
+                            <div key={`existing-${image.id}`} className="relative flex-shrink-0">
                               <div className="w-16 h-16 bg-[rgb(25,25,25)] rounded border border-[rgb(51,51,51)] overflow-hidden">
                                 <img
-                                  src={URL.createObjectURL(image)}
-                                  alt={`Preview ${index + 1}`}
+                                  src={image.image_url}
+                                  alt={`Existing ${index + 1}`}
                                   className="w-full h-full object-cover"
                                 />
                               </div>
-                              {index === 0 && (
-                                <div className="absolute -bottom-1 -right-1 bg-white text-black text-xs px-1 rounded">
-                                  1
+                              {image.is_primary && (
+                                <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-xs px-1 rounded">
+                                  P
                                 </div>
                               )}
                             </div>
                           ))}
-                          {images.length > 5 && (
+
+                          {/* Show new images */}
+                          {images.slice(0, Math.max(0, 5 - existingImages.length)).map((image, index) => (
+                            <div key={`new-${index}`} className="relative flex-shrink-0">
+                              <div className="w-16 h-16 bg-[rgb(25,25,25)] rounded border border-[rgb(51,51,51)] overflow-hidden">
+                                <img
+                                  src={URL.createObjectURL(image)}
+                                  alt={`New ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              {existingImages.length === 0 && index === 0 && (
+                                <div className="absolute -bottom-1 -right-1 bg-white text-black text-xs px-1 rounded">
+                                  P
+                                </div>
+                              )}
+                            </div>
+                          ))}
+
+                          {/* Show overflow indicator */}
+                          {(images.length + existingImages.length) > 5 && (
                             <div className="w-16 h-16 bg-[rgb(25,25,25)] rounded border border-[rgb(51,51,51)] flex items-center justify-center">
-                              <span className="text-[rgb(94,94,94)] text-xs">+{images.length - 5}</span>
+                              <span className="text-[rgb(94,94,94)] text-xs">+{(images.length + existingImages.length) - 5}</span>
                             </div>
                           )}
                         </div>
@@ -1311,13 +1614,364 @@ const ProductsManagement = () => {
             setDeletingProductId(null);
           }}
           onConfirm={confirmDeleteProduct}
-          title="Delete Product"
-          message={`Are you sure you want to delete this product? This action cannot be undone and will remove the product from all collections and orders.`}
-          confirmText="Delete Product"
+          title="Move Product to Trash"
+          message={`Are you sure you want to move this product to trash? The product will be hidden from customers and can be restored later from the deleted products history.`}
+          confirmText="Move to Trash"
           cancelText="Cancel"
           variant="danger"
           loading={deleting}
         />
+
+        {/* Product Detail View Modal */}
+        {showQuickView && quickViewProduct && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-black border border-[rgb(51,51,51)] rounded-lg w-full max-w-6xl max-h-[95vh] overflow-y-auto">
+              {/* Header */}
+              <div className="sticky top-0 bg-black border-b border-[rgb(51,51,51)] px-6 py-4 flex justify-between items-center z-10">
+                <div>
+                  <h3 className="text-xl font-semibold text-white">{quickViewProduct.title}</h3>
+                  <p className="text-[rgb(94,94,94)] text-sm">SKU: {quickViewProduct.sku}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowQuickView(false);
+                    setQuickViewProduct(null);
+                  }}
+                  className="text-[rgb(94,94,94)] hover:text-white text-xl p-1"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="p-6 space-y-8">
+                {/* Product Images */}
+                {quickViewProduct.product_images && quickViewProduct.product_images.length > 0 && (
+                  <div>
+                    <h4 className="text-lg font-medium text-white mb-4">Product Images</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {quickViewProduct.product_images.map((image, index) => (
+                        <div key={image.id} className="relative group">
+                          <img
+                            src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${image.storage_path}`}
+                            alt={image.alt_text || `Product image ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg border border-[rgb(51,51,51)]"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Crect width="100" height="100" fill="%23333"%3E%3C/rect%3E%3Ctext x="50" y="50" text-anchor="middle" dy=".3em" fill="%23666"%3ENo Image%3C/text%3E%3C/svg%3E';
+                            }}
+                          />
+                          {image.is_primary && (
+                            <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                              Primary
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Product Details Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Basic Information */}
+                  <div>
+                    <h4 className="text-lg font-medium text-white mb-4">Basic Information</h4>
+                    <div className="space-y-4">
+                      <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm mb-1">Product Title</p>
+                            <p className="text-white font-medium">{quickViewProduct.title}</p>
+                          </div>
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm mb-1">SKU</p>
+                            <p className="text-white font-mono">{quickViewProduct.sku}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm mb-1">Category</p>
+                            <p className="text-white">{quickViewProduct.categories?.name || 'No Category'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm mb-1">Brand</p>
+                            <p className="text-white">{quickViewProduct.brands?.name || 'No Brand'}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm mb-1">Base Price</p>
+                            <p className="text-white text-xl font-bold">LKR {quickViewProduct.price.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-[rgb(94,94,94)] text-sm mb-1">Status</p>
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              quickViewProduct.is_active
+                                ? 'bg-green-900/20 text-green-400 border border-green-400/20'
+                                : 'bg-red-900/20 text-red-400 border border-red-400/20'
+                            }`}>
+                              {quickViewProduct.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {quickViewProduct.description && (
+                        <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                          <p className="text-[rgb(94,94,94)] text-sm mb-2">Description</p>
+                          <p className="text-white text-sm leading-relaxed">{quickViewProduct.description}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Stock Summary */}
+                  <div>
+                    <h4 className="text-lg font-medium text-white mb-4">Stock Overview</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Package className="w-4 h-4 text-[rgb(94,94,94)]" />
+                          <p className="text-[rgb(94,94,94)] text-sm">Total Stock</p>
+                        </div>
+                        <p className="text-2xl font-bold text-white">
+                          {getTotalStock(quickViewProduct.product_variants)}
+                        </p>
+                      </div>
+
+                      <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Package className="w-4 h-4 text-[rgb(94,94,94)]" />
+                          <p className="text-[rgb(94,94,94)] text-sm">Variants</p>
+                        </div>
+                        <p className="text-2xl font-bold text-white">
+                          {quickViewProduct.product_variants.length}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Variants Table */}
+                    {quickViewProduct.product_variants.length > 0 ? (
+                      <div className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded-lg overflow-hidden">
+                        <div className="px-4 py-3 border-b border-[rgb(51,51,51)]">
+                          <h5 className="text-sm font-medium text-white">Product Variants</h5>
+                        </div>
+                        <div className="max-h-64 overflow-y-auto">
+                          <table className="w-full">
+                            <thead className="bg-[rgb(15,15,15)] sticky top-0">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                                  Size
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                                  Color
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                                  Stock
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                                  Status
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[rgb(51,51,51)]">
+                              {quickViewProduct.product_variants.map((variant, index) => (
+                                <tr key={index} className="hover:bg-white/5">
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-white">
+                                    {variant.size || '-'}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                    {variant.color ? (
+                                      <div className="flex items-center">
+                                        <div className="w-4 h-4 rounded border border-[rgb(51,51,51)] mr-2 overflow-hidden">
+                                          <img
+                                            src={availableColors.find(c => c.name === variant.color)?.image || ''}
+                                            alt={variant.color}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                              e.currentTarget.style.display = 'none';
+                                              e.currentTarget.parentElement!.style.backgroundColor = '#6b7280';
+                                            }}
+                                          />
+                                        </div>
+                                        <span className="text-white">{variant.color}</span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-white">-</span>
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-white">
+                                    <span className={`font-medium ${
+                                      variant.stock === 0 ? 'text-red-400' :
+                                      variant.stock < 10 ? 'text-yellow-400' :
+                                      'text-green-400'
+                                    }`}>
+                                      {variant.stock}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                      variant.stock === 0 ? 'bg-red-900/20 text-red-400 border border-red-400/20' :
+                                      variant.stock < 10 ? 'bg-yellow-900/20 text-yellow-400 border border-yellow-400/20' :
+                                      'bg-green-900/20 text-green-400 border border-green-400/20'
+                                    }`}>
+                                      {variant.stock === 0 ? 'Out of Stock' :
+                                       variant.stock < 10 ? 'Low Stock' :
+                                       'In Stock'}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded-lg p-8 text-center">
+                        <Package className="w-12 h-12 text-[rgb(94,94,94)] mx-auto mb-4 opacity-50" />
+                        <p className="text-[rgb(94,94,94)] text-sm">No variants found</p>
+                        <p className="text-[rgb(94,94,94)] text-xs mt-1">This is a simple product without variants</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Additional Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                    <p className="text-[rgb(94,94,94)] text-sm mb-2">Created</p>
+                    <p className="text-white">{new Date(quickViewProduct.created_at).toLocaleString()}</p>
+                  </div>
+
+                  <div className="bg-[rgb(25,25,25)] p-4 rounded-lg border border-[rgb(51,51,51)]">
+                    <p className="text-[rgb(94,94,94)] text-sm mb-2">Featured Product</p>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      quickViewProduct.featured
+                        ? 'bg-yellow-900/20 text-yellow-400 border border-yellow-400/20'
+                        : 'bg-gray-900/20 text-gray-400 border border-gray-400/20'
+                    }`}>
+                      {quickViewProduct.featured ? 'Yes' : 'No'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Deleted Products History Modal */}
+        {showDeletedHistory && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-black border border-[rgb(51,51,51)] rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-[rgb(51,51,51)] flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Deleted Products History</h3>
+                  <p className="text-[rgb(94,94,94)] text-sm">View and restore deleted products</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowDeletedHistory(false);
+                    setDeletedProducts([]);
+                  }}
+                  className="text-[rgb(94,94,94)] hover:text-white text-xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                {deletedProducts.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-[rgb(25,25,25)]">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                            Product
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                            Category
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                            Price
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                            Deleted By
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                            Deleted At
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[rgb(51,51,51)]">
+                        {deletedProducts.map((product) => (
+                          <tr key={product.id} className="hover:bg-white/5">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-white">{product.title}</div>
+                                <div className="text-sm text-[rgb(94,94,94)]">SKU: {product.sku}</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                              {product.categories?.name || 'No Category'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                              LKR {product.price.toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              {(product as any).profiles ? (
+                                <div>
+                                  <div className="text-white font-medium">
+                                    {(product as any).profiles.full_name || 'Unknown'}
+                                  </div>
+                                  <div className="text-[rgb(94,94,94)] text-xs">
+                                    {(product as any).profiles.email}
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-white">Unknown</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-[rgb(94,94,94)]">
+                              {new Date(product.deleted_at!).toLocaleDateString()} at{' '}
+                              {new Date(product.deleted_at!).toLocaleTimeString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => restoreProduct(product.id)}
+                                disabled={updating === product.id}
+                                className="border-green-500 text-green-400 hover:bg-green-500 hover:text-white disabled:opacity-50"
+                              >
+                                {updating === product.id ? 'Restoring...' : 'Restore'}
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Trash2 className="w-12 h-12 text-[rgb(94,94,94)] mx-auto mb-4 opacity-50" />
+                    <p className="text-[rgb(94,94,94)] text-sm">No deleted products found</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

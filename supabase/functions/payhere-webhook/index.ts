@@ -169,7 +169,7 @@ serve(async (req) => {
 
     switch (payload.status_code) {
       case 2:
-        orderStatus = 'confirmed';
+        orderStatus = 'pending';
         paymentStatus = 'paid';
         break;
       case -1:

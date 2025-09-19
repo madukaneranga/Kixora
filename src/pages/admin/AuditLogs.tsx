@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react';
-import { ClipboardList, Filter, Search, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ClipboardList, Filter, Search, Eye, ChevronLeft, ChevronRight, LayoutDashboard } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import Breadcrumb from '../../components/ui/Breadcrumb';
 
 interface AuditLog {
   id: string;
   table_name: string;
   record_id: string;
   action: 'INSERT' | 'UPDATE' | 'DELETE';
-  old_values: any;
-  new_values: any;
+  old_data: any;
+  new_data: any;
   user_id: string | null;
   created_at: string;
   profiles: {
@@ -111,17 +112,21 @@ const AuditLogs = () => {
   };
 
   useEffect(() => {
+    if (!user) return;
+
     const debounceTimer = setTimeout(() => {
       setCurrentPage(1); // Reset to first page when filters change
       fetchAuditLogs();
     }, 300);
 
     return () => clearTimeout(debounceTimer);
-  }, [filters]);
+  }, [filters, user]);
 
   useEffect(() => {
+    if (!user) return;
+
     fetchAuditLogs();
-  }, [currentPage, itemsPerPage]);
+  }, [currentPage, itemsPerPage, user]);
 
   const getActionColor = (action: string) => {
     switch (action) {
@@ -149,34 +154,103 @@ const AuditLogs = () => {
   };
 
   const formatJsonDiff = (oldValues: any, newValues: any) => {
-    if (!oldValues && !newValues) return null;
+    if (!oldValues && !newValues) {
+      return 'Data tracking not available';
+    }
 
     const changes: string[] = [];
 
     if (oldValues && newValues) {
-      // Show what changed
-      Object.keys(newValues).forEach(key => {
+      // Show what changed - check all keys from both objects
+      const allKeys = new Set([...Object.keys(oldValues), ...Object.keys(newValues)]);
+      allKeys.forEach(key => {
         if (oldValues[key] !== newValues[key]) {
-          changes.push(`${key}: ${oldValues[key]} → ${newValues[key]}`);
+          const oldVal = oldValues[key] === null ? 'null' : String(oldValues[key]);
+          const newVal = newValues[key] === null ? 'null' : String(newValues[key]);
+          changes.push(`${key}: ${oldVal} → ${newVal}`);
         }
       });
     } else if (newValues) {
       // INSERT - show new values
       Object.keys(newValues).forEach(key => {
-        if (newValues[key] !== null) {
-          changes.push(`${key}: ${newValues[key]}`);
-        }
+        const value = newValues[key] === null ? 'null' : String(newValues[key]);
+        changes.push(`${key}: ${value}`);
       });
     } else if (oldValues) {
       // DELETE - show old values
       Object.keys(oldValues).forEach(key => {
-        if (oldValues[key] !== null) {
-          changes.push(`${key}: ${oldValues[key]}`);
-        }
+        const value = oldValues[key] === null ? 'null' : String(oldValues[key]);
+        changes.push(`${key}: ${value}`);
       });
     }
 
+    if (changes.length === 0) return 'No field changes detected';
     return changes.slice(0, 3).join(', ') + (changes.length > 3 ? '...' : '');
+  };
+
+  const renderHighlightedDiff = (oldData: any, newData: any) => {
+    if (!oldData || !newData) {
+      return null;
+    }
+
+    const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)]);
+    const changes: Array<{ key: string; oldValue: any; newValue: any; type: 'modified' | 'added' | 'removed' }> = [];
+
+    allKeys.forEach(key => {
+      const oldValue = oldData[key];
+      const newValue = newData[key];
+
+      if (oldValue !== newValue) {
+        if (oldValue === undefined) {
+          changes.push({ key, oldValue, newValue, type: 'added' });
+        } else if (newValue === undefined) {
+          changes.push({ key, oldValue, newValue, type: 'removed' });
+        } else {
+          changes.push({ key, oldValue, newValue, type: 'modified' });
+        }
+      }
+    });
+
+    if (changes.length === 0) {
+      return <div className="text-[rgb(94,94,94)] italic">No changes detected</div>;
+    }
+
+    return (
+      <div className="space-y-2">
+        {changes.map(({ key, oldValue, newValue, type }) => (
+          <div key={key} className="border border-[rgb(51,51,51)] rounded p-2">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-white font-medium text-sm">{key}</span>
+              <span className={`text-xs px-1.5 py-0.5 rounded ${
+                type === 'added' ? 'bg-green-900/20 text-green-400' :
+                type === 'removed' ? 'bg-red-900/20 text-red-400' :
+                'bg-blue-900/20 text-blue-400'
+              }`}>
+                {type === 'added' ? '+' : type === 'removed' ? '-' : '~'}
+              </span>
+            </div>
+            <div className="text-xs space-y-1">
+              {type !== 'added' && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-red-400 w-4">-</span>
+                  <code className="bg-red-900/10 text-red-300 px-1 py-0.5 rounded flex-1 break-all">
+                    {oldValue === null ? 'null' : String(oldValue)}
+                  </code>
+                </div>
+              )}
+              {type !== 'removed' && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-green-400 w-4">+</span>
+                  <code className="bg-green-900/10 text-green-300 px-1 py-0.5 rounded flex-1 break-all">
+                    {newValue === null ? 'null' : String(newValue)}
+                  </code>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   const tableOptions = [
@@ -262,9 +336,24 @@ const AuditLogs = () => {
     );
   }
 
+  const breadcrumbItems = [
+    {
+      label: 'Admin',
+      path: '/admin',
+      icon: <LayoutDashboard size={16} />
+    },
+    {
+      label: 'Audit Logs',
+      icon: <ClipboardList size={16} />
+    }
+  ];
+
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Breadcrumb */}
+        <Breadcrumb items={breadcrumbItems} variant="white" />
+
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-white mb-2">Audit Logs</h1>
@@ -395,7 +484,7 @@ const AuditLogs = () => {
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-[rgb(94,94,94)] max-w-xs truncate">
-                      {formatJsonDiff(log.old_values, log.new_values) || 'No changes recorded'}
+                      {formatJsonDiff(log.old_data, log.new_data) || 'No changes recorded'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-[rgb(94,94,94)]">
                       <div>{new Date(log.created_at).toLocaleDateString()}</div>
@@ -452,12 +541,12 @@ const AuditLogs = () => {
                 {/* Page Numbers */}
                 {generatePageNumbers().map((page, index) => (
                   page === '...' ? (
-                    <span key={index} className="px-3 py-1 text-[rgb(94,94,94)]">
+                    <span key={`ellipsis-${index}`} className="px-3 py-1 text-[rgb(94,94,94)]">
                       {page}
                     </span>
                   ) : (
                     <Button
-                      key={page}
+                      key={`page-${page}`}
                       size="sm"
                       variant={page === currentPage ? "default" : "outline"}
                       onClick={() => handlePageChange(page as number)}
@@ -489,7 +578,7 @@ const AuditLogs = () => {
 
         {/* Audit Log Details Modal */}
         {showModal && selectedLog && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-black border border-[rgb(51,51,51)] rounded-lg w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
               <div className="px-6 py-4 border-b border-[rgb(51,51,51)] flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-white">
@@ -545,37 +634,49 @@ const AuditLogs = () => {
                 <div className="space-y-4">
                   <h4 className="text-lg font-semibold text-white">Data Changes</h4>
 
-                  {selectedLog.action === 'UPDATE' && selectedLog.old_values && selectedLog.new_values && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {selectedLog.action === 'UPDATE' && selectedLog.old_data && selectedLog.new_data && (
+                    <div className="space-y-4">
                       <div>
-                        <h5 className="text-sm font-medium text-[rgb(94,94,94)] mb-2">Before</h5>
-                        <pre className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded p-3 text-xs text-white overflow-x-auto">
-                          {JSON.stringify(selectedLog.old_values, null, 2)}
-                        </pre>
+                        <h5 className="text-sm font-medium text-[rgb(94,94,94)] mb-3">Changed Fields</h5>
+                        {renderHighlightedDiff(selectedLog.old_data, selectedLog.new_data)}
                       </div>
-                      <div>
-                        <h5 className="text-sm font-medium text-[rgb(94,94,94)] mb-2">After</h5>
-                        <pre className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded p-3 text-xs text-white overflow-x-auto">
-                          {JSON.stringify(selectedLog.new_values, null, 2)}
-                        </pre>
-                      </div>
+
+                      <details className="group">
+                        <summary className="cursor-pointer text-sm text-[rgb(94,94,94)] hover:text-white transition-colors">
+                          View Raw JSON Data
+                        </summary>
+                        <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          <div>
+                            <h6 className="text-xs font-medium text-[rgb(94,94,94)] mb-2">Before (Raw JSON)</h6>
+                            <pre className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded p-3 text-xs text-white overflow-x-auto">
+                              {JSON.stringify(selectedLog.old_data, null, 2)}
+                            </pre>
+                          </div>
+                          <div>
+                            <h6 className="text-xs font-medium text-[rgb(94,94,94)] mb-2">After (Raw JSON)</h6>
+                            <pre className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded p-3 text-xs text-white overflow-x-auto">
+                              {JSON.stringify(selectedLog.new_data, null, 2)}
+                            </pre>
+                          </div>
+                        </div>
+                      </details>
                     </div>
                   )}
 
-                  {selectedLog.action === 'INSERT' && selectedLog.new_values && (
+                  {selectedLog.action === 'INSERT' && selectedLog.new_data && (
                     <div>
                       <h5 className="text-sm font-medium text-[rgb(94,94,94)] mb-2">Created Data</h5>
                       <pre className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded p-3 text-xs text-white overflow-x-auto">
-                        {JSON.stringify(selectedLog.new_values, null, 2)}
+                        {JSON.stringify(selectedLog.new_data, null, 2)}
                       </pre>
                     </div>
                   )}
 
-                  {selectedLog.action === 'DELETE' && selectedLog.old_values && (
+                  {selectedLog.action === 'DELETE' && selectedLog.old_data && (
                     <div>
                       <h5 className="text-sm font-medium text-[rgb(94,94,94)] mb-2">Deleted Data</h5>
                       <pre className="bg-[rgb(25,25,25)] border border-[rgb(51,51,51)] rounded p-3 text-xs text-white overflow-x-auto">
-                        {JSON.stringify(selectedLog.old_values, null, 2)}
+                        {JSON.stringify(selectedLog.old_data, null, 2)}
                       </pre>
                     </div>
                   )}

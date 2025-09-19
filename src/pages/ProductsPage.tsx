@@ -12,12 +12,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SlidersHorizontal, ChevronUp, ChevronDown } from 'lucide-react';
+import { SlidersHorizontal, ChevronUp, ChevronDown, Package } from 'lucide-react';
 
 import { supabase } from '../lib/supabase';
 import ProductGrid from '../components/products/ProductGrid';
 import FiltersSidebar from '../components/products/FiltersSidebar';
 import Button from '../components/ui/Button';
+import Breadcrumb from '../components/ui/Breadcrumb';
 
 // Types
 interface ProductVariant {
@@ -201,7 +202,8 @@ const ProductsPage = () => {
       let countQuery = supabase
         .from('products')
         .select('id', { count: 'exact', head: true })
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .is('deleted_at', null);
 
       // Apply basic filters for count (skip color filtering as it's client-side)
       if (selectedCategory) {
@@ -213,6 +215,7 @@ const ProductsPage = () => {
             categories!inner (slug)
           `, { count: 'exact', head: true })
           .eq('is_active', true)
+          .is('deleted_at', null)
           .eq('categories.slug', selectedCategory);
       }
 
@@ -255,7 +258,8 @@ const ProductsPage = () => {
             stock
           )
         `)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .is('deleted_at', null);
 
       // Apply filters
       if (selectedCategory) {
@@ -366,15 +370,33 @@ const ProductsPage = () => {
   const activeFilterCount = getActiveFilterCount();
 
 
+  // Generate breadcrumb items
+  const breadcrumbItems = [
+    {
+      label: 'Products',
+      path: selectedCategory ? '/products' : undefined,
+      icon: <Package size={16} />
+    },
+    ...(selectedCategory ? [{
+      label: categories.find(c => c.slug === selectedCategory)?.name || selectedCategory
+    }] : []),
+    ...(searchQuery ? [{
+      label: `Search: "${searchQuery}"`
+    }] : [])
+  ];
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumbItems} className="mb-4" />
+
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 space-y-4 lg:space-y-0">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 space-y-3 lg:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">
+          <h1 className="text-xl md:text-2xl font-bold text-slate-900">
             {selectedCategory ? categories.find(c => c.slug === selectedCategory)?.name : 'All Products'}
           </h1>
-          <p className="text-slate-600 mt-2">
+          <p className="text-sm text-slate-600 mt-1">
             {loading ? 'Loading...' : `${products.length} products found`}
           </p>
         </div>

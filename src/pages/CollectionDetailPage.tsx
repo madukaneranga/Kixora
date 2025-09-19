@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
-import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Grid3X3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fetchCollectionBySlug } from '../services/collectionsService';
 import { CollectionWithProducts } from '../types/collection';
 import ProductGrid from '../components/products/ProductGrid';
+import Breadcrumb from '../components/ui/Breadcrumb';
 
 const CollectionDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -39,7 +40,7 @@ const CollectionDetailPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           <div className="animate-pulse">
             <div className="h-12 bg-gray-200 w-1/3 mb-4"></div>
             <div className="h-6 bg-gray-200 w-2/3 mb-12"></div>
@@ -70,11 +71,28 @@ const CollectionDetailPage = () => {
     position: item.position
   })).sort((a, b) => a.position - b.position) || [];
 
+  // Generate breadcrumb items
+  const breadcrumbItems = [
+    {
+      label: 'Collections',
+      path: '/collections',
+      icon: <Grid3X3 size={16} />
+    },
+    {
+      label: collection.name
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Breadcrumb */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <Breadcrumb items={breadcrumbItems} className="mb-6" />
+      </div>
+
       {/* Hero Section */}
       <section
-        className="relative py-24 bg-black text-white overflow-hidden"
+        className="relative py-12 sm:py-16 lg:py-24 bg-black text-white overflow-hidden"
         style={{
           backgroundImage: collection.image_url ? `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${collection.image_url})` : undefined,
           backgroundSize: 'cover',
@@ -97,7 +115,7 @@ const CollectionDetailPage = () => {
               Back to Collections
             </Link>
 
-            <h1 className="text-5xl lg:text-7xl font-black leading-tight mb-6 uppercase">
+            <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black leading-tight mb-4 sm:mb-6 uppercase">
               {collection.name}
             </h1>
 
@@ -117,7 +135,7 @@ const CollectionDetailPage = () => {
       </section>
 
       {/* Products Section */}
-      <section className="py-20">
+      <section className="py-8 sm:py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {products.length > 0 ? (
             <motion.div
@@ -131,7 +149,7 @@ const CollectionDetailPage = () => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-16"
+              className="text-center py-8 sm:py-12"
             >
               <div className="text-6xl mb-4">👟</div>
               <h3 className="text-2xl font-semibold text-black mb-4">No Products Yet</h3>
@@ -148,7 +166,7 @@ const CollectionDetailPage = () => {
       </section>
 
       {/* Related Collections CTA */}
-      <section className="py-20 bg-black text-white">
+      <section className="py-8 sm:py-12 lg:py-16 bg-black text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -156,7 +174,7 @@ const CollectionDetailPage = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-4xl font-bold mb-6">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">
               Discover More Collections
             </h2>
             <p className="text-xl text-gray-300 mb-8 leading-relaxed">

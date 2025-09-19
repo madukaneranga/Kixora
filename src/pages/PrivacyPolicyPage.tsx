@@ -102,7 +102,7 @@ const PrivacyPolicy: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white px-6 py-12 md:px-20 md:py-16 space-y-8">
+    <div className="min-h-screen bg-black text-white px-4 py-8 sm:px-6 sm:py-10 md:px-20 md:py-12 space-y-6 sm:space-y-8">
       <h1 className="text-4xl font-bold mb-2">Privacy Policy</h1>
       <p className="mb-6">Last updated: October 26, 2023</p>
       <p className="mb-6">

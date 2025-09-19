@@ -66,6 +66,7 @@ const ThankYouPopup = ({
         `)
         .eq('is_active', true)
         .eq('featured', true)
+        .is('deleted_at', null)
         .limit(8);
 
       if (error) throw error;
@@ -188,7 +189,7 @@ const ThankYouPopup = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={onClose}
         >
           <motion.div
@@ -213,7 +214,7 @@ const ThankYouPopup = ({
                 </div>
 
                 <div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
                     {paymentInfo.title}
                   </h2>
                   <p className="text-gray-600 mb-2">
