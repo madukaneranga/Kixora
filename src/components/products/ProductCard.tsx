@@ -204,10 +204,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+      className="group transition-all duration-300 hover:-translate-y-1 overflow-hidden md:bg-white md:shadow-md md:hover:shadow-xl"
     >
       <div
-        className="relative aspect-[4/5] overflow-hidden"
+        className="relative aspect-[4/5] overflow-hidden bg-white shadow-md hover:shadow-xl transition-all duration-300 md:bg-transparent md:shadow-none md:hover:shadow-none"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -295,7 +295,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
       </div>
 
-      <div className="p-3 relative">
+      <div className="p-3 relative bg-transparent md:bg-transparent">
         <Link to={`/products/${product.id}`}>
           {product.brand && (
             <p className="text-xs text-gray-500 mb-1">{product.brand}</p>
