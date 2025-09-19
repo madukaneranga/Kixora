@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingCart, Trash2, ArrowLeft, Search } from 'lucide-react';
+import { Heart, ShoppingCart, Trash2, ArrowLeft, Search, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { useWishlistStore } from '../stores/wishlistStore';
@@ -94,13 +94,13 @@ const WishlistPage = () => {
   if (!user) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center">
-            <Heart className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h1 className="text-xl md:text-2xl font-bold text-black mb-3">Your Wishlist</h1>
-            <p className="text-sm text-gray-600 mb-6">Please sign in to view your wishlist</p>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          <div className="text-center px-4">
+            <Heart className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-4 sm:mb-6" />
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-black mb-3">Your Wishlist</h1>
+            <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 max-w-sm mx-auto">Please sign in to view your wishlist</p>
             <Link to="/products">
-              <Button variant="primary">
+              <Button variant="primary" className="min-h-[44px] px-6">
                 Continue Shopping
               </Button>
             </Link>
@@ -113,18 +113,26 @@ const WishlistPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-white p-6 rounded-2xl border-2 border-gray-200">
-                  <div className="flex space-x-4">
-                    <div className="w-24 h-24 bg-gray-200 rounded-lg"></div>
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                    </div>
+            {/* Breadcrumb skeleton */}
+            <div className="h-4 bg-gray-200 rounded w-20 mb-6"></div>
+
+            {/* Header skeleton */}
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-5 h-5 bg-gray-200 rounded"></div>
+              <div className="h-6 bg-gray-200 rounded w-32"></div>
+            </div>
+
+            {/* Grid skeleton */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="bg-gray-200 aspect-[4/5] rounded-lg mb-3"></div>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-gray-200 rounded"></div>
+                    <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
                   </div>
                 </div>
               ))}
@@ -149,46 +157,46 @@ const WishlistPage = () => {
         <Breadcrumb items={breadcrumbItems} className="mb-6" />
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-col gap-4 mb-6 sm:mb-8">
+          <div className="flex items-center space-x-3 sm:space-x-4">
             <Link to="/products" className="text-gray-600 hover:text-black">
-              <ArrowLeft size={24} />
+              <ArrowLeft size={20} className="sm:w-6 sm:h-6" />
             </Link>
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-black">Your Wishlist</h1>
-              <p className="text-sm text-gray-600">
+            <div className="flex-1">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-black">Your Wishlist</h1>
+              <p className="text-xs sm:text-sm text-gray-600">
                 {searchQuery ? `${filteredProducts.length} of ${items.length}` : `${items.length}`} item{items.length !== 1 ? 's' : ''}
                 {searchQuery && ` matching "${searchQuery}"`}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Search Input */}
-            {items.length > 0 && (
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          {/* Search and Actions */}
+          {items.length > 0 && (
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+              {/* Search Input */}
+              <div className="relative flex-1 sm:max-w-xs">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search wishlist..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm w-64"
+                  className="w-full pl-10 pr-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm"
                 />
               </div>
-            )}
 
-            {items.length > 0 && (
+              {/* Clear Button */}
               <Button
                 variant="outline"
                 onClick={handleClearWishlist}
-                className="flex items-center space-x-2 whitespace-nowrap"
+                className="flex items-center justify-center space-x-2 whitespace-nowrap min-h-[40px] sm:min-h-[36px]"
               >
                 <Trash2 size={16} />
-                <span>Clear All</span>
+                <span className="text-sm">Clear All</span>
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Wishlist Items */}
@@ -196,13 +204,13 @@ const WishlistPage = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center py-8 sm:py-12"
+            className="text-center py-8 sm:py-12 px-4"
           >
-            <Heart className="mx-auto h-16 w-16 text-gray-400 mb-6" />
-            <h2 className="text-2xl font-semibold text-black mb-4">Your wishlist is empty</h2>
-            <p className="text-gray-600 mb-8">Save items you love to buy them later</p>
+            <Heart className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-4 sm:mb-6" />
+            <h2 className="text-xl sm:text-2xl font-semibold text-black mb-3 sm:mb-4">Your wishlist is empty</h2>
+            <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 max-w-sm mx-auto">Save items you love to buy them later</p>
             <Link to="/products">
-              <Button variant="primary" className="flex items-center space-x-2">
+              <Button variant="primary" className="flex items-center justify-center space-x-2 min-h-[44px] px-6">
                 <ShoppingCart size={16} />
                 <span>Continue Shopping</span>
               </Button>
@@ -212,15 +220,17 @@ const WishlistPage = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center py-8 sm:py-12"
+            className="text-center py-8 sm:py-12 px-4"
           >
-            <Search className="mx-auto h-16 w-16 text-gray-400 mb-6" />
-            <h2 className="text-2xl font-semibold text-black mb-4">No items found</h2>
-            <p className="text-gray-600 mb-8">No wishlist items match your search for "{searchQuery}"</p>
+            <Search className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-4 sm:mb-6" />
+            <h2 className="text-xl sm:text-2xl font-semibold text-black mb-3 sm:mb-4">No items found</h2>
+            <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 max-w-sm mx-auto">
+              No wishlist items match your search for "<span className="font-medium">{searchQuery}</span>"
+            </p>
             <Button
               variant="outline"
               onClick={() => setSearchQuery('')}
-              className="flex items-center space-x-2"
+              className="flex items-center justify-center space-x-2 min-h-[44px] px-6"
             >
               <X size={16} />
               <span>Clear Search</span>
@@ -232,9 +242,9 @@ const WishlistPage = () => {
 
         {/* Continue Shopping */}
         {products.length > 0 && (
-          <div className="mt-12 text-center">
+          <div className="mt-8 sm:mt-12 text-center px-4">
             <Link to="/products">
-              <Button variant="outline" className="flex items-center space-x-2">
+              <Button variant="outline" className="flex items-center justify-center space-x-2 min-h-[44px] px-6">
                 <ArrowLeft size={16} />
                 <span>Continue Shopping</span>
               </Button>
