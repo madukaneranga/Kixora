@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Eye, ToggleLeft, ToggleRight, Package, LayoutDashboard } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, ToggleLeft, ToggleRight, Package, LayoutDashboard, Check } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { supabaseAdmin, isUserAdmin } from '../../lib/supabaseAdmin';
 import { useAuth } from '../../hooks/useAuth';
@@ -9,6 +9,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { showSuccessToast, showErrorToast } from '../../components/ui/CustomToast';
 import { uploadProductImages, saveProductImages, deleteProductImages, getProductImages } from '../../lib/imageUpload';
 import Breadcrumb from '../../components/ui/Breadcrumb';
+import { generateSlug, ensureUniqueSlug } from '../../utils/slugUtils';
 
 interface Product {
   id: string;
@@ -16,6 +17,7 @@ interface Product {
   description: string;
   price: number;
   sku: string;
+  slug?: string;
   category_id: string | null;
   brand_id: string | null;
   is_active: boolean;
@@ -70,11 +72,16 @@ const ProductsManagement = () => {
   const [showDeletedHistory, setShowDeletedHistory] = useState(false);
   const [deletedProducts, setDeletedProducts] = useState<Product[]>([]);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [editingStock, setEditingStock] = useState<string | null>(null);
+  const [tempStock, setTempStock] = useState<{[key: string]: number}>({});
+  const [editingVariantStock, setEditingVariantStock] = useState<number | null>(null);
+  const [tempVariantStock, setTempVariantStock] = useState<number>(0);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     price: '',
     sku: '',
+    slug: '',
     category_id: '',
     brand_id: '',
     is_active: true,
@@ -83,9 +90,12 @@ const ProductsManagement = () => {
   const [productType, setProductType] = useState<'simple' | 'variable'>('simple');
   const [currentStep, setCurrentStep] = useState(1);
   const [variants, setVariants] = useState<Array<{
+    id?: string; // ID exists for saved variants, undefined for new ones
     size: string;
     color: string;
     stock: number;
+    isExisting?: boolean; // Flag to track if this is a saved variant
+    is_active?: boolean; // Active status for existing variants
   }>>([]);
   const [availableColors] = useState([
     { name: 'Black', image: '/src/assests/colors/black.png' },
@@ -131,7 +141,7 @@ const ProductsManagement = () => {
             *,
             categories (name),
             brands (name),
-            product_variants (id, stock, size, color),
+            product_variants (id, stock, size, color, is_active),
             product_images (
               id,
               storage_path,
@@ -149,7 +159,13 @@ const ProductsManagement = () => {
       if (categoriesRes.error) throw categoriesRes.error;
       if (brandsRes.error) throw brandsRes.error;
 
-      setProducts(productsRes.data || []);
+      // Filter out inactive variants from products display
+      const productsWithActiveVariants = (productsRes.data || []).map(product => ({
+        ...product,
+        product_variants: product.product_variants?.filter(variant => variant.is_active !== false) || []
+      }));
+
+      setProducts(productsWithActiveVariants);
       setCategories(categoriesRes.data || []);
       setBrands(brandsRes.data || []);
     } catch (error) {
@@ -191,6 +207,9 @@ const ProductsManagement = () => {
         throw new Error('Please fill in all required fields');
       }
 
+      // Ensure unique slug
+      const finalSlug = await ensureUniqueSlug(formData.slug || generateSlug(formData.title), editingProduct?.id);
+
       // Validate product type specific requirements
       if (productType === 'simple' && simpleStock < 0) {
         throw new Error('Stock quantity cannot be negative');
@@ -205,6 +224,7 @@ const ProductsManagement = () => {
         description: formData.description,
         price: parseFloat(formData.price),
         sku: formData.sku,
+        slug: finalSlug,
         category_id: formData.category_id || null,
         brand_id: formData.brand_id || null,
         is_active: formData.is_active,
@@ -223,13 +243,8 @@ const ProductsManagement = () => {
         if (productError) throw productError;
         productId = editingProduct.id;
 
-        // Delete existing variants to replace them
-        const { error: deleteError } = await supabaseAdmin
-          .from('product_variants')
-          .delete()
-          .eq('product_id', productId);
-
-        if (deleteError) throw deleteError;
+        // For editing: Update existing variants and add new ones
+        // Don't delete existing variants, just update their stock and add new ones
       } else {
         // Create new product
         const { data: newProduct, error: productError } = await supabaseAdmin
@@ -242,45 +257,90 @@ const ProductsManagement = () => {
         productId = newProduct.id;
       }
 
-      // Create variants based on product type
-      const variantData: Array<{
-        product_id: string;
-        sku: string;
-        size: string | null;
-        color: string | null;
-        stock: number;
-      }> = [];
+      // Handle variants based on edit vs create mode
+      if (editingProduct) {
+        // EDIT MODE: Update existing variants and create new ones
 
-      if (productType === 'simple') {
-        // Create single variant for simple product
-        variantData.push({
-          product_id: productId,
-          sku: `${formData.sku}-default`,
-          size: null,
-          color: null,
-          stock: simpleStock
-        });
-      } else {
-        // Create variants for variable product
-        variants.forEach((variant, index) => {
-          const variantSku = `${formData.sku}-${index + 1}`;
-          variantData.push({
+        // Update existing variants (stock and is_active can be changed)
+        for (const variant of variants.filter(v => v.isExisting)) {
+          const { error: updateError } = await supabaseAdmin
+            .from('product_variants')
+            .update({
+              stock: variant.stock,
+              is_active: variant.is_active
+            })
+            .eq('id', variant.id);
+
+          if (updateError) throw updateError;
+        }
+
+        // Create new variants
+        const newVariants = variants.filter(v => !v.isExisting);
+        if (newVariants.length > 0) {
+          const newVariantData = newVariants.map((variant, index) => ({
             product_id: productId,
-            sku: variantSku,
+            sku: `${formData.sku}-new-${index + 1}`,
             size: variant.size || null,
             color: variant.color || null,
             stock: variant.stock
+          }));
+
+          const { error: insertError } = await supabaseAdmin
+            .from('product_variants')
+            .insert(newVariantData);
+
+          if (insertError) throw insertError;
+        }
+
+        // Handle simple product in edit mode
+        if (productType === 'simple') {
+          // Update the single variant's stock
+          const { error: updateError } = await supabaseAdmin
+            .from('product_variants')
+            .update({ stock: simpleStock })
+            .eq('product_id', productId);
+
+          if (updateError) throw updateError;
+        }
+
+      } else {
+        // CREATE MODE: Create all variants normally
+        const variantData: Array<{
+          product_id: string;
+          sku: string;
+          size: string | null;
+          color: string | null;
+          stock: number;
+        }> = [];
+
+        if (productType === 'simple') {
+          variantData.push({
+            product_id: productId,
+            sku: `${formData.sku}-default`,
+            size: null,
+            color: null,
+            stock: simpleStock
           });
-        });
-      }
+        } else {
+          variants.forEach((variant, index) => {
+            const variantSku = `${formData.sku}-${index + 1}`;
+            variantData.push({
+              product_id: productId,
+              sku: variantSku,
+              size: variant.size || null,
+              color: variant.color || null,
+              stock: variant.stock
+            });
+          });
+        }
 
-      // Insert variants
-      if (variantData.length > 0) {
-        const { error: variantError } = await supabaseAdmin
-          .from('product_variants')
-          .insert(variantData);
+        if (variantData.length > 0) {
+          const { error: variantError } = await supabaseAdmin
+            .from('product_variants')
+            .insert(variantData);
 
-        if (variantError) throw variantError;
+          if (variantError) throw variantError;
+        }
       }
 
       // Handle image upload if images are selected
@@ -406,6 +466,7 @@ const ProductsManagement = () => {
         description: product.description || '',
         price: product.price.toString(),
         sku: product.sku,
+        slug: product.slug || '',
         category_id: product.category_id || '',
         brand_id: product.brand_id || '',
         is_active: product.is_active,
@@ -418,11 +479,14 @@ const ProductsManagement = () => {
 
         if (hasVariations || product.product_variants.length > 1) {
           setProductType('variable');
-          // Map variants without price override
+          // Map variants and mark them as existing
           const mappedVariants = product.product_variants.map(variant => ({
+            id: variant.id,
             size: variant.size || '',
             color: variant.color || '',
-            stock: variant.stock
+            stock: variant.stock,
+            isExisting: true,
+            is_active: variant.is_active !== false // Default to true if undefined
           }));
           setVariants(mappedVariants);
         } else {
@@ -452,12 +516,21 @@ const ProductsManagement = () => {
     setShowModal(true);
   };
 
+  const handleTitleChange = (title: string) => {
+    setFormData({
+      ...formData,
+      title,
+      slug: title ? generateSlug(title) : ''
+    });
+  };
+
   const resetForm = () => {
     setFormData({
       title: '',
       description: '',
       price: '',
       sku: '',
+      slug: '',
       category_id: '',
       brand_id: '',
       is_active: true,
@@ -471,6 +544,8 @@ const ProductsManagement = () => {
     setLoadingImages(false);
     setSimpleStock(0);
     setFieldErrors({});
+    setEditingVariantStock(null);
+    setTempVariantStock(0);
   };
 
   const clearFieldError = (fieldName: string) => {
@@ -494,17 +569,22 @@ const ProductsManagement = () => {
     }
   };
 
-  const addVariant = () => {
+  const addVariant = (size: string = '', color: string = '', stock: number = 0) => {
     const newVariant = {
-      size: '',
-      color: '',
-      stock: 0
+      size,
+      color,
+      stock,
+      isExisting: false
     };
     setVariants([...variants, newVariant]);
   };
 
   const removeVariant = (index: number) => {
-    setVariants(variants.filter((_, i) => i !== index));
+    const variant = variants[index];
+    // Only allow removal of new variants (not existing saved ones)
+    if (!variant.isExisting) {
+      setVariants(variants.filter((_, i) => i !== index));
+    }
   };
 
   const updateVariant = (index: number, field: string, value: any) => {
@@ -595,6 +675,85 @@ const ProductsManagement = () => {
     return variants.reduce((total, variant) => total + (variant.stock || 0), 0);
   };
 
+  const updateVariantStock = async (variantId: string, newStock: number) => {
+    try {
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { error } = await supabaseAdmin
+        .from('product_variants')
+        .update({ stock: newStock })
+        .eq('id', variantId);
+
+      if (error) throw error;
+
+      // Refresh products list
+      await fetchData();
+      setEditingStock(null);
+      setTempStock({});
+      showSuccessToast('Stock updated successfully');
+    } catch (error) {
+      console.error('Error updating stock:', error);
+      showErrorToast(error instanceof Error ? error.message : 'Failed to update stock');
+    }
+  };
+
+  const startEditingStock = (variantId: string, currentStock: number) => {
+    setEditingStock(variantId);
+    setTempStock({ [variantId]: currentStock });
+  };
+
+  const cancelEditingStock = () => {
+    setEditingStock(null);
+    setTempStock({});
+  };
+
+  const startEditingVariantStock = (index: number, currentStock: number) => {
+    setEditingVariantStock(index);
+    setTempVariantStock(currentStock);
+  };
+
+  const saveVariantStock = (index: number) => {
+    const newVariants = [...variants];
+    newVariants[index] = { ...newVariants[index], stock: tempVariantStock };
+    setVariants(newVariants);
+    setEditingVariantStock(null);
+    setTempVariantStock(0);
+  };
+
+  const cancelVariantStockEdit = () => {
+    setEditingVariantStock(null);
+    setTempVariantStock(0);
+  };
+
+  const toggleVariantActive = (index: number) => {
+    const newVariants = [...variants];
+    const variant = newVariants[index];
+
+    // Only allow toggling for existing variants
+    if (variant.isExisting) {
+      // Check if this is the only active variant and we're trying to deactivate it
+      const activeVariants = variants.filter(v => v.isExisting && v.is_active);
+
+      if (variant.is_active && activeVariants.length === 1) {
+        showErrorToast('Cannot deactivate the only active variant. A product must have at least one active variant.');
+        return;
+      }
+
+      newVariants[index] = {
+        ...variant,
+        is_active: !variant.is_active
+      };
+      setVariants(newVariants);
+    }
+  };
+
   const openQuickView = (product: Product) => {
     setQuickViewProduct(product);
     setShowQuickView(true);
@@ -617,7 +776,7 @@ const ProductsManagement = () => {
           *,
           categories (name),
           brands (name),
-          product_variants (id, stock, size, color),
+          product_variants (id, stock, size, color, is_active),
           profiles!deleted_by (
             full_name,
             email
@@ -628,7 +787,13 @@ const ProductsManagement = () => {
 
       if (error) throw error;
 
-      setDeletedProducts(data || []);
+      // Filter out inactive variants from deleted products display
+      const deletedProductsWithActiveVariants = (data || []).map(product => ({
+        ...product,
+        product_variants: product.product_variants?.filter(variant => variant.is_active !== false) || []
+      }));
+
+      setDeletedProducts(deletedProductsWithActiveVariants);
       setShowDeletedHistory(true);
     } catch (error) {
       console.error('Error fetching deleted products:', error);
@@ -798,22 +963,77 @@ const ProductsManagement = () => {
                       LKR {product.price.toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                      {getTotalStock(product.product_variants)}
+                      <div className="space-y-1">
+                        {product.product_variants.map((variant, index) => (
+                          <div key={variant.id} className="flex items-center justify-between">
+                            <span className="text-xs text-[rgb(94,94,94)]">
+                              {variant.size || variant.color ?
+                                `${variant.size || ''} ${variant.color || ''}`.trim() :
+                                `Variant ${index + 1}`
+                              }:
+                            </span>
+                            {editingStock === variant.id ? (
+                              <div className="flex items-center space-x-1">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={tempStock[variant.id] || 0}
+                                  onChange={(e) => setTempStock({ ...tempStock, [variant.id]: parseInt(e.target.value) || 0 })}
+                                  className="w-16 px-1 py-0.5 bg-black text-white border border-[rgb(51,51,51)] rounded text-xs"
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() => updateVariantStock(variant.id, tempStock[variant.id] || 0)}
+                                  className="text-green-400 hover:text-green-300"
+                                  title="Save"
+                                >
+                                  <Check className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={cancelEditingStock}
+                                  className="text-red-400 hover:text-red-300"
+                                  title="Cancel"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center space-x-1">
+                                <span className="text-white">{variant.stock}</span>
+                                <button
+                                  onClick={() => startEditingStock(variant.id, variant.stock)}
+                                  className="text-[rgb(94,94,94)] hover:text-white"
+                                  title="Edit stock"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        <div className="text-xs text-[rgb(94,94,94)] mt-1 pt-1 border-t border-[rgb(51,51,51)]">
+                          Total: {getTotalStock(product.product_variants)}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
                         onClick={() => toggleProductStatus(product.id, product.is_active)}
-                        className="flex items-center"
+                        className={`flex items-center text-sm px-3 py-2 rounded-lg font-medium transition-colors ${
+                          product.is_active
+                            ? 'bg-green-900/20 text-green-400 border border-green-400/20 hover:bg-green-900/30'
+                            : 'bg-red-900/20 text-red-400 border border-red-400/20 hover:bg-red-900/30'
+                        }`}
                       >
                         {product.is_active ? (
                           <>
-                            <ToggleRight className="w-5 h-5 text-green-400 mr-2" />
-                            <span className="text-green-400 text-sm">Active</span>
+                            <ToggleRight className="w-4 h-4 mr-2" />
+                            <span>Active</span>
                           </>
                         ) : (
                           <>
-                            <ToggleLeft className="w-5 h-5 text-red-400 mr-2" />
-                            <span className="text-red-400 text-sm">Inactive</span>
+                            <ToggleLeft className="w-4 h-4 mr-2" />
+                            <span>Inactive</span>
                           </>
                         )}
                       </button>
@@ -862,7 +1082,7 @@ const ProductsManagement = () => {
         {/* Add/Edit Product Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-black border border-[rgb(51,51,51)] rounded-lg w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="bg-black border border-[rgb(51,51,51)] rounded-lg w-full max-w-6xl min-w-[800px] mx-4 max-h-[90vh] overflow-y-auto">
               {/* Header */}
               <div className="px-6 py-4 border-b border-[rgb(51,51,51)] flex justify-between items-center">
                 <div>
@@ -913,7 +1133,7 @@ const ProductsManagement = () => {
                           variant="dark"
                           value={formData.title}
                           onChange={(e) => {
-                            setFormData({ ...formData, title: e.target.value });
+                            handleTitleChange(e.target.value);
                             clearFieldError('title');
                           }}
                           error={fieldErrors.title}
@@ -936,6 +1156,23 @@ const ProductsManagement = () => {
                           Unique identifier for this product (min 3 characters)
                         </p>
                       </div>
+                    </div>
+
+                    <div>
+                      <Input
+                        label="URL Slug"
+                        variant="dark"
+                        value={formData.slug}
+                        onChange={(e) => {
+                          setFormData({ ...formData, slug: e.target.value });
+                          clearFieldError('slug');
+                        }}
+                        error={fieldErrors.slug}
+                        placeholder="auto-generated from title"
+                      />
+                      <p className="text-xs text-[rgb(94,94,94)] mt-1">
+                        SEO-friendly URL slug (auto-generated from title, but can be edited)
+                      </p>
                     </div>
 
                     <div>
@@ -1037,28 +1274,55 @@ const ProductsManagement = () => {
                       <label className="block text-sm font-medium text-white mb-4">Product Type</label>
                       <div className="grid grid-cols-2 gap-4">
                         <div
-                          onClick={() => handleProductTypeChange('simple')}
-                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                          onClick={!editingProduct ? () => handleProductTypeChange('simple') : undefined}
+                          className={`p-4 rounded-lg border-2 transition-all ${
+                            editingProduct
+                              ? 'cursor-not-allowed opacity-50'
+                              : 'cursor-pointer'
+                          } ${
                             productType === 'simple'
                               ? 'border-white bg-white/5'
+                              : editingProduct
+                              ? 'border-[rgb(51,51,51)]'
                               : 'border-[rgb(51,51,51)] hover:border-[rgb(94,94,94)]'
                           }`}
                         >
-                          <h4 className="text-white font-medium mb-2">Simple Product</h4>
+                          <h4 className="text-white font-medium mb-2">
+                            Simple Product
+                            {editingProduct && productType === 'simple' && (
+                              <span className="ml-2 text-xs text-green-400">(Current)</span>
+                            )}
+                          </h4>
                           <p className="text-[rgb(94,94,94)] text-sm">Single product with no variations (e.g., book, accessory)</p>
                         </div>
                         <div
-                          onClick={() => handleProductTypeChange('variable')}
-                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                          onClick={!editingProduct ? () => handleProductTypeChange('variable') : undefined}
+                          className={`p-4 rounded-lg border-2 transition-all ${
+                            editingProduct
+                              ? 'cursor-not-allowed opacity-50'
+                              : 'cursor-pointer'
+                          } ${
                             productType === 'variable'
                               ? 'border-white bg-white/5'
+                              : editingProduct
+                              ? 'border-[rgb(51,51,51)]'
                               : 'border-[rgb(51,51,51)] hover:border-[rgb(94,94,94)]'
                           }`}
                         >
-                          <h4 className="text-white font-medium mb-2">Variable Product</h4>
+                          <h4 className="text-white font-medium mb-2">
+                            Variable Product
+                            {editingProduct && productType === 'variable' && (
+                              <span className="ml-2 text-xs text-green-400">(Current)</span>
+                            )}
+                          </h4>
                           <p className="text-[rgb(94,94,94)] text-sm">Product with multiple options (e.g., sizes, colors)</p>
                         </div>
                       </div>
+                      {editingProduct && (
+                        <p className="text-xs text-[rgb(94,94,94)] mt-2">
+                          Product type cannot be changed when editing existing products
+                        </p>
+                      )}
                     </div>
 
                     {/* Simple Product Stock */}
@@ -1189,11 +1453,17 @@ const ProductsManagement = () => {
                                     return;
                                   }
 
-                                  addVariant();
-                                  const newIndex = variants.length;
-                                  updateVariant(newIndex, 'size', size);
-                                  updateVariant(newIndex, 'color', color);
-                                  updateVariant(newIndex, 'stock', stock);
+                                  // Check for duplicate variants
+                                  const isDuplicate = variants.some(variant =>
+                                    variant.size === size && variant.color === color
+                                  );
+
+                                  if (isDuplicate) {
+                                    showErrorToast('A variant with this size and color combination already exists');
+                                    return;
+                                  }
+
+                                  addVariant(size, color, stock);
 
                                   // Clear form
                                   sizeInput.value = '';
@@ -1238,6 +1508,9 @@ const ProductsManagement = () => {
                                       Stock
                                     </th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                                      Status
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
                                       Actions
                                     </th>
                                   </tr>
@@ -1269,17 +1542,96 @@ const ProductsManagement = () => {
                                         )}
                                       </td>
                                       <td className="px-4 py-3 whitespace-nowrap text-sm text-white">
-                                        {variant.stock}
+                                        {editingVariantStock === index ? (
+                                          <div className="flex items-center space-x-2">
+                                            <input
+                                              type="number"
+                                              min="0"
+                                              value={tempVariantStock}
+                                              onChange={(e) => setTempVariantStock(parseInt(e.target.value) || 0)}
+                                              className="w-20 px-2 py-1 bg-black text-white border border-[rgb(51,51,51)] rounded text-sm"
+                                              autoFocus
+                                            />
+                                            <button
+                                              type="button"
+                                              onClick={() => saveVariantStock(index)}
+                                              className="text-green-400 hover:text-green-300"
+                                              title="Save"
+                                            >
+                                              <Check className="w-3 h-3" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={cancelVariantStockEdit}
+                                              className="text-red-400 hover:text-red-300"
+                                              title="Cancel"
+                                            >
+                                              ×
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center space-x-2">
+                                            <span>{variant.stock}</span>
+                                            <button
+                                              type="button"
+                                              onClick={() => startEditingVariantStock(index, variant.stock)}
+                                              className="text-[rgb(94,94,94)] hover:text-white"
+                                              title="Edit stock"
+                                            >
+                                              <Edit className="w-3 h-3" />
+                                            </button>
+                                          </div>
+                                        )}
                                       </td>
                                       <td className="px-4 py-3 whitespace-nowrap text-sm">
-                                        <button
-                                          type="button"
-                                          onClick={() => removeVariant(index)}
-                                          className="text-red-400 hover:text-red-300 transition-colors"
-                                          title="Remove variant"
-                                        >
-                                          <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        {variant.isExisting ? (
+                                          <button
+                                            type="button"
+                                            onClick={() => toggleVariantActive(index)}
+                                            className={`flex items-center text-sm px-3 py-2 rounded-lg font-medium transition-colors ${
+                                              variant.is_active
+                                                ? 'bg-green-900/20 text-green-400 border border-green-400/20 hover:bg-green-900/30'
+                                                : 'bg-red-900/20 text-red-400 border border-red-400/20 hover:bg-red-900/30'
+                                            }`}
+                                            title={`Click to ${variant.is_active ? 'disable' : 'enable'} variant`}
+                                          >
+                                            {variant.is_active ? (
+                                              <>
+                                                <ToggleRight className="w-4 h-4 mr-2" />
+                                                <span>Active</span>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <ToggleLeft className="w-4 h-4 mr-2" />
+                                                <span>Inactive</span>
+                                              </>
+                                            )}
+                                          </button>
+                                        ) : (
+                                          <span className="inline-flex items-center text-sm px-3 py-2 rounded-lg font-medium bg-blue-900/20 text-blue-400 border border-blue-400/20">
+                                            <Package className="w-4 h-4 mr-2" />
+                                            New
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                        {variant.isExisting ? (
+                                          <span
+                                            className="text-[rgb(94,94,94)] cursor-not-allowed"
+                                            title="Cannot remove existing variant"
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </span>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            onClick={() => removeVariant(index)}
+                                            className="text-red-400 hover:text-red-300 transition-colors"
+                                            title="Remove variant"
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </button>
+                                        )}
                                       </td>
                                     </tr>
                                   ))}

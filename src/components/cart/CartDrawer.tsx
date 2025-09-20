@@ -169,7 +169,7 @@ const CartDrawer = () => {
                                     <div className="h-20 w-20 flex-shrink-0 overflow-hidden border border-gray-200 rounded-md">
                                       {item.image ? (
                                         <img
-                                          src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${item.image}`}
+                                          src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${item.image}`}
                                           alt={item.title}
                                           className="h-full w-full object-cover object-center"
                                         />
@@ -383,7 +383,7 @@ const CartDrawer = () => {
                             <div className="h-16 w-16 flex-shrink-0 overflow-hidden border border-gray-200 rounded-md">
                               {item.image ? (
                                 <img
-                                  src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-images/${item.image}`}
+                                  src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${item.image}`}
                                   alt={item.title}
                                   className="h-full w-full object-cover object-center"
                                 />

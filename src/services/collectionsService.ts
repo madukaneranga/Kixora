@@ -57,6 +57,7 @@ export const fetchCollectionBySlug = async (slug: string): Promise<CollectionWit
           products!inner(
             id,
             title,
+            slug,
             price,
             sku,
             brands(
@@ -71,7 +72,8 @@ export const fetchCollectionBySlug = async (slug: string): Promise<CollectionWit
               id,
               size,
               color,
-              stock
+              stock,
+              is_active
             )
           )
         )
@@ -131,6 +133,7 @@ export const fetchCollectionProducts = async (collectionId: string) => {
         products!inner(
           id,
           title,
+          slug,
           price,
           sku,
           featured,
@@ -146,7 +149,8 @@ export const fetchCollectionProducts = async (collectionId: string) => {
             id,
             size,
             color,
-            stock
+            stock,
+            is_active
           )
         )
       `)
@@ -197,6 +201,7 @@ export const fetchPinnedCollection = async () => {
         products!inner(
           id,
           title,
+          slug,
           price,
           sku,
           featured,
@@ -234,7 +239,7 @@ export const fetchPinnedCollection = async () => {
         brand: item.products.brands?.name,
         image: item.products.product_images?.[0]?.storage_path,
         images: item.products.product_images?.map(img => img.storage_path) || [],
-        variants: item.products.product_variants || []
+        variants: item.products.product_variants?.filter(v => v.is_active !== false) || []
       })) || [];
 
     return {

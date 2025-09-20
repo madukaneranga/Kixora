@@ -238,6 +238,7 @@ const ProductsPage = () => {
         .select(`
           id,
           title,
+          slug,
           price,
           featured,
           categories (
@@ -255,7 +256,8 @@ const ProductsPage = () => {
             id,
             size,
             color,
-            stock
+            stock,
+            is_active
           )
         `)
         .eq('is_active', true)
@@ -307,7 +309,7 @@ const ProductsPage = () => {
         category: product.categories?.name || '',
         image: product.product_images?.[0]?.storage_path,
         images: product.product_images?.map(img => img.storage_path) || [],
-        variants: product.product_variants || []
+        variants: product.product_variants?.filter(v => v.is_active !== false) || []
       })) || [];
 
       // Client-side filtering for colors (apply to fetched products only)

@@ -15,6 +15,7 @@ interface ProductCardProps {
   product: {
     id: string;
     title: string;
+    slug?: string;
     brand?: string;
     price: number;
     image?: string;
@@ -211,7 +212,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <Link to={`/products/${product.id}`}>
+        <Link to={`/products/${product.slug || product.id}`}>
           {primaryImage ? (
             <div className="relative w-full h-full">
               {/* Primary Image */}
@@ -296,7 +297,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
       </div>
 
       <div className="p-3 relative bg-transparent md:bg-transparent">
-        <Link to={`/products/${product.id}`}>
+        <Link to={`/products/${product.slug || product.id}`}>
           {product.brand && (
             <p className="text-xs text-gray-500 mb-1">{product.brand}</p>
           )}

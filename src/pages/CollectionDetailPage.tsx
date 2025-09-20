@@ -67,7 +67,7 @@ const CollectionDetailPage = () => {
     brand: item.products.brands?.name,
     image: item.products.product_images?.[0]?.storage_path,
     images: item.products.product_images?.map(img => img.storage_path) || [],
-    variants: item.products.product_variants || [],
+    variants: item.products.product_variants?.filter(v => v.is_active !== false) || [],
     position: item.position
   })).sort((a, b) => a.position - b.position) || [];
 
