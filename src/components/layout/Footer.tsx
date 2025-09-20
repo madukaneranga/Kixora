@@ -1,12 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Mail } from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../ui/CustomToast';
+import { supabase } from '../../lib/supabase';
 import logo from '../../assests/logo.white.png';
+
+interface Category {
+  id: string;
+  slug: string;
+  name: string;
+}
 
 const Footer = () => {
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  // Fetch categories for quick links
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data } = await supabase
+          .from('categories')
+          .select('id, slug, name')
+          .order('name')
+          .limit(6); // Limit to 6 categories for footer
+
+        setCategories(data || []);
+      } catch (error) {
+        console.error('Error fetching categories for footer:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,20 +108,34 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/products?category=running" className="hover:text-gray-300 transition-colors">
-                  Running Shoes
+                <Link to="/collections" className="hover:text-gray-300 transition-colors">
+                  Collections
                 </Link>
               </li>
-              <li>
-                <Link to="/products?category=training" className="hover:text-gray-300 transition-colors">
-                  Training Shoes
-                </Link>
-              </li>
-              <li>
-                <Link to="/products?category=lifestyle" className="hover:text-gray-300 transition-colors">
-                  Lifestyle
-                </Link>
-              </li>
+              {categories.slice(0, 4).map((category) => (
+                <li key={category.id}>
+                  <Link
+                    to={`/products?category=${category.slug}`}
+                    className="hover:text-gray-300 transition-colors"
+                  >
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
+              {categories.length === 0 && (
+                <>
+                  <li>
+                    <Link to="/featured" className="hover:text-gray-300 transition-colors">
+                      Featured Products
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/new-arrivals" className="hover:text-gray-300 transition-colors">
+                      New Arrivals
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
 
@@ -167,9 +208,6 @@ const Footer = () => {
             </Link>
             <a href="#" className="text-white hover:text-gray-300 text-sm transition-colors">
               Terms of Service
-            </a>
-            <a href="#" className="text-white hover:text-gray-300 text-sm transition-colors">
-              Cookie Policy
             </a>
           </div>
         </div>
