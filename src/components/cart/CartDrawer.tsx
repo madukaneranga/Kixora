@@ -15,11 +15,18 @@ const CartDrawer = () => {
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  const handleQuantityUpdate = async (itemId: string, newQuantity: number) => {
+  const handleQuantityUpdate = async (itemId: string, newQuantity: number, event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    setIsUpdating(true);
     setUpdatingItems(prev => new Set([...prev, itemId]));
 
     try {
@@ -41,6 +48,7 @@ const CartDrawer = () => {
         newSet.delete(itemId);
         return newSet;
       });
+      setIsUpdating(false);
     }
   };
 
@@ -64,10 +72,16 @@ const CartDrawer = () => {
     }
   };
 
+  const handleCloseCart = () => {
+    // Don't allow closing during quantity updates
+    if (isUpdating) return;
+    closeCart();
+  };
+
   return (
     <>
       <Transition.Root show={isOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-50" onClose={closeCart}>
+        <Dialog as="div" className="relative z-50" onClose={() => {}}>
         <Transition.Child
           as={Fragment}
           enter="ease-in-out duration-300"
@@ -77,12 +91,15 @@ const CartDrawer = () => {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity" />
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity"
+            onClick={handleCloseCart}
+          />
         </Transition.Child>
 
         {/* Desktop Layout - Right Sidebar */}
         <div className="fixed inset-0 overflow-hidden hidden md:block">
-          <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute inset-0 overflow-hidden" onClick={handleCloseCart}>
             <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
               <Transition.Child
                 as={Fragment}
@@ -93,7 +110,10 @@ const CartDrawer = () => {
                 leaveFrom="translate-x-0"
                 leaveTo="translate-x-full"
               >
-                <Dialog.Panel className="pointer-events-auto w-screen max-w-md">
+                <Dialog.Panel
+                  className="pointer-events-auto w-screen max-w-md"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="flex h-full flex-col bg-white shadow-xl">
                     <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
                       <div className="flex items-start justify-between">
@@ -113,7 +133,7 @@ const CartDrawer = () => {
                           <button
                             type="button"
                             className="-m-2 p-2 text-black hover:text-gray-700"
-                            onClick={closeCart}
+                            onClick={handleCloseCart}
                           >
                             <X className="h-6 w-6" />
                           </button>
@@ -131,7 +151,7 @@ const CartDrawer = () => {
                               >
                                 <ShoppingBag className="mx-auto h-12 w-12 text-black mb-4" />
                                 <p className="text-black mb-6">Your cart is empty</p>
-                                <Button onClick={closeCart}>
+                                <Button onClick={handleCloseCart}>
                                   <Link to="/products">Continue Shopping</Link>
                                 </Button>
                               </motion.div>
@@ -189,7 +209,7 @@ const CartDrawer = () => {
                                       <div className="flex flex-1 items-end justify-between text-xs">
                                         <div className="flex items-center space-x-1">
                                           <button
-                                            onClick={() => handleQuantityUpdate(item.id, item.quantity - 1)}
+                                            onClick={(e) => handleQuantityUpdate(item.id, item.quantity - 1, e)}
                                             disabled={updatingItems.has(item.id)}
                                             className="p-1 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded"
                                           >
@@ -199,7 +219,7 @@ const CartDrawer = () => {
                                             {updatingItems.has(item.id) ? '...' : item.quantity}
                                           </span>
                                           <button
-                                            onClick={() => handleQuantityUpdate(item.id, item.quantity + 1)}
+                                            onClick={(e) => handleQuantityUpdate(item.id, item.quantity + 1, e)}
                                             disabled={updatingItems.has(item.id)}
                                             className="p-1 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded"
                                           >
@@ -244,7 +264,7 @@ const CartDrawer = () => {
                         <div className="mt-6">
                           {user ? (
                             <Link to="/checkout">
-                              <Button fullWidth onClick={closeCart}>
+                              <Button fullWidth onClick={handleCloseCart}>
                                 Checkout
                               </Button>
                             </Link>
@@ -253,7 +273,7 @@ const CartDrawer = () => {
                               <p className="text-sm text-black text-center">
                                 Please sign in to continue to checkout
                               </p>
-                              <Button fullWidth onClick={closeCart}>
+                              <Button fullWidth onClick={handleCloseCart}>
                                 Sign In to Checkout
                               </Button>
                             </div>
@@ -265,7 +285,7 @@ const CartDrawer = () => {
                             <button
                               type="button"
                               className="font-medium text-brand-accent hover:text-brand-secondary"
-                              onClick={closeCart}
+                              onClick={handleCloseCart}
                             >
                               Continue Shopping
                               <span aria-hidden="true"> &rarr;</span>
@@ -282,7 +302,7 @@ const CartDrawer = () => {
         </div>
 
         {/* Mobile Layout - Bottom Sheet */}
-        <div className="fixed inset-0 md:hidden">
+        <div className="fixed inset-0 md:hidden" onClick={handleCloseCart}>
           <Transition.Child
             as={Fragment}
             enter="transform transition ease-in-out duration-300"
@@ -292,7 +312,10 @@ const CartDrawer = () => {
             leaveFrom="translate-y-0"
             leaveTo="translate-y-full"
           >
-            <Dialog.Panel className="absolute bottom-0 left-0 right-0 bg-white shadow-2xl max-h-[85vh] flex flex-col">
+            <Dialog.Panel
+              className="absolute bottom-0 left-0 right-0 bg-white shadow-2xl max-h-[85vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
               {/* Mobile Handle */}
               <div className="flex justify-center pt-2 pb-1">
                 <div className="w-8 h-0.5 bg-gray-300 rounded-full"></div>
@@ -321,7 +344,7 @@ const CartDrawer = () => {
                   <button
                     type="button"
                     className="p-1.5 text-black hover:text-gray-700 hover:bg-gray-100 rounded-full"
-                    onClick={closeCart}
+                    onClick={handleCloseCart}
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -340,7 +363,7 @@ const CartDrawer = () => {
                       <ShoppingBag className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                       <h3 className="text-base font-medium text-black mb-2">Your cart is empty</h3>
                       <p className="text-sm text-gray-600 mb-6">Add some products to get started</p>
-                      <Button onClick={closeCart} size="sm" className="px-6">
+                      <Button onClick={handleCloseCart} size="sm" className="px-6">
                         <Link to="/products">Start Shopping</Link>
                       </Button>
                     </motion.div>
@@ -420,7 +443,7 @@ const CartDrawer = () => {
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center bg-gray-100 rounded-md">
                                   <button
-                                    onClick={() => handleQuantityUpdate(item.id, item.quantity - 1)}
+                                    onClick={(e) => handleQuantityUpdate(item.id, item.quantity - 1, e)}
                                     disabled={updatingItems.has(item.id)}
                                     className="p-2 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-l-md transition-colors"
                                   >
@@ -430,7 +453,7 @@ const CartDrawer = () => {
                                     {updatingItems.has(item.id) ? '...' : item.quantity}
                                   </span>
                                   <button
-                                    onClick={() => handleQuantityUpdate(item.id, item.quantity + 1)}
+                                    onClick={(e) => handleQuantityUpdate(item.id, item.quantity + 1, e)}
                                     disabled={updatingItems.has(item.id)}
                                     className="p-2 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-r-md transition-colors"
                                   >
@@ -476,7 +499,7 @@ const CartDrawer = () => {
                   {/* Compact Checkout Button */}
                   {user ? (
                     <Link to="/checkout" className="block">
-                      <Button fullWidth size="default" onClick={closeCart} className="text-sm font-semibold py-3">
+                      <Button fullWidth size="default" onClick={handleCloseCart} className="text-sm font-semibold py-3">
                         Checkout ({itemCount} {itemCount === 1 ? 'item' : 'items'})
                       </Button>
                     </Link>
@@ -485,7 +508,7 @@ const CartDrawer = () => {
                       <p className="text-xs text-gray-600 text-center">
                         Please sign in to continue
                       </p>
-                      <Button fullWidth size="default" onClick={closeCart} className="text-sm font-semibold py-3">
+                      <Button fullWidth size="default" onClick={handleCloseCart} className="text-sm font-semibold py-3">
                         Sign In to Checkout
                       </Button>
                     </div>
@@ -495,7 +518,7 @@ const CartDrawer = () => {
                   <button
                     type="button"
                     className="w-full text-center text-sm text-gray-600 font-medium py-2 hover:text-gray-800 transition-colors"
-                    onClick={closeCart}
+                    onClick={handleCloseCart}
                   >
                     Continue Shopping
                   </button>
