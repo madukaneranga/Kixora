@@ -17,11 +17,7 @@ const WishlistPage = () => {
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    if (user) {
-      fetchWishlist(user.id);
-    }
-  }, [user, fetchWishlist]);
+  // No need to fetch here - App.tsx already handles wishlist merging
 
   // Fetch full product details for wishlist items
   useEffect(() => {

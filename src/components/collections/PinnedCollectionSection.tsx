@@ -80,7 +80,7 @@ const PinnedCollectionSection = ({ collection }: PinnedCollectionSectionProps) =
 
   return (
     <section className="py-8 sm:py-10 bg-white">
-      <div className="w-full">
+      <div className="w-full"> 
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

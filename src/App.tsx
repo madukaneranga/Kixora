@@ -104,11 +104,15 @@ const AppContent = () => {
     // Update cart store with current user ID and new user flag
     setUserId(user?.id || null, isNewUser);
 
-    if (user && !authLoading) {
-      mergeWithDbWishlist(user.id);
-    } else if (!user && !authLoading) {
-      // Clear wishlist when user signs out
-      clearLocal();
+    // Handle wishlist state based on auth status
+    if (!authLoading) {
+      if (user) {
+        // User is authenticated - merge with database
+        mergeWithDbWishlist(user.id);
+      } else {
+        // User is not authenticated - clear wishlist
+        clearLocal();
+      }
     }
   }, [user?.id, authLoading, isNewUser, mergeWithDbWishlist, setUserId, clearLocal]);
 
