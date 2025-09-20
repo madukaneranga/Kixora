@@ -155,33 +155,52 @@ const PinnedCollectionSection = ({ collection }: PinnedCollectionSectionProps) =
             </button>
           </div>
 
-          {/* Custom Product Carousel */}
+          {/* Mobile: Double Row, Desktop: Single Row */}
           <div
             ref={scrollContainerRef}
-            className="flex gap-3 md:gap-6 overflow-x-auto scrollbar-hide pb-4 scroll-smooth px-4 sm:px-6 lg:px-8"
+            className="overflow-x-auto scrollbar-hide pb-4 scroll-smooth px-4 sm:px-6 lg:px-8"
             style={{
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}
           >
-            {collection.products.map((product, index) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, x: 50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="flex-none w-[calc(50%-6px)] sm:w-[calc(50%-8px)] md:w-[calc(33.333%-12px)] lg:w-[calc(25%-18px)] min-w-[160px] max-w-[320px]"
-              >
-                <ProductCard product={product} />
-              </motion.div>
-            ))}
+            {/* Mobile Double Row Grid */}
+            <div className="grid grid-rows-2 grid-flow-col gap-3 auto-cols-[minmax(160px,180px)] sm:hidden">
+              {collection.products.map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, x: 50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="w-full"
+                >
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Desktop Single Row Flex */}
+            <div className="hidden sm:flex gap-3 md:gap-6">
+              {collection.products.map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, x: 50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="flex-none w-[calc(50%-8px)] md:w-[calc(33.333%-12px)] lg:w-[calc(25%-18px)] min-w-[180px] max-w-[280px]"
+                >
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
+            </div>
           </div>
 
           {/* Mobile scroll indicator dots */}
-          <div className="flex justify-center mt-4 sm:mt-6 md:hidden px-4">
+          <div className="flex justify-center mt-4 sm:hidden px-4">
             <div className="flex space-x-2">
-              {Array.from({ length: Math.ceil(collection.products.length / 2) }).map((_, index) => (
+              {Array.from({ length: Math.ceil(collection.products.length / 4) }).map((_, index) => (
                 <div
                   key={index}
                   className="w-2 h-2 bg-gray-300 rounded-full"
