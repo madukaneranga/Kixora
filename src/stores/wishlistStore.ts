@@ -13,6 +13,7 @@ interface WishlistItem {
 interface WishlistStore {
   items: WishlistItem[];
   loading: boolean;
+  currentUserId: string | null;
   fetchWishlist: (userId: string) => Promise<void>;
   addToWishlist: (userId: string, productId: string) => Promise<void>;
   addToWishlistLocal: (productId: string) => Promise<void>;
@@ -30,6 +31,7 @@ export const useWishlistStore = create<WishlistStore>()(
     (set, get) => ({
       items: [],
       loading: false,
+      currentUserId: null,
   
   fetchWishlist: async (userId: string) => {
     set({ loading: true });
@@ -150,7 +152,7 @@ export const useWishlistStore = create<WishlistStore>()(
   },
 
   clearLocal: () => {
-    set({ items: [] });
+    set({ items: [], currentUserId: null });
   },
 
   isInWishlist: (productId: string) => {
@@ -179,6 +181,9 @@ export const useWishlistStore = create<WishlistStore>()(
   mergeWithDbWishlist: async (userId: string) => {
     try {
       console.log('Merging wishlist with database for user:', userId);
+
+      // Update current user ID
+      set({ currentUserId: userId });
 
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Wishlist fetch timeout')), 5000);
