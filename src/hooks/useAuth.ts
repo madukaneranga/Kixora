@@ -21,7 +21,10 @@ export function useAuth() {
 
       if (profileData) {
         setProfile(profileData);
+        setIsNewUser(false); // Existing user
       } else {
+        // New user - no profile exists
+        setIsNewUser(true);
         // fallback profile from session
         setProfile({
           id: sessionUser.id,
@@ -36,6 +39,7 @@ export function useAuth() {
     } catch (err) {
       console.error("Error loading profile:", err);
       setProfile(null);
+      setIsNewUser(false);
     }
   };
 
@@ -75,9 +79,6 @@ export function useAuth() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
 
-      // Detect if this is a new user signup
-      setIsNewUser(event === 'SIGNED_UP');
-
       setUser(session?.user ?? null);
 
       if (session?.user) {
@@ -104,15 +105,18 @@ export function useAuth() {
       options: { data: { full_name: fullName } },
     });
 
-  const signInWithGoogle = () =>
-    supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
-    });
 
-  const signOut = () => supabase.auth.signOut();
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Force local logout if server logout fails
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.reload();
+    }
+  };
 
   const resetPassword = (email: string) =>
     supabase.auth.resetPasswordForEmail(email, {
@@ -134,7 +138,6 @@ export function useAuth() {
     isNewUser,
     signIn,
     signUp,
-    signInWithGoogle,
     signOut,
     resetPassword,
     updatePassword,
