@@ -59,7 +59,7 @@ const ThankYouPage = () => {
           price,
           featured,
           product_images(storage_path),
-          product_variants(id, size, color, stock)
+          product_variants(id, size, color, stock, is_active)
         `)
         .eq('is_active', true)
         .eq('featured', true)
@@ -76,7 +76,7 @@ const ThankYouPage = () => {
         featured: product.featured,
         image: product.product_images?.[0]?.storage_path,
         images: product.product_images?.map(img => img.storage_path) || [],
-        variants: product.product_variants?.map(variant => ({
+        variants: product.product_variants?.filter(v => v.is_active !== false).map(variant => ({
           id: variant.id,
           size: variant.size,
           color: variant.color,

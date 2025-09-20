@@ -62,7 +62,7 @@ const ThankYouPopup = ({
           title,
           price,
           product_images!inner(storage_path),
-          product_variants!inner(id, size, color, stock)
+          product_variants!inner(id, size, color, stock, is_active)
         `)
         .eq('is_active', true)
         .eq('featured', true)
@@ -76,7 +76,7 @@ const ThankYouPopup = ({
         title: product.title,
         price: product.price,
         image: product.product_images?.[0]?.storage_path,
-        variants: product.product_variants?.map(variant => ({
+        variants: product.product_variants?.filter(v => v.is_active !== false).map(variant => ({
           id: variant.id,
           size: variant.size,
           color: variant.color,

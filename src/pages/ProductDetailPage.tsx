@@ -165,8 +165,9 @@ const ProductDetailPage = () => {
         data.product_images.sort((a, b) => a.display_order - b.display_order);
       }
 
-      // Sort variants by size and color
+      // Filter out inactive variants and sort by size and color
       if (data.product_variants) {
+        data.product_variants = data.product_variants.filter(v => v.is_active !== false);
         data.product_variants.sort((a, b) => {
           if (a.size && b.size) {
             return parseInt(a.size) - parseInt(b.size);
