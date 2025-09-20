@@ -146,14 +146,14 @@ const HomePage = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="flex items-center justify-between mb-4 sm:mb-6 px-6 sm:px-8 lg:px-10"
+            className="flex items-center justify-between mb-4 sm:mb-6 px-6 sm:pl-12 sm:pr-8 lg:pl-16 lg:pr-10"
           >
             <motion.h2
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-black"
+              className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-black sm:ml-8 lg:ml-10"
             >
               Popular Picks
             </motion.h2>
@@ -163,8 +163,36 @@ const HomePage = () => {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex-shrink-0"
+              className="flex items-center gap-3"
             >
+              {/* Navigation Buttons */}
+              <div className="hidden md:flex items-center gap-2">
+                <button
+                  onClick={() => scroll('left')}
+                  disabled={!canScrollLeft}
+                  className={`w-10 h-10 bg-white shadow-md border border-gray-200 rounded-full flex items-center justify-center transition-all duration-200 ${
+                    canScrollLeft
+                      ? 'text-black hover:bg-gray-50 hover:shadow-lg'
+                      : 'text-gray-300 cursor-not-allowed'
+                  }`}
+                >
+                  <ChevronLeft size={18} />
+                </button>
+
+                <button
+                  onClick={() => scroll('right')}
+                  disabled={!canScrollRight}
+                  className={`w-10 h-10 bg-white shadow-md border border-gray-200 rounded-full flex items-center justify-center transition-all duration-200 ${
+                    canScrollRight
+                      ? 'text-black hover:bg-gray-50 hover:shadow-lg'
+                      : 'text-gray-300 cursor-not-allowed'
+                  }`}
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+
+              {/* View All Button */}
               <Link to="/products">
                 <Button
                   variant="outline"
@@ -179,7 +207,7 @@ const HomePage = () => {
             </motion.div>
           </motion.div>
 
-          {/* Products Carousel with Navigation */}
+          {/* Products Carousel */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -187,36 +215,10 @@ const HomePage = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="relative w-full"
           >
-            {/* Navigation Buttons */}
-            <div className="hidden md:block">
-              <button
-                onClick={() => scroll('left')}
-                disabled={!canScrollLeft}
-                className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white shadow-lg border border-gray-200 rounded-full flex items-center justify-center transition-all duration-200 ${
-                  canScrollLeft
-                    ? 'text-black hover:bg-gray-50 hover:shadow-xl'
-                    : 'text-gray-300 cursor-not-allowed'
-                }`}
-              >
-                <ChevronLeft size={20} />
-              </button>
-
-              <button
-                onClick={() => scroll('right')}
-                disabled={!canScrollRight}
-                className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white shadow-lg border border-gray-200 rounded-full flex items-center justify-center transition-all duration-200 ${
-                  canScrollRight
-                    ? 'text-black hover:bg-gray-50 hover:shadow-xl'
-                    : 'text-gray-300 cursor-not-allowed'
-                }`}
-              >
-                <ChevronRight size={20} />
-              </button>
-            </div>
 
             {/* Products Carousel */}
             {loading ? (
-              <div className="flex gap-3 md:gap-6 overflow-x-auto scrollbar-hide pb-4 px-4 sm:px-6 lg:px-8">
+              <div className="flex gap-3 md:gap-6 overflow-x-auto scrollbar-hide pb-4 px-4 sm:pl-20 sm:pr-6 lg:pl-26 lg:pr-8">
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
@@ -227,7 +229,7 @@ const HomePage = () => {
             ) : (
               <div
                 ref={scrollContainerRef}
-                className="flex gap-3 md:gap-6 overflow-x-auto scrollbar-hide pb-4 scroll-smooth px-4 sm:px-6 lg:px-8"
+                className="flex gap-3 md:gap-6 overflow-x-auto scrollbar-hide pb-4 scroll-smooth px-4 sm:pl-20 sm:pr-6 lg:pl-26 lg:pr-8"
                 style={{
                   scrollbarWidth: 'none',
                   msOverflowStyle: 'none'

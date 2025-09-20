@@ -39,9 +39,9 @@ const Footer = () => {
   return (
     <footer className="bg-black text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Brand */}
-          <div className="space-y-3">
+          <div className="space-y-3 lg:col-span-2">
             <div>
               <img
                 src={logo}
@@ -65,6 +65,9 @@ const Footer = () => {
               <a href="#" className="text-white hover:text-gray-300 transition-colors">
                 <Mail size={20} />
               </a>
+            </div>
+            <div className="pt-4">
+              <a href="https://www.payhere.lk" target="_blank"><img src="https://www.payhere.lk/downloads/images/payhere_long_banner.png" alt="PayHere" width="200"/></a>
             </div>
           </div>
 
@@ -95,28 +98,33 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Customer Service */}
+          {/* Support */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Customer Service</h3>
+            <h3 className="text-lg font-semibold">Support</h3>
             <ul className="space-y-2 text-white">
               <li>
-                <a href="#" className="hover:text-gray-300 transition-colors">
+                <Link to="/faq" className="hover:text-gray-300 transition-colors">
+                  FAQ
+                </Link>
+              </li>
+              <li>
+                <Link to="/delivery" className="hover:text-gray-300 transition-colors">
+                  Delivery Info
+                </Link>
+              </li>
+              <li>
+                <Link to="/submit-request" className="hover:text-gray-300 transition-colors">
+                  Submit a Request
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="hover:text-gray-300 transition-colors">
                   Contact Us
-                </a>
+                </Link>
               </li>
               <li>
                 <a href="#" className="hover:text-gray-300 transition-colors">
                   Size Guide
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-gray-300 transition-colors">
-                  Shipping Info
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-gray-300 transition-colors">
-                  Returns
                 </a>
               </li>
             </ul>
@@ -145,9 +153,6 @@ const Footer = () => {
                 {isSubscribing ? 'Subscribing...' : 'Subscribe'}
               </button>
             </form>
-            <div>
-              <a href="https://www.payhere.lk" target="_blank"><img src="https://www.payhere.lk/downloads/images/payhere_long_banner.png" alt="PayHere" width="400"/></a>
-            </div>
           </div>
         </div>
 
