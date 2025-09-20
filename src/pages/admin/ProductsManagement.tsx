@@ -414,6 +414,38 @@ const ProductsManagement = () => {
     }
   };
 
+  const toggleFeaturedStatus = async (productId: string, currentStatus: boolean) => {
+    try {
+      if (!user?.id) {
+        showErrorToast('Authentication required');
+        return;
+      }
+
+      const isAdmin = await isUserAdmin(user.id);
+      if (!isAdmin) {
+        throw new Error('Access denied: Admin privileges required');
+      }
+
+      const { error } = await supabaseAdmin
+        .from('products')
+        .update({ featured: !currentStatus })
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      setProducts(products.map(product =>
+        product.id === productId
+          ? { ...product, featured: !currentStatus }
+          : product
+      ));
+
+      showSuccessToast(`Product ${!currentStatus ? 'featured' : 'unfeatured'} successfully`);
+    } catch (error) {
+      console.error('Error toggling featured status:', error);
+      showErrorToast('Failed to update featured status');
+    }
+  };
+
   const handleDeleteProduct = (productId: string) => {
     setDeletingProductId(productId);
     setShowDeleteConfirm(true);
@@ -915,6 +947,9 @@ const ProductsManagement = () => {
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                    Featured
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -1034,6 +1069,28 @@ const ProductsManagement = () => {
                           <>
                             <ToggleLeft className="w-4 h-4 mr-2" />
                             <span>Inactive</span>
+                          </>
+                        )}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => toggleFeaturedStatus(product.id, product.featured)}
+                        className={`flex items-center text-sm px-3 py-2 rounded-lg font-medium transition-colors ${
+                          product.featured
+                            ? 'bg-yellow-900/20 text-yellow-400 border border-yellow-400/20 hover:bg-yellow-900/30'
+                            : 'bg-gray-900/20 text-gray-400 border border-gray-400/20 hover:bg-gray-900/30'
+                        }`}
+                      >
+                        {product.featured ? (
+                          <>
+                            <ToggleRight className="w-4 h-4 mr-2" />
+                            <span>Featured</span>
+                          </>
+                        ) : (
+                          <>
+                            <ToggleLeft className="w-4 h-4 mr-2" />
+                            <span>Regular</span>
                           </>
                         )}
                       </button>
