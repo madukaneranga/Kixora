@@ -34,6 +34,7 @@ import UsersManagement from './pages/admin/UsersManagement';
 import AuditLogs from './pages/admin/AuditLogs';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 import { PageLoading } from './components/ui/Loading';
 
 const queryClient = new QueryClient({
@@ -75,6 +76,7 @@ const AppLayout = () => {
           <Route path="/payment/cancel" element={<PaymentCancelPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />

@@ -85,7 +85,7 @@ const CollectionsPage = () => {
                 <Link to={`/collections/${collection.slug}`}>
                   <div className="relative h-full overflow-hidden">
                     <img
-                      src={collection.image_url || 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=600'}
+                      src={collection.image_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${collection.image_url}` : 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=600'}
                       alt={collection.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />

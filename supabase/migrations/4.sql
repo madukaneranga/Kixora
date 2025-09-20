@@ -256,10 +256,10 @@ ON CONFLICT DO NOTHING;
 -- =====================================================
 
 INSERT INTO collections (slug, name, description, image_url, is_active, is_pinned, display_order) VALUES
-  ('featured', 'Featured Products', 'Our hand-picked selection of the best running shoes', 'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=800&h=400&fit=crop', true, true, 1),
-  ('new-arrivals', 'New Arrivals', 'Latest products just added to our catalog', 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&h=400&fit=crop', true, true, 2),
-  ('bestsellers', 'Best Sellers', 'Most popular products among our customers', 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=400&fit=crop', true, true, 3),
-  ('nike-collection', 'Nike Collection', 'Premium Nike footwear for athletes', 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&h=400&fit=crop', true, false, 4)
+  ('featured', 'Featured Products', 'Our hand-picked selection of the best running shoes', 'collections/collection_featured.jpg', true, true, 1),
+  ('new-arrivals', 'New Arrivals', 'Latest products just added to our catalog', 'collections/collection_new_arrivals.jpg', true, true, 2),
+  ('bestsellers', 'Best Sellers', 'Most popular products among our customers', 'collections/collection_bestsellers.jpg', true, true, 3),
+  ('nike-collection', 'Nike Collection', 'Premium Nike footwear for athletes', 'collections/collection_nike.jpg', true, false, 4)
 ON CONFLICT (slug) DO NOTHING;
 
 -- =====================================================
