@@ -79,13 +79,19 @@ interface Product {
 interface RelatedProduct {
   id: string;
   title: string;
+  slug?: string;
   price: number;
   image?: string;
   rating?: number;
 }
 
+// Helper function to check if a string is a UUID
+const isUUID = (str: string): boolean => {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+};
+
 const ProductDetailPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { addItem } = useCartStore();
@@ -101,10 +107,10 @@ const ProductDetailPage = () => {
   const [selectedVariant, setSelectedVariant] = useState<string>('');
 
   useEffect(() => {
-    if (id) {
+    if (slug) {
       fetchProduct();
     }
-  }, [id]);
+  }, [slug]);
 
   useEffect(() => {
     if (product?.category_id) {
@@ -113,7 +119,7 @@ const ProductDetailPage = () => {
   }, [product]);
 
   const fetchProduct = async () => {
-    if (!id) return;
+    if (!slug) return;
     
     setLoading(true);
     try {
@@ -153,7 +159,7 @@ const ProductDetailPage = () => {
             )
           )
         `)
-        .eq('id', id)
+        .eq(isUUID(slug) ? 'id' : 'slug', slug)
         .eq('is_active', true)
         .is('deleted_at', null)
         .single();
@@ -203,6 +209,7 @@ const ProductDetailPage = () => {
         .select(`
           id,
           title,
+          slug,
           price,
           product_images (
             storage_path,
@@ -933,7 +940,7 @@ const ProductDetailPage = () => {
                 whileHover={{ y: -4 }}
                 className="bg-white shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
               >
-                <Link to={`/products/${relatedProduct.id}`} className="block">
+                <Link to={`/products/${relatedProduct.slug || relatedProduct.id}`} className="block">
                   <div className="relative aspect-square overflow-hidden">
                     {relatedProduct.image ? (
                       <img

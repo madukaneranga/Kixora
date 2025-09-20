@@ -57,6 +57,7 @@ export const fetchCollectionBySlug = async (slug: string): Promise<CollectionWit
           products!inner(
             id,
             title,
+            slug,
             price,
             sku,
             brands(
@@ -132,6 +133,7 @@ export const fetchCollectionProducts = async (collectionId: string) => {
         products!inner(
           id,
           title,
+          slug,
           price,
           sku,
           featured,
@@ -199,6 +201,7 @@ export const fetchPinnedCollection = async () => {
         products!inner(
           id,
           title,
+          slug,
           price,
           sku,
           featured,

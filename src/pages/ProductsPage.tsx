@@ -238,6 +238,7 @@ const ProductsPage = () => {
         .select(`
           id,
           title,
+          slug,
           price,
           featured,
           categories (

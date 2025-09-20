@@ -516,6 +516,14 @@ const ProductsManagement = () => {
     setShowModal(true);
   };
 
+  const handleTitleChange = (title: string) => {
+    setFormData({
+      ...formData,
+      title,
+      slug: title ? generateSlug(title) : ''
+    });
+  };
+
   const resetForm = () => {
     setFormData({
       title: '',
@@ -730,6 +738,14 @@ const ProductsManagement = () => {
 
     // Only allow toggling for existing variants
     if (variant.isExisting) {
+      // Check if this is the only active variant and we're trying to deactivate it
+      const activeVariants = variants.filter(v => v.isExisting && v.is_active);
+
+      if (variant.is_active && activeVariants.length === 1) {
+        showErrorToast('Cannot deactivate the only active variant. A product must have at least one active variant.');
+        return;
+      }
+
       newVariants[index] = {
         ...variant,
         is_active: !variant.is_active
@@ -1003,17 +1019,21 @@ const ProductsManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
                         onClick={() => toggleProductStatus(product.id, product.is_active)}
-                        className="flex items-center"
+                        className={`flex items-center text-sm px-3 py-2 rounded-lg font-medium transition-colors ${
+                          product.is_active
+                            ? 'bg-green-900/20 text-green-400 border border-green-400/20 hover:bg-green-900/30'
+                            : 'bg-red-900/20 text-red-400 border border-red-400/20 hover:bg-red-900/30'
+                        }`}
                       >
                         {product.is_active ? (
                           <>
-                            <ToggleRight className="w-5 h-5 text-green-400 mr-2" />
-                            <span className="text-green-400 text-sm">Active</span>
+                            <ToggleRight className="w-4 h-4 mr-2" />
+                            <span>Active</span>
                           </>
                         ) : (
                           <>
-                            <ToggleLeft className="w-5 h-5 text-red-400 mr-2" />
-                            <span className="text-red-400 text-sm">Inactive</span>
+                            <ToggleLeft className="w-4 h-4 mr-2" />
+                            <span>Inactive</span>
                           </>
                         )}
                       </button>
@@ -1113,9 +1133,7 @@ const ProductsManagement = () => {
                           variant="dark"
                           value={formData.title}
                           onChange={(e) => {
-                            const newTitle = e.target.value;
-                            const newSlug = newTitle ? generateSlug(newTitle) : '';
-                            setFormData({ ...formData, title: newTitle, slug: newSlug });
+                            handleTitleChange(e.target.value);
                             clearFieldError('title');
                           }}
                           error={fieldErrors.title}
@@ -1570,22 +1588,29 @@ const ProductsManagement = () => {
                                           <button
                                             type="button"
                                             onClick={() => toggleVariantActive(index)}
-                                            className={`flex items-center justify-center text-xs px-1 py-1 rounded w-8 h-8 ${
+                                            className={`flex items-center text-sm px-3 py-2 rounded-lg font-medium transition-colors ${
                                               variant.is_active
-                                                ? 'bg-green-900/50 text-green-400 hover:bg-green-900/70'
-                                                : 'bg-red-900/50 text-red-400 hover:bg-red-900/70'
+                                                ? 'bg-green-900/20 text-green-400 border border-green-400/20 hover:bg-green-900/30'
+                                                : 'bg-red-900/20 text-red-400 border border-red-400/20 hover:bg-red-900/30'
                                             }`}
                                             title={`Click to ${variant.is_active ? 'disable' : 'enable'} variant`}
                                           >
                                             {variant.is_active ? (
-                                              <ToggleRight className="w-4 h-4" />
+                                              <>
+                                                <ToggleRight className="w-4 h-4 mr-2" />
+                                                <span>Active</span>
+                                              </>
                                             ) : (
-                                              <ToggleLeft className="w-4 h-4" />
+                                              <>
+                                                <ToggleLeft className="w-4 h-4 mr-2" />
+                                                <span>Inactive</span>
+                                              </>
                                             )}
                                           </button>
                                         ) : (
-                                          <span className="text-green-400 text-xs px-1 py-1 bg-green-900/50 rounded w-8 h-8 flex items-center justify-center">
-                                            N
+                                          <span className="inline-flex items-center text-sm px-3 py-2 rounded-lg font-medium bg-blue-900/20 text-blue-400 border border-blue-400/20">
+                                            <Package className="w-4 h-4 mr-2" />
+                                            New
                                           </span>
                                         )}
                                       </td>
