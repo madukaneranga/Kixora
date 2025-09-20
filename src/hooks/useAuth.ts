@@ -112,7 +112,17 @@ export function useAuth() {
       }
     });
 
-  const signOut = () => supabase.auth.signOut();
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Force local logout if server logout fails
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.reload();
+    }
+  };
 
   const resetPassword = (email: string) =>
     supabase.auth.resetPasswordForEmail(email, {
