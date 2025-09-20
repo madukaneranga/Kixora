@@ -94,7 +94,7 @@ const CollectionDetailPage = () => {
       <section
         className="relative h-[40vh] sm:h-[45vh] lg:h-[50vh] bg-black text-white overflow-hidden flex flex-col"
         style={{
-          backgroundImage: collection.image_url ? `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${collection.image_url})` : undefined,
+          backgroundImage: collection.image_url ? `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${collection.image_url})` : undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -168,14 +168,14 @@ const CollectionDetailPage = () => {
             </p>
             <div className="flex flex-col gap-3 sm:gap-4 max-w-md mx-auto sm:max-w-none sm:flex-row sm:justify-center">
               <Link to="/collections" className="w-full sm:w-auto">
-                <button className="w-full sm:w-auto inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-white text-black font-semibold hover:bg-gray-100 transition-colors rounded-lg text-sm sm:text-base min-h-[48px]">
+                <button className="w-full sm:w-auto inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-white text-black font-semibold hover:bg-gray-100 transition-colors text-sm sm:text-base min-h-[48px]">
                   <span>View All Collections</span>
                   <ArrowRight size={16} className="ml-2 sm:hidden" />
                   <ArrowRight size={20} className="ml-2 hidden sm:inline" />
                 </button>
               </Link>
               <Link to="/products" className="w-full sm:w-auto">
-                <button className="w-full sm:w-auto inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors rounded-lg text-sm sm:text-base min-h-[48px]">
+                <button className="w-full sm:w-auto inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 border-2 border-white text-white font-semibold hover:bg-white hover:text-black transition-colors text-sm sm:text-base min-h-[48px]">
                   Browse Products
                 </button>
               </Link>

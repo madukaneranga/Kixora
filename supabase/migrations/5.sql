@@ -238,10 +238,10 @@ ON CONFLICT DO NOTHING;
 -- =====================================================
 
 INSERT INTO collections (slug, name, description, image_url, is_active, is_pinned, display_order) VALUES
-  ('trending-now', 'Trending Now', 'The hottest items everyone is talking about', 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=400&fit=crop', true, true, 1),
-  ('new-arrivals', 'New Arrivals', 'Fresh styles just landed in our store', 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=400&fit=crop', true, false, 2),
-  ('bestsellers', 'Best Sellers', 'Customer favorites that keep selling out', 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&h=400&fit=crop', true, false, 3),
-  ('streetwear', 'Streetwear', 'Urban fashion for the modern lifestyle', 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=800&h=400&fit=crop', true, false, 4)
+  ('trending-now', 'Trending Now', 'The hottest items everyone is talking about', 'collections/collection_trending_featured.jpg', true, true, 1),
+  ('new-arrivals', 'New Arrivals', 'Fresh styles just landed in our store', 'collections/collection_new_arrivals.jpg', true, false, 2),
+  ('bestsellers', 'Best Sellers', 'Customer favorites that keep selling out', 'collections/collection_bestsellers.jpg', true, false, 3),
+  ('streetwear', 'Streetwear', 'Urban fashion for the modern lifestyle', 'collections/collection_streetwear.jpg', true, false, 4)
 ON CONFLICT (slug) DO NOTHING;
 
 -- =====================================================

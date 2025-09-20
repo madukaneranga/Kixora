@@ -61,6 +61,7 @@ CREATE TABLE products (
   sku text UNIQUE NOT NULL,
   title text NOT NULL,
   description text,
+  slug text UNIQUE,
   price decimal(10,2) NOT NULL CHECK (price >= 0),
   currency text DEFAULT 'LKR',
   category_id uuid REFERENCES categories(id) ON DELETE SET NULL,

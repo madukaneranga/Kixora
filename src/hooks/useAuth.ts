@@ -104,6 +104,14 @@ export function useAuth() {
       options: { data: { full_name: fullName } },
     });
 
+  const signInWithGoogle = () =>
+    supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+
   const signOut = () => supabase.auth.signOut();
 
   const resetPassword = (email: string) =>
@@ -126,6 +134,7 @@ export function useAuth() {
     isNewUser,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
     resetPassword,
     updatePassword,

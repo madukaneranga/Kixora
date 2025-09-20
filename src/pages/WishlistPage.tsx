@@ -12,7 +12,7 @@ import Breadcrumb from '../components/ui/Breadcrumb';
 
 const WishlistPage = () => {
   const { user } = useAuth();
-  const { items, loading, fetchWishlist, removeFromWishlist } = useWishlistStore();
+  const { items, loading, fetchWishlist, removeFromWishlist, clearWishlist } = useWishlistStore();
   const [products, setProducts] = useState<any[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,10 +77,8 @@ const WishlistPage = () => {
     if (!user || items.length === 0) return;
 
     try {
-      // Remove all items from wishlist
-      for (const item of items) {
-        await removeFromWishlist(user.id, item.productId);
-      }
+      // Clear all items from wishlist using the dedicated clearWishlist function
+      await clearWishlist(user.id);
       showSuccessToast('Wishlist cleared');
     } catch (error) {
       showErrorToast('Failed to clear wishlist');

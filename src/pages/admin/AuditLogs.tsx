@@ -148,7 +148,15 @@ const AuditLogs = () => {
       orders: 'Orders',
       profiles: 'Users',
       brands: 'Brands',
-      collections: 'Collections'
+      collections: 'Collections',
+      product_variants: 'Product Variants',
+      product_images: 'Product Images',
+      collection_products: 'Collection Products',
+      wishlists: 'Wishlists',
+      carts: 'Carts',
+      cart_items: 'Cart Items',
+      order_items: 'Order Items',
+      reviews: 'Reviews'
     };
     return names[tableName] || tableName;
   };
@@ -260,7 +268,15 @@ const AuditLogs = () => {
     { value: 'orders', label: 'Orders' },
     { value: 'profiles', label: 'Users' },
     { value: 'brands', label: 'Brands' },
-    { value: 'collections', label: 'Collections' }
+    { value: 'collections', label: 'Collections' },
+    { value: 'product_variants', label: 'Product Variants' },
+    { value: 'product_images', label: 'Product Images' },
+    { value: 'collection_products', label: 'Collection Products' },
+    { value: 'wishlists', label: 'Wishlists' },
+    { value: 'carts', label: 'Carts' },
+    { value: 'cart_items', label: 'Cart Items' },
+    { value: 'order_items', label: 'Order Items' },
+    { value: 'reviews', label: 'Reviews' }
   ];
 
   const actionOptions = [

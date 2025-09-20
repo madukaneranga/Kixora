@@ -567,7 +567,7 @@ const CollectionsManagement = () => {
                         {collection.image_url ? (
                           <img
                             className="h-10 w-10 rounded object-cover mr-4"
-                            src={collection.image_url}
+                            src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${collection.image_url}`}
                             alt={collection.name}
                           />
                         ) : (
@@ -721,7 +721,7 @@ const CollectionsManagement = () => {
                     <div className="mb-3">
                       <div className="relative inline-block">
                         <img
-                          src={formData.image_url}
+                          src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${formData.image_url}`}
                           alt="Collection preview"
                           className="w-32 h-32 object-cover rounded-lg border border-[rgb(51,51,51)]"
                         />

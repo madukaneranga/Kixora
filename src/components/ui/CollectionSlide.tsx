@@ -44,7 +44,7 @@ const CollectionSlide: React.FC<CollectionSlideProps> = ({ collection, isActive 
         transition={{ duration: 0.8 }}
       >
         <img
-          src={collection.image_url || 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=1920'}
+          src={collection.image_url ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${collection.image_url}` : 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=1920'}
           alt={collection.name}
           className="w-full h-full object-cover"
         />
@@ -53,7 +53,7 @@ const CollectionSlide: React.FC<CollectionSlideProps> = ({ collection, isActive 
 
       {/* Content */}
       <motion.div
-        className="absolute bottom-16 sm:bottom-20 md:bottom-24 lg:bottom-28 left-4 right-4 sm:left-6 sm:right-6 md:left-8 md:right-8 flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4 sm:gap-6 lg:gap-0"
+        className="absolute bottom-24 sm:bottom-28 md:bottom-32 lg:bottom-36 left-4 right-4 sm:left-6 sm:right-6 md:left-8 md:right-8 flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4 sm:gap-6 lg:gap-0"
         variants={textVariants}
         animate={isActive ? "enter" : "exit"}
       >

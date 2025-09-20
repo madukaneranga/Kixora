@@ -189,16 +189,9 @@ export const uploadCollectionImage = async (
       throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
     }
 
-    // Get public URL
-    const { data: urlData } = supabaseAdmin.storage
-      .from('kixora')
-      .getPublicUrl(filePath);
-
-    if (!urlData.publicUrl) {
-      throw new Error(`Failed to get public URL for ${file.name}`);
-    }
-
-    return urlData.publicUrl;
+    // Return the file path (not the full URL)
+    // This matches how product images are stored as paths
+    return filePath;
 
   } catch (error) {
     console.error('Error uploading collection image:', file.name, error);
@@ -206,12 +199,20 @@ export const uploadCollectionImage = async (
   }
 };
 
-export const deleteCollectionImage = async (imageUrl: string): Promise<void> => {
+export const deleteCollectionImage = async (imagePath: string): Promise<void> => {
   try {
-    // Extract file path from URL
-    const url = new URL(imageUrl);
-    const pathSegments = url.pathname.split('/');
-    const filePath = pathSegments.slice(-2).join('/'); // collections/filename.jpg
+    let filePath: string;
+
+    // Handle both full URLs and storage paths
+    if (imagePath.startsWith('http')) {
+      // Extract file path from URL
+      const url = new URL(imagePath);
+      const pathSegments = url.pathname.split('/');
+      filePath = pathSegments.slice(-2).join('/'); // collections/filename.jpg
+    } else {
+      // Already a storage path
+      filePath = imagePath;
+    }
 
     // Delete file from storage
     const { error } = await supabaseAdmin.storage
