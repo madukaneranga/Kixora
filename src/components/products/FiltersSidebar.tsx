@@ -124,23 +124,24 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'tween', duration: 0.3 }}
-            className="fixed left-0 top-0 h-full w-96 bg-white z-50 shadow-xl overflow-y-auto"
+            className="fixed left-0 top-0 h-full w-96 bg-white z-50 shadow-xl flex flex-col"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            {/* Fixed Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white flex-shrink-0">
               <h2 className="text-xl font-semibold text-black">
                 Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
               </h2>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 transition-colors"
+                className="p-2 hover:bg-gray-100 transition-colors rounded-full"
               >
                 <X size={20} className="text-gray-600" />
               </button>
             </div>
 
-            {/* Content */}
-            <div className="p-6 space-y-6">
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-6 space-y-6">
               {/* Search */}
               <ExpandableSection
                 isExpanded={searchExpanded}
@@ -230,18 +231,19 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
                 />
               </ExpandableSection>
 
-              {/* Clear Filters */}
-              {activeFilterCount > 0 && (
-                <div className="pt-4 border-t border-gray-200">
-                  <Button
-                    variant="outline"
-                    onClick={clearFilters}
-                    fullWidth
-                  >
-                    Clear All Filters ({activeFilterCount})
-                  </Button>
-                </div>
-              )}
+                {/* Clear Filters */}
+                {activeFilterCount > 0 && (
+                  <div className="pt-4 border-t border-gray-200">
+                    <Button
+                      variant="outline"
+                      onClick={clearFilters}
+                      fullWidth
+                    >
+                      Clear All Filters ({activeFilterCount})
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
         </>

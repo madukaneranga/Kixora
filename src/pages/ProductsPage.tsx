@@ -9,7 +9,7 @@
  * - Optimized performance with memoized functions and React.memo
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SlidersHorizontal, ChevronUp, ChevronDown, Package } from 'lucide-react';
@@ -54,7 +54,6 @@ interface PriceRange {
 }
 
 // Constants
-const AVAILABLE_COLORS = ['Black', 'White', 'Red', 'Blue', 'Grey', 'Navy', 'Beige'];
 const PRODUCTS_PER_PAGE = 12;
 
 const SORT_OPTIONS = [
@@ -134,18 +133,39 @@ const ProductsPage = () => {
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
   // UI states
   const [showFilters, setShowFilters] = useState(false);
 
   // Filter states
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
-  const [priceRange, setPriceRange] = useState<PriceRange>({ min: '', max: '' });
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState('newest');
+  const [priceRange, setPriceRange] = useState<PriceRange>({
+    min: searchParams.get('minPrice') || '',
+    max: searchParams.get('maxPrice') || ''
+  });
+  const [selectedColors, setSelectedColors] = useState<string[]>(
+    searchParams.get('colors')?.split(',').filter(Boolean) || []
+  );
+  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'newest');
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
 
   // Helper functions
+  const updateSearchParams = useCallback((updates: Record<string, string | null>) => {
+    const newParams = new URLSearchParams(searchParams);
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value && value.trim()) {
+        newParams.set(key, value);
+      } else {
+        newParams.delete(key);
+      }
+    });
+
+    setSearchParams(newParams);
+  }, [searchParams, setSearchParams]);
+
   const getActiveFilterCount = useCallback(() => {
     return [
       selectedCategory,
@@ -157,18 +177,45 @@ const ProductsPage = () => {
 
 
   const handleColorToggle = useCallback((color: string) => {
-    setSelectedColors(prev =>
-      prev.includes(color)
-        ? prev.filter(c => c !== color)
-        : [...prev, color]
-    );
-  }, []);
+    const newColors = selectedColors.includes(color)
+      ? selectedColors.filter(c => c !== color)
+      : [...selectedColors, color];
+
+    setSelectedColors(newColors);
+    updateSearchParams({
+      colors: newColors.length > 0 ? newColors.join(',') : null
+    });
+  }, [selectedColors, updateSearchParams]);
+
+  const handleCategoryChange = useCallback((category: string) => {
+    setSelectedCategory(category);
+    updateSearchParams({ category: category || null });
+  }, [updateSearchParams]);
+
+  const handlePriceChange = useCallback((newPriceRange: PriceRange) => {
+    setPriceRange(newPriceRange);
+    updateSearchParams({
+      minPrice: newPriceRange.min || null,
+      maxPrice: newPriceRange.max || null
+    });
+  }, [updateSearchParams]);
+
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+    updateSearchParams({ search: query || null });
+  }, [updateSearchParams]);
+
+  const handleSortChange = useCallback((sort: string) => {
+    setSortBy(sort);
+    updateSearchParams({ sort: sort !== 'newest' ? sort : null });
+  }, [updateSearchParams]);
 
   const clearFilters = useCallback(() => {
     setSelectedCategory('');
     setPriceRange({ min: '', max: '' });
     setSelectedColors([]);
     setSearchQuery('');
+    setSortBy('newest');
     setSearchParams({});
   }, [setSearchParams]);
 
@@ -176,6 +223,7 @@ const ProductsPage = () => {
   // Data fetching
   const fetchCategories = useCallback(async () => {
     try {
+      setCategoriesError(null);
       const { data, error } = await supabase
         .from('categories')
         .select('id, slug, name')
@@ -185,6 +233,8 @@ const ProductsPage = () => {
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      setCategoriesError('Failed to load categories. Please try again.');
+      setCategories([]);
     }
   }, []);
 
@@ -195,44 +245,13 @@ const ProductsPage = () => {
       setLoading(true);
       setCurrentPage(1);
       setHasMore(true);
+      setError(null);
     }
 
     try {
-      // Get simple product count (no complex joins needed)
-      let countQuery = supabase
-        .from('products')
-        .select('id', { count: 'exact', head: true })
-        .eq('is_active', true)
-        .is('deleted_at', null);
+      // Build the main query with conditional category join
+      const categoryJoin = selectedCategory ? 'categories!inner' : 'categories';
 
-      // Apply basic filters for count (skip color filtering as it's client-side)
-      if (selectedCategory) {
-        // Join with categories for filtering
-        countQuery = supabase
-          .from('products')
-          .select(`
-            id,
-            categories!inner (slug)
-          `, { count: 'exact', head: true })
-          .eq('is_active', true)
-          .is('deleted_at', null)
-          .eq('categories.slug', selectedCategory);
-      }
-
-      if (priceRange.min) {
-        countQuery = countQuery.gte('price', parseFloat(priceRange.min));
-      }
-      if (priceRange.max) {
-        countQuery = countQuery.lte('price', parseFloat(priceRange.max));
-      }
-      if (searchQuery) {
-        countQuery = countQuery.ilike('title', `%${searchQuery}%`);
-      }
-
-      const { count } = await countQuery;
-      setTotalCount(count || 0);
-
-      // Then get the actual products with pagination
       let query = supabase
         .from('products')
         .select(`
@@ -241,7 +260,7 @@ const ProductsPage = () => {
           slug,
           price,
           featured,
-          categories (
+          ${categoryJoin} (
             slug,
             name
           ),
@@ -292,11 +311,7 @@ const ProductsPage = () => {
           query = query.order('created_at', { ascending: false });
       }
 
-      // Add pagination
-      const from = (page - 1) * PRODUCTS_PER_PAGE;
-      const to = from + PRODUCTS_PER_PAGE - 1;
-      query = query.range(from, to);
-
+      // Get all data first for filtering
       const { data, error } = await query;
       if (error) throw error;
 
@@ -312,68 +327,121 @@ const ProductsPage = () => {
         variants: product.product_variants?.filter(v => v.is_active !== false) || []
       })) || [];
 
-      // Client-side filtering for colors (apply to fetched products only)
+      // Apply color filtering client-side
       if (selectedColors.length > 0) {
         fetchedProducts = fetchedProducts.filter(product =>
           product.variants?.some(variant =>
-            selectedColors.includes(variant.color)
+            selectedColors.some(selectedColor =>
+              variant.color && variant.color.toLowerCase() === selectedColor.toLowerCase()
+            )
           )
         );
       }
 
+      // Apply pagination to filtered results
+      const totalFilteredCount = fetchedProducts.length;
+      const from = (page - 1) * PRODUCTS_PER_PAGE;
+      const to = from + PRODUCTS_PER_PAGE;
+      const paginatedProducts = fetchedProducts.slice(from, to);
+
+      setTotalCount(totalFilteredCount);
+
       if (loadMore) {
-        setProducts(prev => [...prev, ...fetchedProducts]);
+        setProducts(prev => [...prev, ...paginatedProducts]);
         setCurrentPage(page);
       } else {
-        setProducts(fetchedProducts);
+        setProducts(paginatedProducts);
       }
 
       // Check if there are more products to load
-      const loadedCount = loadMore ? products.length + fetchedProducts.length : fetchedProducts.length;
-      setHasMore(fetchedProducts.length === PRODUCTS_PER_PAGE);
+      setHasMore(to < totalFilteredCount);
 
     } catch (error) {
       console.error('Error fetching products:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load products. Please try again.';
+      setError(errorMessage);
+
+      if (!loadMore) {
+        setProducts([]);
+        setTotalCount(0);
+      }
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [selectedCategory, priceRange, selectedColors, sortBy, searchQuery, products.length]);
+  }, [selectedCategory, priceRange, selectedColors, sortBy, searchQuery]);
 
   // Load more products function
   const loadMoreProducts = useCallback(() => {
     if (!loadingMore && hasMore) {
       fetchProducts(currentPage + 1, true);
     }
-  }, [fetchProducts, currentPage, loadingMore, hasMore]);
+  }, [currentPage, loadingMore, hasMore, fetchProducts]);
 
-  // Infinite scroll effect
+  // Infinite scroll effect with throttling
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const handleScroll = () => {
-      if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
-        loadMoreProducts();
-      }
+      // Clear previous timeout
+      clearTimeout(timeoutId);
+
+      // Throttle scroll events
+      timeoutId = setTimeout(() => {
+        if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
+          loadMoreProducts();
+        }
+      }, 100);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(timeoutId);
+    };
   }, [loadMoreProducts]);
+
+  // Effect to handle URL parameter changes
+  useEffect(() => {
+    const category = searchParams.get('category') || '';
+    const minPrice = searchParams.get('minPrice') || '';
+    const maxPrice = searchParams.get('maxPrice') || '';
+    const colors = searchParams.get('colors')?.split(',').filter(Boolean) || [];
+    const sort = searchParams.get('sort') || 'newest';
+    const search = searchParams.get('search') || '';
+
+    // Update state if URL params differ from current state
+    if (category !== selectedCategory) setSelectedCategory(category);
+    if (minPrice !== priceRange.min || maxPrice !== priceRange.max) {
+      setPriceRange({ min: minPrice, max: maxPrice });
+    }
+    if (JSON.stringify(colors) !== JSON.stringify(selectedColors)) {
+      setSelectedColors(colors);
+    }
+    if (sort !== sortBy) setSortBy(sort);
+    if (search !== searchQuery) setSearchQuery(search);
+  }, [searchParams]);
 
   // Effects
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
+  // Debounced effect for fetching products
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    const timeoutId = setTimeout(() => {
+      fetchProducts();
+    }, 300); // 300ms debounce for search
+
+    return () => clearTimeout(timeoutId);
+  }, [selectedCategory, priceRange, selectedColors, sortBy, searchQuery]);
 
   // Computed values
-  const activeFilterCount = getActiveFilterCount();
-
+  const activeFilterCount = useMemo(() => getActiveFilterCount(), [selectedCategory, priceRange, selectedColors]);
 
   // Generate breadcrumb items
-  const breadcrumbItems = [
+  const breadcrumbItems = useMemo(() => [
     {
       label: 'Products',
       path: selectedCategory ? '/products' : undefined,
@@ -385,7 +453,12 @@ const ProductsPage = () => {
     ...(searchQuery ? [{
       label: `Search: "${searchQuery}"`
     }] : [])
-  ];
+  ], [selectedCategory, categories, searchQuery]);
+
+  // Memoized current category name
+  const currentCategoryName = useMemo(() => {
+    return selectedCategory ? categories.find(c => c.slug === selectedCategory)?.name : 'All Products';
+  }, [selectedCategory, categories]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -396,10 +469,10 @@ const ProductsPage = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 space-y-3 lg:space-y-0">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-slate-900">
-            {selectedCategory ? categories.find(c => c.slug === selectedCategory)?.name : 'All Products'}
+            {currentCategoryName}
           </h1>
           <p className="text-sm text-slate-600 mt-1">
-            {loading ? 'Loading...' : `${products.length} products found`}
+            {loading ? 'Loading...' : error ? 'Error loading products' : `${products.length} products found`}
           </p>
         </div>
 
@@ -415,7 +488,7 @@ const ProductsPage = () => {
 
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
+            onChange={(e) => handleSortChange(e.target.value)}
             className="px-4 py-2 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500 h-10"
           >
             {SORT_OPTIONS.map(option => (
@@ -433,19 +506,41 @@ const ProductsPage = () => {
         onClose={() => setShowFilters(false)}
         categories={categories}
         selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
+        setSelectedCategory={handleCategoryChange}
         priceRange={priceRange}
-        setPriceRange={setPriceRange}
+        setPriceRange={handlePriceChange}
         selectedColors={selectedColors}
         handleColorToggle={handleColorToggle}
         searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
+        setSearchQuery={handleSearchChange}
         clearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
       />
 
       {/* Products Grid */}
       <div className="w-full">
+        {/* Error Message */}
+        {error && !loading && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <div className="text-red-500 text-sm font-medium">
+                {error}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setError(null);
+                  fetchProducts();
+                }}
+                className="ml-auto text-red-600 hover:text-red-700"
+              >
+                Retry
+              </Button>
+            </div>
+          </div>
+        )}
+
         <ProductGrid products={products} loading={loading} />
 
         {/* Loading more indicator */}
