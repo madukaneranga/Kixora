@@ -13,7 +13,7 @@ import { InlineLoading } from '../components/ui/Loading';
 import Breadcrumb from '../components/ui/Breadcrumb';
 
 const ProfilePage = () => {
-  const { user, profile, updatePassword } = useAuth();
+  const { user, profile, updatePassword, refreshProfile } = useAuth();
   const { items: wishlistItems } = useWishlistStore();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -80,6 +80,9 @@ const ProfilePage = () => {
         .eq('id', user.id);
 
       if (error) throw error;
+
+      // Refresh the profile to get updated data
+      await refreshProfile();
 
       showSuccessToast('Profile updated successfully');
       setIsEditing(false);

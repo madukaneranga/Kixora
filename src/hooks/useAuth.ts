@@ -131,6 +131,12 @@ export function useAuth() {
 
   const isAdmin = profile?.role === "admin";
 
+  const refreshProfile = async () => {
+    if (user) {
+      await loadUserProfile(user);
+    }
+  };
+
   return {
     user,
     profile,
@@ -142,6 +148,7 @@ export function useAuth() {
     resetPassword,
     updatePassword,
     updateEmail,
+    refreshProfile,
     isAdmin
   };
 }
