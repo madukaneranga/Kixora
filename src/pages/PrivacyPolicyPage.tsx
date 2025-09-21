@@ -94,8 +94,8 @@ const PrivacyPolicy: React.FC = () => {
       title: "9. Contact Us",
       content: (
         <>
-          <p>Email: <a href="mailto:your-email@example.com" className="underline">your-email@example.com</a></p>
-          <p>Phone: <a href="tel:your-phone-number" className="underline">+94 XXX XXX XXXX</a></p>
+          <p>Email: <a href="mailto:support@inkixora.com" className="underline">support@inkixora.com</a></p>
+          <p>Phone: <a href="tel:+94741285920" className="underline">+94 74 128 5920</a></p>
         </>
       ),
     },

@@ -62,6 +62,7 @@ const CheckoutPage = () => {
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [sameAsBilling, setSameAsBilling] = useState(true);
+  const [saveDeliveryInfo, setSaveDeliveryInfo] = useState(true);
 
   const {
     register,
@@ -108,6 +109,35 @@ const CheckoutPage = () => {
       navigate('/');
       return;
     }
+
+    // Load saved delivery address if available
+    const loadSavedAddress = async () => {
+      try {
+        const { data: savedAddress } = await supabase
+          .from('delivery_addresses')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_default', true)
+          .single();
+
+        if (savedAddress) {
+          setValue('firstName', savedAddress.first_name);
+          setValue('lastName', savedAddress.last_name);
+          setValue('address', savedAddress.address);
+          setValue('apartment', savedAddress.apartment || '');
+          setValue('city', savedAddress.city);
+          setValue('postalCode', savedAddress.postal_code);
+          setValue('phone', savedAddress.phone);
+          setValue('countryCode', savedAddress.country_code);
+          setValue('country', savedAddress.country);
+        }
+      } catch (error) {
+        console.error('Error loading saved address:', error);
+        // Don't show error to user, just proceed without pre-fill
+      }
+    };
+
+    loadSavedAddress();
   }, [user, authLoading, items, navigate, setValue]);
 
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -179,6 +209,37 @@ const CheckoutPage = () => {
       }
 
       const order = { id: result.order_id };
+
+      // Save delivery information if checkbox is checked
+      if (saveDeliveryInfo) {
+        try {
+          // First, unset any existing default address
+          await supabase
+            .from('delivery_addresses')
+            .update({ is_default: false })
+            .eq('user_id', user!.id);
+
+          // Save the new delivery address as default
+          await supabase
+            .from('delivery_addresses')
+            .insert({
+              user_id: user!.id,
+              first_name: formData.firstName,
+              last_name: formData.lastName,
+              address: formData.address,
+              apartment: formData.apartment || null,
+              city: formData.city,
+              postal_code: formData.postalCode,
+              phone: formData.phone,
+              country_code: formData.countryCode,
+              country: formData.country,
+              is_default: true
+            });
+        } catch (saveError) {
+          console.error('Error saving delivery address:', saveError);
+          // Don't fail the order if address saving fails
+        }
+      }
 
       // Handle different payment methods
       if (formData.paymentMethod === 'payhere') {
@@ -447,6 +508,19 @@ const CheckoutPage = () => {
                       error={errors.phone?.message}
                     />
                   </div>
+
+                  {/* Save Delivery Information Checkbox */}
+                  <div className="pt-4 border-t border-[rgb(51,51,51)]">
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={saveDeliveryInfo}
+                        onChange={(e) => setSaveDeliveryInfo(e.target.checked)}
+                        className="mr-3 text-white accent-white"
+                      />
+                      <span className="text-white text-sm">Save this delivery information for future orders</span>
+                    </label>
+                  </div>
                 </div>
               </div>
 
@@ -518,7 +592,7 @@ const CheckoutPage = () => {
                             <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
                             <span className="truncate">Express</span>
                           </p>
-                          <p className="text-[rgb(94,94,94)] text-sm">Within Colombo</p>
+                          <p className="text-red-400 text-sm font-medium">Only within Colombo</p>
                         </div>
                         <p className="text-white font-medium flex-shrink-0 ml-2">Rs 699</p>
                       </div>
@@ -627,7 +701,7 @@ const CheckoutPage = () => {
                       <Banknote className="w-4 h-4 mr-3 text-white flex-shrink-0" />
                       <div className="min-w-0">
                         <p className="text-white font-medium">Cash on Delivery</p>
-                        <p className="text-[rgb(94,94,94)] text-sm">Pay when you receive</p>
+                        <p className="text-red-400 text-sm font-medium">Only in Colombo</p>
                       </div>
                     </div>
                   </label>

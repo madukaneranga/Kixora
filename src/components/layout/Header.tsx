@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, User, Menu, Heart, LogOut, X, Package } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, Heart, LogOut, X, Package, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import { useCartStore } from '../../stores/cartStore';
@@ -128,7 +128,7 @@ const Header = () => {
                 )}
               </Button>
             </Link>
-
+            
             {/* Cart */}
             <Button
               variant="ghost"
@@ -201,6 +201,17 @@ const Header = () => {
                         <div className="flex items-center space-x-2">
                           <Heart size={16} />
                           <span>Wishlist</span>
+                        </div>
+                      </Link>
+
+                      <Link
+                        to="/my-requests"
+                        className="block px-4 py-2 text-sm text-black hover:bg-gray-100"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <MessageSquare size={16} />
+                          <span>My Requests</span>
                         </div>
                       </Link>
                       

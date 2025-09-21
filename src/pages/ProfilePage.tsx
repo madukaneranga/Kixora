@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Mail, Calendar, Edit3, Save, X, Shield, Package, Heart, Lock } from 'lucide-react';
+import { User, Mail, Calendar, Edit3, Save, X, Shield, Package, Heart, Lock, MapPin, Trash2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useWishlistStore } from '../stores/wishlistStore';
 import { supabase } from '../lib/supabase';
@@ -24,6 +24,12 @@ const ProfilePage = () => {
     wishlistCount: 0,
   });
   const [statsLoading, setStatsLoading] = useState(true);
+  const [deliveryAddresses, setDeliveryAddresses] = useState<any[]>([]);
+  const [addressesLoading, setAddressesLoading] = useState(true);
+  const [deletingAddressId, setDeletingAddressId] = useState<string | null>(null);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [editingAddress, setEditingAddress] = useState<any>(null);
+  const [updatingAddressId, setUpdatingAddressId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || '',
     email: user?.email || '',
@@ -65,6 +71,33 @@ const ProfilePage = () => {
 
     fetchStats();
   }, [user, wishlistItems]);
+
+  useEffect(() => {
+    const fetchDeliveryAddresses = async () => {
+      if (!user) {
+        setAddressesLoading(false);
+        return;
+      }
+
+      try {
+        const { data: addresses, error } = await supabase
+          .from('delivery_addresses')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setDeliveryAddresses(addresses || []);
+      } catch (error) {
+        console.error('Error fetching delivery addresses:', error);
+        setDeliveryAddresses([]);
+      } finally {
+        setAddressesLoading(false);
+      }
+    };
+
+    fetchDeliveryAddresses();
+  }, [user]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -145,6 +178,82 @@ const ProfilePage = () => {
       newPassword: '',
       confirmPassword: '',
     });
+  };
+
+  const handleDeleteAddress = async (addressId: string) => {
+    if (!user) return;
+
+    setDeletingAddressId(addressId);
+    try {
+      const { error } = await supabase
+        .from('delivery_addresses')
+        .delete()
+        .eq('id', addressId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Remove from local state
+      setDeliveryAddresses(prev => prev.filter(addr => addr.id !== addressId));
+      showSuccessToast('Delivery address deleted successfully');
+    } catch (error) {
+      console.error('Error deleting address:', error);
+      showErrorToast('Failed to delete delivery address');
+    } finally {
+      setDeletingAddressId(null);
+    }
+  };
+
+  const handleEditAddress = (address: any) => {
+    setEditingAddressId(address.id);
+    setEditingAddress({ ...address });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingAddressId(null);
+    setEditingAddress(null);
+  };
+
+  const handleUpdateAddress = async () => {
+    if (!user || !editingAddress) return;
+
+    setUpdatingAddressId(editingAddress.id);
+    try {
+      const { error } = await supabase
+        .from('delivery_addresses')
+        .update({
+          first_name: editingAddress.first_name,
+          last_name: editingAddress.last_name,
+          address: editingAddress.address,
+          apartment: editingAddress.apartment || null,
+          city: editingAddress.city,
+          postal_code: editingAddress.postal_code,
+          phone: editingAddress.phone,
+          country_code: editingAddress.country_code,
+          country: editingAddress.country,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingAddress.id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setDeliveryAddresses(prev =>
+        prev.map(addr =>
+          addr.id === editingAddress.id ? editingAddress : addr
+        )
+      );
+
+      showSuccessToast('Delivery address updated successfully');
+      setEditingAddressId(null);
+      setEditingAddress(null);
+    } catch (error) {
+      console.error('Error updating address:', error);
+      showErrorToast('Failed to update delivery address');
+    } finally {
+      setUpdatingAddressId(null);
+    }
   };
 
   const getInitials = (name: string) => {
@@ -352,6 +461,156 @@ const ProfilePage = () => {
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Saved Delivery Addresses */}
+                <div className="space-y-4">
+                  <h3 className="text-lg sm:text-xl font-semibold text-white flex items-center">
+                    <MapPin className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                    Saved Delivery Addresses
+                  </h3>
+
+                  {addressesLoading ? (
+                    <div className="flex items-center justify-center p-6">
+                      <InlineLoading size="sm" />
+                    </div>
+                  ) : deliveryAddresses.length === 0 ? (
+                    <div className="text-center p-6 bg-white/5 border border-white/10 rounded-lg">
+                      <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-400 text-sm">No saved delivery addresses</p>
+                      <p className="text-gray-500 text-xs mt-1">
+                        Save an address during checkout for faster future orders
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {deliveryAddresses.map((address) => (
+                        <div
+                          key={address.id}
+                          className="p-4 bg-white/5 border border-white/10 rounded-lg"
+                        >
+                          {editingAddressId === address.id ? (
+                            // Edit mode
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <Input
+                                  value={editingAddress.first_name}
+                                  onChange={(e) => setEditingAddress({ ...editingAddress, first_name: e.target.value })}
+                                  placeholder="First Name"
+                                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 text-sm"
+                                />
+                                <Input
+                                  value={editingAddress.last_name}
+                                  onChange={(e) => setEditingAddress({ ...editingAddress, last_name: e.target.value })}
+                                  placeholder="Last Name"
+                                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 text-sm"
+                                />
+                              </div>
+                              <Input
+                                value={editingAddress.address}
+                                onChange={(e) => setEditingAddress({ ...editingAddress, address: e.target.value })}
+                                placeholder="Address"
+                                className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 text-sm"
+                              />
+                              <Input
+                                value={editingAddress.apartment || ''}
+                                onChange={(e) => setEditingAddress({ ...editingAddress, apartment: e.target.value })}
+                                placeholder="Apartment (optional)"
+                                className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 text-sm"
+                              />
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <Input
+                                  value={editingAddress.city}
+                                  onChange={(e) => setEditingAddress({ ...editingAddress, city: e.target.value })}
+                                  placeholder="City"
+                                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 text-sm"
+                                />
+                                <Input
+                                  value={editingAddress.postal_code}
+                                  onChange={(e) => setEditingAddress({ ...editingAddress, postal_code: e.target.value })}
+                                  placeholder="Postal Code"
+                                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 text-sm"
+                                />
+                              </div>
+                              <Input
+                                value={editingAddress.phone}
+                                onChange={(e) => setEditingAddress({ ...editingAddress, phone: e.target.value })}
+                                placeholder="Phone"
+                                className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 text-sm"
+                              />
+                              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                                <Button
+                                  size="sm"
+                                  onClick={handleUpdateAddress}
+                                  disabled={updatingAddressId === address.id}
+                                  className="!bg-white !text-black hover:!bg-gray-200 !text-xs font-medium"
+                                >
+                                  <Save className="w-3 h-3 mr-1" />
+                                  {updatingAddressId === address.id ? 'Updating...' : 'Update'}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={handleCancelEdit}
+                                  className="text-gray-400 hover:text-white hover:bg-white/10 border-white/20 !text-xs"
+                                >
+                                  <X className="w-3 h-3 mr-1" />
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            // View mode
+                            <div>
+                              <div className="flex justify-between items-start mb-2">
+                                <div>
+                                  <h4 className="text-white font-medium text-sm">
+                                    {address.first_name} {address.last_name}
+                                    {address.is_default && (
+                                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white text-black">
+                                        Default
+                                      </span>
+                                    )}
+                                  </h4>
+                                  <p className="text-gray-400 text-xs mt-1">
+                                    {address.address}
+                                    {address.apartment && `, ${address.apartment}`}
+                                  </p>
+                                  <p className="text-gray-400 text-xs">
+                                    {address.city}, {address.postal_code}
+                                  </p>
+                                  <p className="text-gray-400 text-xs">
+                                    {address.country_code} {address.phone}
+                                  </p>
+                                </div>
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() => handleEditAddress(address)}
+                                    className="text-gray-400 hover:text-white transition-colors"
+                                    title="Edit address"
+                                  >
+                                    <Edit3 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteAddress(address.id)}
+                                    disabled={deletingAddressId === address.id}
+                                    className="text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
+                                    title="Delete address"
+                                  >
+                                    {deletingAddressId === address.id ? (
+                                      <InlineLoading size="sm" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

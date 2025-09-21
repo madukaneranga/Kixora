@@ -10,6 +10,8 @@ import {
   LogOut,
   Home,
   Grid3X3,
+  MessageCircle,
+  HelpCircle,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../ui/Button';
@@ -39,6 +41,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { path: '/admin/categories', label: 'Categories', icon: FolderOpen },
     { path: '/admin/collections', label: 'Collections', icon: Grid3X3 },
     { path: '/admin/users', label: 'Users', icon: Users },
+    { path: '/admin/contact-messages', label: 'Contact Messages', icon: MessageCircle },
+    { path: '/admin/support-requests', label: 'Support Requests', icon: HelpCircle },
     { path: '/admin/audit', label: 'Audit Logs', icon: ClipboardList },
   ];
 
