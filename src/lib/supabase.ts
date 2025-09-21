@@ -146,6 +146,104 @@ export type Database = {
           updated_at: string;
         };
       };
+      contact_messages: {
+        Row: {
+          id: string;
+          name: string;
+          email: string;
+          mobile: string | null;
+          subject: string;
+          message: string;
+          status: 'new' | 'in_progress' | 'resolved' | 'closed';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          name: string;
+          email: string;
+          mobile?: string | null;
+          subject: string;
+          message: string;
+          status?: 'new' | 'in_progress' | 'resolved' | 'closed';
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          email?: string;
+          mobile?: string | null;
+          subject?: string;
+          message?: string;
+          status?: 'new' | 'in_progress' | 'resolved' | 'closed';
+        };
+      };
+      support_requests: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          email: string;
+          mobile: string | null;
+          order_number: string | null;
+          category: string;
+          priority: 'low' | 'normal' | 'high' | 'critical';
+          subject: string;
+          description: string;
+          status: 'new' | 'in_progress' | 'resolved' | 'closed';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          name: string;
+          email: string;
+          mobile?: string | null;
+          order_number?: string | null;
+          category: string;
+          priority?: 'low' | 'normal' | 'high' | 'critical';
+          subject: string;
+          description: string;
+          status?: 'new' | 'in_progress' | 'resolved' | 'closed';
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          email?: string;
+          mobile?: string | null;
+          order_number?: string | null;
+          category?: string;
+          priority?: 'low' | 'normal' | 'high' | 'critical';
+          subject?: string;
+          description?: string;
+          status?: 'new' | 'in_progress' | 'resolved' | 'closed';
+        };
+      };
+      support_attachments: {
+        Row: {
+          id: string;
+          support_request_id: string;
+          file_name: string;
+          file_path: string;
+          file_size: number;
+          file_type: string;
+          created_at: string;
+        };
+        Insert: {
+          support_request_id: string;
+          file_name: string;
+          file_path: string;
+          file_size: number;
+          file_type: string;
+        };
+        Update: {
+          id?: string;
+          support_request_id?: string;
+          file_name?: string;
+          file_path?: string;
+          file_size?: number;
+          file_type?: string;
+        };
+      };
     };
   };
 };

@@ -11,6 +11,7 @@ import Footer from './components/layout/Footer';
 import CartDrawer from './components/cart/CartDrawer';
 import ScrollToTop from './components/ui/ScrollToTop';
 import ScrollToTopOnRoute from './components/ui/ScrollToTopOnRoute';
+import WhatsAppChat from './components/ui/WhatsAppChat';
 import HomePage from './pages/HomePage';
 import CollectionsPage from './pages/CollectionsPage';
 import ProductsPage from './pages/ProductsPage';
@@ -32,9 +33,20 @@ import CategoriesManagement from './pages/admin/CategoriesManagement';
 import CollectionsManagement from './pages/admin/CollectionsManagement';
 import UsersManagement from './pages/admin/UsersManagement';
 import AuditLogs from './pages/admin/AuditLogs';
+import ContactMessagesManagement from './pages/admin/ContactMessagesManagement';
+import SupportRequestsManagement from './pages/admin/SupportRequestsManagement';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
+import FAQPage from './pages/FAQPage';
+import DeliveryPage from './pages/DeliveryPage';
+import ContactPage from './pages/ContactPage';
+import SubmitRequestPage from './pages/SubmitRequestPage';
+import MyRequestsPage from './pages/MyRequestsPage';
+import RefundPolicyPage from './pages/RefundPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+import SizeGuidePage from './pages/SizeGuidePage';
+import UnsubscribePage from './pages/UnsubscribePage';
 import { PageLoading } from './components/ui/Loading';
 
 const queryClient = new QueryClient({
@@ -50,8 +62,9 @@ const AppLayout = () => {
   const location = useLocation();
   const isCheckoutPage = location.pathname === '/checkout';
   const isThankYouPage = location.pathname === '/thank-you';
+  const isUnsubscribePage = location.pathname === '/unsubscribe';
   const isAdminPage = location.pathname.startsWith('/admin');
-  const isSpecialPage = isCheckoutPage || isThankYouPage || isAdminPage;
+  const isSpecialPage = isCheckoutPage || isThankYouPage || isUnsubscribePage || isAdminPage;
 
   // Use the page title hook to dynamically update document title
   usePageTitle();
@@ -75,6 +88,16 @@ const AppLayout = () => {
           <Route path="/payment/success" element={<PaymentSuccessPage />} />
           <Route path="/payment/cancel" element={<PaymentCancelPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/refund-policy" element={<RefundPolicyPage />} />
+          <Route path="/faq" element={<FAQPage />} />
+          <Route path="/delivery" element={<DeliveryPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/contact-information" element={<ContactPage />} />
+          <Route path="/submit-request" element={<SubmitRequestPage />} />
+          <Route path="/my-requests" element={<MyRequestsPage />} />
+          <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+          <Route path="/size-guide" element={<SizeGuidePage />} />
+          <Route path="/unsubscribe" element={<UnsubscribePage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
@@ -86,6 +109,8 @@ const AppLayout = () => {
           <Route path="/admin/categories" element={<ProtectedAdminRoute><CategoriesManagement /></ProtectedAdminRoute>} />
           <Route path="/admin/collections" element={<ProtectedAdminRoute><CollectionsManagement /></ProtectedAdminRoute>} />
           <Route path="/admin/users" element={<ProtectedAdminRoute><UsersManagement /></ProtectedAdminRoute>} />
+          <Route path="/admin/contact-messages" element={<ProtectedAdminRoute><ContactMessagesManagement /></ProtectedAdminRoute>} />
+          <Route path="/admin/support-requests" element={<ProtectedAdminRoute><SupportRequestsManagement /></ProtectedAdminRoute>} />
           <Route path="/admin/audit" element={<ProtectedAdminRoute><AuditLogs /></ProtectedAdminRoute>} />
           {/* Add more routes as needed */}
         </Routes>
@@ -93,6 +118,13 @@ const AppLayout = () => {
       {!isSpecialPage && <Footer />}
       <CartDrawer />
       <ScrollToTop />
+      {!isSpecialPage && (
+        <WhatsAppChat
+          phoneNumber="94741285920"
+          message="Hello! I'm interested in your Kixora products."
+          businessName="Kixora"
+        />
+      )}
     </div>
   );
 };
