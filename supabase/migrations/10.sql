@@ -1,6 +1,3 @@
--- Add user_id column to support_requests table
-ALTER TABLE support_requests
-ADD COLUMN user_id UUID REFERENCES auth.users(id);
 
 -- Update existing support_requests to link with users based on email
 -- This will only work if the email in support_requests matches a user's email

@@ -151,7 +151,7 @@ serve(async (req) => {
         `
 
         const emailRequest: ResendEmailRequest = {
-          from: 'Kixora <noreply@kixora.com>',
+          from: 'Kixora <noreply@inkixora.com>',
           to: [email],
           subject: 'Welcome to Kixora Newsletter! 👟',
           html: welcomeEmailHtml
