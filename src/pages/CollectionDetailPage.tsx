@@ -6,6 +6,9 @@ import { fetchCollectionBySlug } from '../services/collectionsService';
 import { CollectionWithProducts } from '../types/collection';
 import ProductGrid from '../components/products/ProductGrid';
 import Breadcrumb from '../components/ui/Breadcrumb';
+import SEOHead from '../components/seo/SEOHead';
+import { generateSEOData } from '../hooks/useSEO';
+import { generateCollectionSchema, generateBreadcrumbSchema } from '../utils/structuredData';
 
 const CollectionDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -84,11 +87,22 @@ const CollectionDetailPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Breadcrumb */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <Breadcrumb items={breadcrumbItems} className="mb-6" />
-      </div>
+    <>
+      <SEOHead
+        seoData={generateSEOData.collection(collection)}
+        structuredData={[
+          { schema: generateCollectionSchema(collection), id: 'collection-schema' },
+          { schema: generateBreadcrumbSchema(breadcrumbItems.map(item => ({
+            name: typeof item.label === 'string' ? item.label : item.label || '',
+            url: item.href || '#'
+          }))), id: 'breadcrumb-schema' }
+        ]}
+      />
+      <div className="min-h-screen bg-slate-50">
+        {/* Breadcrumb */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+          <Breadcrumb items={breadcrumbItems} className="mb-6" />
+        </div>
 
       {/* Hero Section */}
       <section
@@ -183,7 +197,8 @@ const CollectionDetailPage = () => {
           </motion.div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 };
 

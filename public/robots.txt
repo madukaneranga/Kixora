@@ -1,0 +1,28 @@
+User-agent: *
+Allow: /
+
+# Allow all product pages and collections
+Allow: /products/
+Allow: /collections/
+Allow: /categories/
+
+# Block admin and private pages
+Disallow: /admin/
+Disallow: /checkout
+Disallow: /profile
+Disallow: /orders
+Disallow: /wishlist
+Disallow: /payment/
+Disallow: /auth/
+Disallow: /reset-password
+
+# Block development and utility pages
+Disallow: /unsubscribe
+Disallow: /submit-request
+Disallow: /my-requests
+
+# Sitemap location
+Sitemap: https://inkixora.com/sitemap.xml
+
+# Crawl delay (optional - helps with server load)
+Crawl-delay: 1

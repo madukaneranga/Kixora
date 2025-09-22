@@ -28,6 +28,9 @@ import Button from '../components/ui/Button';
 import ColorSelector from '../components/ui/ColorSelector';
 import { showSuccessToast, showErrorToast } from '../components/ui/CustomToast';
 import Breadcrumb from '../components/ui/Breadcrumb';
+import SEOHead from '../components/seo/SEOHead';
+import { generateSEOData } from '../hooks/useSEO';
+import { generateProductSchema, generateBreadcrumbSchema } from '../utils/structuredData';
 
 interface Product {
   id: string;
@@ -401,9 +404,20 @@ const ProductDetailPage = () => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Breadcrumb */}
-      <Breadcrumb items={breadcrumbItems} className="mb-8" />
+    <>
+      <SEOHead
+        seoData={generateSEOData.product(product)}
+        structuredData={[
+          { schema: generateProductSchema(product), id: 'product-schema' },
+          { schema: generateBreadcrumbSchema(breadcrumbItems.map(item => ({
+            name: typeof item.label === 'string' ? item.label : item.label || '',
+            url: item.href || '#'
+          }))), id: 'breadcrumb-schema' }
+        ]}
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumb */}
+        <Breadcrumb items={breadcrumbItems} className="mb-8" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
         {/* Product Images */}
@@ -978,7 +992,8 @@ const ProductDetailPage = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

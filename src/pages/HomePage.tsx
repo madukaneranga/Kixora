@@ -12,6 +12,9 @@ import CategoryTiles from '../components/ui/CategoryTiles';
 import PinnedCollectionSection from '../components/collections/PinnedCollectionSection';
 import { fetchPinnedCollection } from '../services/collectionsService';
 import middleBannerImage from '../assests/Middle_Banner.png';
+import SEOHead from '../components/seo/SEOHead';
+import { generateSEOData } from '../hooks/useSEO';
+import { organizationSchema, websiteSchema } from '../utils/structuredData';
 
 const HomePage = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -125,9 +128,17 @@ const HomePage = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section - Dynamic Collections Swiper */}
-      <HeroSwiper />
+    <>
+      <SEOHead
+        seoData={generateSEOData.home()}
+        structuredData={[
+          { schema: organizationSchema, id: 'organization-schema' },
+          { schema: websiteSchema, id: 'website-schema' }
+        ]}
+      />
+      <div className="min-h-screen">
+        {/* Hero Section - Dynamic Collections Swiper */}
+        <HeroSwiper />
 
       {/* Pinned Collection Section */}
       {pinnedCollection && !pinnedLoading && (
@@ -274,7 +285,8 @@ const HomePage = () => {
         subtitle="Excellence"
       />
 
-    </div>
+      </div>
+    </>
   );
 };
 
