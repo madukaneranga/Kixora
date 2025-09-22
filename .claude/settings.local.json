@@ -6,7 +6,9 @@
       "Bash(taskkill:*)",
       "Bash(git checkout:*)",
       "Bash(find:*)",
-      "WebFetch(domain:support.payhere.lk)"
+      "WebFetch(domain:support.payhere.lk)",
+      "WebFetch(domain:www.nike.com)",
+      "WebFetch(domain:incarnage.com)"
     ],
     "deny": [],
     "ask": []
