@@ -28,6 +28,7 @@ import Button from '../components/ui/Button';
 import ColorSelector from '../components/ui/ColorSelector';
 import { showSuccessToast, showErrorToast } from '../components/ui/CustomToast';
 import Breadcrumb from '../components/ui/Breadcrumb';
+import ProductCard from '../components/products/ProductCard';
 import SEOHead from '../components/seo/SEOHead';
 import { generateSEOData } from '../hooks/useSEO';
 import { generateProductSchema, generateBreadcrumbSchema } from '../utils/structuredData';
@@ -65,27 +66,22 @@ interface Product {
     stock: number;
     is_active: boolean;
   }>;
-  reviews?: Array<{
-    id: string;
-    user_id: string;
-    rating: number;
-    title: string | null;
-    content: string | null;
-    is_verified_purchase: boolean;
-    created_at: string;
-    profiles?: {
-      full_name: string | null;
-    };
-  }>;
 }
 
 interface RelatedProduct {
   id: string;
   title: string;
   slug?: string;
+  brand?: string;
   price: number;
   image?: string;
-  rating?: number;
+  images?: string[];
+  variants?: Array<{
+    id: string;
+    size: string;
+    color: string;
+    stock: number;
+  }>;
 }
 
 // Helper function to check if a string is a UUID
@@ -105,7 +101,7 @@ const ProductDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState<'description' | 'reviews' | 'shipping'>('description');
+  const [activeTab, setActiveTab] = useState<'description' | 'shipping'>('description');
   const [isZoomed, setIsZoomed] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<string>('');
 
@@ -148,18 +144,6 @@ const ProductDetailPage = () => {
             price_override,
             stock,
             is_active
-          ),
-          reviews (
-            id,
-            user_id,
-            rating,
-            title,
-            content,
-            is_verified_purchase,
-            created_at,
-            profiles (
-              full_name
-            )
           )
         `)
         .eq(isUUID(slug) ? 'id' : 'slug', slug)
@@ -214,9 +198,19 @@ const ProductDetailPage = () => {
           title,
           slug,
           price,
+          brands (
+            name
+          ),
           product_images (
             storage_path,
             display_order
+          ),
+          product_variants (
+            id,
+            size,
+            color,
+            stock,
+            is_active
           )
         `)
         .eq('category_id', product.category_id)
@@ -230,9 +224,17 @@ const ProductDetailPage = () => {
       const related = data?.map(item => ({
         id: item.id,
         title: item.title,
+        slug: item.slug,
+        brand: item.brands?.name,
         price: item.price,
         image: item.product_images?.[0]?.storage_path,
-        rating: 4.5 + Math.random() * 0.5, // Mock rating
+        images: item.product_images?.map(img => img.storage_path) || [],
+        variants: item.product_variants?.filter(v => v.is_active !== false).map(v => ({
+          id: v.id,
+          size: v.size || '',
+          color: v.color || '',
+          stock: v.stock
+        })) || []
       })) || [];
 
       setRelatedProducts(related);
@@ -347,22 +349,6 @@ const ProductDetailPage = () => {
     return variant?.price_override || product?.price || 0;
   };
 
-  const getAverageRating = () => {
-    if (!product?.reviews || product.reviews.length === 0) return 0;
-    const sum = product.reviews.reduce((acc, review) => acc + review.rating, 0);
-    return sum / product.reviews.length;
-  };
-
-  const getRatingDistribution = () => {
-    if (!product?.reviews) return { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    
-    const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    product.reviews.forEach(review => {
-      distribution[review.rating as keyof typeof distribution]++;
-    });
-    
-    return distribution;
-  };
 
   if (loading) {
     return (
@@ -383,8 +369,6 @@ const ProductDetailPage = () => {
     );
   }
 
-  const averageRating = getAverageRating();
-  const ratingDistribution = getRatingDistribution();
   const currentVariant = getSelectedVariant();
 
   // Generate breadcrumb items
@@ -515,27 +499,6 @@ const ProductDetailPage = () => {
               </motion.button>
             </div>
 
-            {/* Rating */}
-            {product.reviews && product.reviews.length > 0 && (
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      size={16}
-                      className={`${
-                        i < Math.floor(averageRating)
-                          ? 'text-black fill-current'
-                          : 'text-slate-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm text-slate-600">
-                  {averageRating.toFixed(1)} ({product.reviews.length} review{product.reviews.length !== 1 ? 's' : ''})
-                </span>
-              </div>
-            )}
 
             {/* Price */}
             <div className="mb-6">
@@ -716,7 +679,7 @@ const ProductDetailPage = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-900">Free Shipping</p>
-                <p className="text-xs text-slate-600">On orders over LKR 5,000</p>
+                <p className="text-xs text-slate-600">On orders over LKR 15,000</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -733,15 +696,13 @@ const ProductDetailPage = () => {
                 <RotateCcw size={20} className="text-black" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-900">
-                  {product.is_returnable ? 'Easy Returns' : 'No Returns'}
-                </p>
-                <p className="text-xs text-slate-600">
-                  {product.is_returnable
-                    ? `${product.return_days}-day return policy`
-                    : 'Final sale item'
-                  }
-                </p>
+                <p className="text-sm font-medium text-slate-900">Returns</p>
+                <Link
+                  to="/refund-policy"
+                  className="text-xs text-slate-600 hover:text-slate-900 underline"
+                >
+                  Check return policy
+                </Link>
               </div>
             </div>
           </div>
@@ -754,7 +715,6 @@ const ProductDetailPage = () => {
           <nav className="-mb-px flex space-x-8">
             {[
               { id: 'description', label: 'Description' },
-              { id: 'reviews', label: `Reviews (${product.reviews?.length || 0})` },
               { id: 'shipping', label: 'Shipping & Returns' },
             ].map((tab) => (
               <button
@@ -790,116 +750,6 @@ const ProductDetailPage = () => {
               </div>
             )}
 
-            {activeTab === 'reviews' && (
-              <div className="space-y-8">
-                {product.reviews && product.reviews.length > 0 ? (
-                  <>
-                    {/* Reviews Summary */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div>
-                        <div className="text-center">
-                          <div className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
-                            {averageRating.toFixed(1)}
-                          </div>
-                          <div className="flex items-center justify-center mb-2">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                size={20}
-                                className={`${
-                                  i < Math.floor(averageRating)
-                                    ? 'text-black fill-current'
-                                    : 'text-slate-300'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <p className="text-sm text-slate-600">
-                            Based on {product.reviews.length} review{product.reviews.length !== 1 ? 's' : ''}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        {[5, 4, 3, 2, 1].map(rating => {
-                          const count = ratingDistribution[rating as keyof typeof ratingDistribution];
-                          const percentage = product.reviews!.length > 0 ? (count / product.reviews!.length) * 100 : 0;
-                          
-                          return (
-                            <div key={rating} className="flex items-center space-x-2">
-                              <span className="text-sm text-slate-600 w-8">{rating}</span>
-                              <Star size={14} className="text-black fill-current" />
-                              <div className="flex-1 h-2 bg-slate-200 overflow-hidden">
-                                <div
-                                  className="h-full bg-black transition-all duration-300"
-                                  style={{ width: `${percentage}%` }}
-                                />
-                              </div>
-                              <span className="text-sm text-slate-600 w-8">{count}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Individual Reviews */}
-                    <div className="space-y-6">
-                      {product.reviews.map((review) => (
-                        <div key={review.id} className="border-b border-slate-200 pb-6 last:border-b-0">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-slate-200 flex items-center justify-center">
-                                <span className="text-slate-600 font-medium">
-                                  {review.profiles?.full_name?.charAt(0) || 'A'}
-                                </span>
-                              </div>
-                              <div>
-                                <p className="font-medium text-slate-900">
-                                  {review.profiles?.full_name || 'Anonymous'}
-                                </p>
-                                <div className="flex items-center space-x-2">
-                                  <div className="flex">
-                                    {[...Array(5)].map((_, i) => (
-                                      <Star
-                                        key={i}
-                                        size={12}
-                                        className={`${
-                                          i < review.rating
-                                            ? 'text-black fill-current'
-                                            : 'text-slate-300'
-                                        }`}
-                                      />
-                                    ))}
-                                  </div>
-                                  {review.is_verified_purchase && (
-                                    <span className="text-xs text-black font-medium">
-                                      Verified Purchase
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            <span className="text-sm text-slate-500">
-                              {new Date(review.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                          {review.title && (
-                            <h4 className="font-medium text-slate-900 mb-2">{review.title}</h4>
-                          )}
-                          {review.content && (
-                            <p className="text-slate-600">{review.content}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-12">
-                    <p className="text-slate-600 mb-4">No reviews yet. Be the first to review this product!</p>
-                    <Button variant="outline">Write a Review</Button>
-                  </div>
-                )}
-              </div>
-            )}
 
             {activeTab === 'shipping' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -908,15 +758,27 @@ const ProductDetailPage = () => {
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3">
                       <Truck size={16} className="text-slate-400" />
-                      <span className="text-slate-600">Free shipping on orders over LKR 5,000</span>
+                      <span className="text-slate-600">Free standard delivery on orders over LKR 15,000</span>
                     </div>
                     <div className="flex items-center space-x-3">
                       <Clock size={16} className="text-slate-400" />
-                      <span className="text-slate-600">Standard delivery: 3-5 business days</span>
+                      <span className="text-slate-600">Standard delivery: 3-7 business days (LKR 399)</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <Clock size={16} className="text-slate-400" />
+                      <span className="text-slate-600">Express delivery: 1-3 business days (LKR 699)</span>
                     </div>
                     <div className="flex items-center space-x-3">
                       <MapPin size={16} className="text-slate-400" />
-                      <span className="text-slate-600">Island-wide delivery available</span>
+                      <span className="text-slate-600">Island-wide delivery across Sri Lanka</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <Package size={16} className="text-slate-400" />
+                      <span className="text-slate-600">Orders processed within 1-2 business days</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <CreditCard size={16} className="text-slate-400" />
+                      <span className="text-slate-600">Cash on Delivery available in Colombo only</span>
                     </div>
                   </div>
                 </div>
@@ -925,15 +787,23 @@ const ProductDetailPage = () => {
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3">
                       <RotateCcw size={16} className="text-slate-400" />
-                      <span className="text-slate-600">30-day return policy</span>
+                      <span className="text-slate-600">14-day return policy from delivery date</span>
                     </div>
                     <div className="flex items-center space-x-3">
                       <Shield size={16} className="text-slate-400" />
-                      <span className="text-slate-600">Items must be in original condition</span>
+                      <span className="text-slate-600">Items must be unworn and in original packaging</span>
                     </div>
                     <div className="flex items-center space-x-3">
                       <CreditCard size={16} className="text-slate-400" />
                       <span className="text-slate-600">Refunds processed within 5-7 business days</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <Package size={16} className="text-slate-400" />
+                      <span className="text-slate-600">Original receipt or order confirmation required</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <AlertCircle size={16} className="text-slate-400" />
+                      <span className="text-slate-600">Sale items non-refundable (unless defective)</span>
                     </div>
                   </div>
                 </div>
@@ -949,45 +819,19 @@ const ProductDetailPage = () => {
           <h2 className="text-2xl font-bold text-slate-900 mb-8">You might also like</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {relatedProducts.map((relatedProduct) => (
-              <motion.div
+              <ProductCard
                 key={relatedProduct.id}
-                whileHover={{ y: -4 }}
-                className="bg-white shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
-              >
-                <Link to={`/products/${relatedProduct.slug || relatedProduct.id}`} className="block">
-                  <div className="relative aspect-square overflow-hidden">
-                    {relatedProduct.image ? (
-                      <img
-                        src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${relatedProduct.image}`}
-                        alt={relatedProduct.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-                        <ShoppingCart className="h-12 w-12 text-slate-400" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-slate-900 mb-2 line-clamp-2">
-                      {relatedProduct.title}
-                    </h3>
-                    <div className="flex items-center justify-between">
-                      <p className="text-lg font-bold text-slate-900">
-                        LKR {relatedProduct.price.toLocaleString()}
-                      </p>
-                      {relatedProduct.rating && (
-                        <div className="flex items-center space-x-1">
-                          <Star size={12} className="text-black fill-current" />
-                          <span className="text-sm text-slate-600">
-                            {relatedProduct.rating.toFixed(1)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
+                product={{
+                  id: relatedProduct.id,
+                  title: relatedProduct.title,
+                  slug: relatedProduct.slug,
+                  brand: relatedProduct.brand,
+                  price: relatedProduct.price,
+                  image: relatedProduct.image,
+                  images: relatedProduct.images,
+                  variants: relatedProduct.variants
+                }}
+              />
             ))}
           </div>
         </div>

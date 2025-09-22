@@ -8,6 +8,7 @@ import { useWishlistStore } from '../../stores/wishlistStore';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import AuthForm from '../auth/AuthForm';
+import AnnouncementBar from '../ui/AnnouncementBar';
 import logo from '../../assests/logo.black.png';
 
 const Header = () => {
@@ -39,7 +40,15 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+    <>
+      {/* Announcement Bar */}
+      <AnnouncementBar
+        message="🚚 Island-wide delivery available across Sri Lanka"
+        storageKey="delivery-announcement-dismissed"
+        expirationDays={14}
+      />
+
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -57,6 +66,14 @@ const Header = () => {
 
           {/* Right Side Controls */}
           <div className="flex items-center space-x-0.5">
+            {/* Shop All Link */}
+            <Link
+              to="/products"
+              className="hidden sm:block px-4 py-2 text-sm font-medium text-gray-700 hover:text-black transition-colors"
+            >
+              Shop All
+            </Link>
+
             {/* Search */}
             <motion.div
               animate={{ width: isSearchOpen ? '300px' : '40px' }}
@@ -311,7 +328,8 @@ const Header = () => {
       >
         <AuthForm onSuccess={() => setShowAuthModal(false)} />
       </Modal>
-    </header>
+      </header>
+    </>
   );
 };
 
