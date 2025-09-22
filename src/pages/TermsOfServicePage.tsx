@@ -11,7 +11,7 @@ const TermsOfServicePage: React.FC = () => {
             If you do not agree to abide by the above, please do not use this service.
           </p>
           <p className="mt-3">
-            These Terms of Service ("Terms") govern your use of our website located at www.kixora.com (the "Service")
+            These Terms of Service ("Terms") govern your use of our website located at www.inkixora.com (the "Service")
             operated by Kixora ("us", "we", or "our").
           </p>
         </>
@@ -46,7 +46,7 @@ const TermsOfServicePage: React.FC = () => {
             You are responsible for safeguarding the password and for maintaining the confidentiality of your account.
           </p>
           <ul className="list-disc list-inside space-y-1 mt-3">
-            <li>You must be at least 18 years old to create an account</li>
+            <li>You must be at least 13 years old to create an account</li>
             <li>You are responsible for all activities that occur under your account</li>
             <li>You must notify us immediately of any unauthorized use of your account</li>
             <li>We reserve the right to suspend or terminate accounts that violate these terms</li>
@@ -92,7 +92,7 @@ const TermsOfServicePage: React.FC = () => {
       content: (
         <>
           <p>
-            Our return policy allows returns within 30 days of delivery. Please refer to our detailed Refund Policy for complete terms.
+            Our return policy allows returns within 14 days of delivery. Please refer to our detailed Refund Policy for complete terms.
           </p>
           <ul className="list-disc list-inside space-y-1 mt-3">
             <li>Items must be returned in original, unworn condition</li>
@@ -215,9 +215,8 @@ const TermsOfServicePage: React.FC = () => {
         <>
           <p>If you have any questions about these Terms of Service, please contact us:</p>
           <ul className="list-disc list-inside space-y-1 mt-3">
-            <li>Email: <a href="mailto:legal@kixora.com" className="underline">legal@kixora.com</a></li>
-            <li>Phone: <a href="tel:+94112345678" className="underline">+94 11 234 5678</a></li>
-            <li>Address: 123 Fashion Street, Colombo 03, Sri Lanka</li>
+            <li>Email: <a href="mailto:support@kixora.com" className="underline">inkixora@gmail.com</a></li>
+            <li>Phone: <a href="tel:+94112345678" className="underline">+94 74 128 5920</a></li>
           </ul>
         </>
       ),
@@ -227,7 +226,7 @@ const TermsOfServicePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-black text-white px-4 py-8 sm:px-6 sm:py-10 md:px-20 md:py-12 space-y-6 sm:space-y-8">
       <h1 className="text-4xl font-bold mb-2">Terms of Service</h1>
-      <p className="mb-6">Last updated: December 21, 2024</p>
+      <p className="mb-6">Last updated: September 22, 2025</p>
       <p className="mb-8">
         Please read these Terms of Service ("Terms", "Terms of Service") carefully before using the Kixora website
         (the "Service") operated by Kixora ("us", "we", or "our").

@@ -70,8 +70,8 @@ const ContactPage: React.FC = () => {
     {
       icon: <Mail size={24} />,
       title: "Email",
-      details: "support@inkixora.com",
-      action: "mailto:support@inkixora.com"
+      details: "inkixora@gmail.com",
+      action: "mailto:inkixora@gmail.com"
     },
     {
       icon: <Phone size={24} />,
