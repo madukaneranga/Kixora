@@ -234,8 +234,16 @@ serve(async (req) => {
     const userAgent = req.headers.get('user-agent') || '';
     const siteUrl = url.origin.replace('supabase.co', 'inkixora.com'); // Adjust this to your actual domain
 
+    console.log('=== META HANDLER REQUEST ===');
+    console.log('URL:', req.url);
+    console.log('Pathname:', url.pathname);
+    console.log('User-Agent:', userAgent);
+    console.log('Is Crawler:', isCrawler(userAgent));
+    console.log('Site URL:', siteUrl);
+
     // Only handle crawler requests
     if (!isCrawler(userAgent)) {
+      console.log('Not a crawler, returning default HTML');
       return new Response(getDefaultHTML(siteUrl), {
         headers: { ...corsHeaders, 'Content-Type': 'text/html' },
       });
@@ -249,10 +257,27 @@ serve(async (req) => {
     const pathname = url.pathname;
 
     // Handle product pages
-    if (pathname.startsWith('/products/')) {
-      const slug = pathname.split('/products/')[1];
+    if (pathname.startsWith('/products/') || pathname.startsWith('/meta-handler/products/')) {
+      // Extract slug from either format
+      let slug = '';
+      if (pathname.startsWith('/meta-handler/products/')) {
+        slug = pathname.split('/meta-handler/products/')[1];
+      } else {
+        slug = pathname.split('/products/')[1];
+      }
+
+      console.log('Product slug:', slug);
+
+      // If slug is $1 or :splat, it means the redirect didn't work properly
+      if (slug === '$1' || slug === ':splat' || !slug) {
+        console.log('Invalid slug from redirect, returning default HTML');
+        return new Response(getDefaultHTML(siteUrl), {
+          headers: { ...corsHeaders, 'Content-Type': 'text/html' },
+        });
+      }
 
       if (slug) {
+        console.log('Querying product with slug:', slug);
         const { data: product, error } = await supabase
           .from('products')
           .select(`
@@ -274,12 +299,16 @@ serve(async (req) => {
           .is('deleted_at', null)
           .single();
 
+        console.log('Database query result:', { product, error });
+
         if (error || !product) {
+          console.log('Product not found, returning default HTML');
           return new Response(getDefaultHTML(siteUrl), {
             headers: { ...corsHeaders, 'Content-Type': 'text/html' },
           });
         }
 
+        console.log('Product found, generating HTML for:', product.title);
         return new Response(generateProductHTML(product, siteUrl), {
           headers: { ...corsHeaders, 'Content-Type': 'text/html' },
         });

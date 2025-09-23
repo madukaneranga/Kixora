@@ -77,7 +77,7 @@ export const generateSitemap = async (): Promise<string> => {
     if (categories) {
       categories.forEach(category => {
         urls.push({
-          loc: `${baseUrl}/categories/${category.slug || category.id}`,
+          loc: `${baseUrl}/products?category=${category.slug}`,
           lastmod: new Date(category.updated_at).toISOString().split('T')[0],
           changefreq: 'weekly',
           priority: 0.7
