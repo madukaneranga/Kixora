@@ -4,8 +4,6 @@ import { Plus, Edit, Trash2, Eye, EyeOff, Calendar, Link as LinkIcon } from 'luc
 import { supabase } from '../../lib/supabase';
 import AdminLayout from '../../components/admin/AdminLayout';
 import Button from '../../components/ui/Button';
-import Modal from '../../components/ui/Modal';
-import Input from '../../components/ui/Input';
 import Breadcrumb from '../../components/ui/Breadcrumb';
 import { showSuccessToast, showErrorToast } from '../../components/ui/CustomToast';
 import { useForm } from 'react-hook-form';
@@ -341,33 +339,49 @@ const AnnouncementsManagement = () => {
         )}
       </div>
 
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title={editingAnnouncement ? 'Edit Announcement' : 'Create Announcement'}
-      >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-black border border-[rgb(51,51,51)] rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-[rgb(51,51,51)] flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-white">
+                {editingAnnouncement ? 'Edit Announcement' : 'Create Announcement'}
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-[rgb(94,94,94)] hover:text-white text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-white mb-2">
                 Title
               </label>
-              <Input
+              <input
                 {...register('title')}
-                error={errors.title?.message}
+                className="w-full px-4 py-2.5 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
                 placeholder="Announcement title"
               />
+              {errors.title && (
+                <p className="mt-1 text-sm text-white/80">{errors.title.message}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-white mb-2">
                 Priority
               </label>
-              <Input
+              <input
                 type="number"
                 {...register('priority')}
-                error={errors.priority?.message}
+                className="w-full px-4 py-2.5 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
                 placeholder="0"
               />
+              {errors.priority && (
+                <p className="mt-1 text-sm text-white/80">{errors.priority.message}</p>
+              )}
             </div>
           </div>
 
@@ -377,7 +391,7 @@ const AnnouncementsManagement = () => {
             </label>
             <textarea
               {...register('message')}
-              className="w-full px-3 py-2 bg-black border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+              className="w-full px-4 py-2.5 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
               rows={3}
               placeholder="Announcement message"
             />
@@ -394,7 +408,7 @@ const AnnouncementsManagement = () => {
               <input
                 type="color"
                 {...register('background_color')}
-                className="w-full h-10 rounded-md border border-white/20 bg-black"
+                className="w-full h-10 rounded-lg border border-[rgb(51,51,51)] bg-black hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
               />
             </div>
             <div>
@@ -404,7 +418,7 @@ const AnnouncementsManagement = () => {
               <input
                 type="color"
                 {...register('text_color')}
-                className="w-full h-10 rounded-md border border-white/20 bg-black"
+                className="w-full h-10 rounded-lg border border-[rgb(51,51,51)] bg-black hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
               />
             </div>
           </div>
@@ -414,21 +428,27 @@ const AnnouncementsManagement = () => {
               <label className="block text-sm font-medium text-white mb-2">
                 Start Date
               </label>
-              <Input
+              <input
                 type="datetime-local"
                 {...register('start_date')}
-                error={errors.start_date?.message}
+                className="w-full px-4 py-2.5 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
               />
+              {errors.start_date && (
+                <p className="mt-1 text-sm text-white/80">{errors.start_date.message}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-white mb-2">
                 End Date (Optional)
               </label>
-              <Input
+              <input
                 type="datetime-local"
                 {...register('end_date')}
-                error={errors.end_date?.message}
+                className="w-full px-4 py-2.5 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
               />
+              {errors.end_date && (
+                <p className="mt-1 text-sm text-white/80">{errors.end_date.message}</p>
+              )}
             </div>
           </div>
 
@@ -436,11 +456,14 @@ const AnnouncementsManagement = () => {
             <label className="block text-sm font-medium text-white mb-2">
               Link URL (Optional)
             </label>
-            <Input
+            <input
               {...register('link_url')}
-              error={errors.link_url?.message}
+              className="w-full px-4 py-2.5 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
               placeholder="https://example.com"
             />
+            {errors.link_url && (
+              <p className="mt-1 text-sm text-white/80">{errors.link_url.message}</p>
+            )}
           </div>
 
           <div className="flex items-center">
@@ -464,25 +487,27 @@ const AnnouncementsManagement = () => {
             Preview: {watch('message') || 'Your message will appear here...'}
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex space-x-4 pt-6 border-t border-[rgb(51,51,51)]">
+            <Button
+              type="submit"
+              loading={submitting}
+              className="bg-[rgb(51,51,51)] text-white hover:bg-[rgb(64,64,64)] border border-[rgb(94,94,94)]"
+            >
+              {editingAnnouncement ? 'Update Announcement' : 'Create Announcement'}
+            </Button>
             <Button
               type="button"
               variant="outline"
               onClick={() => setShowModal(false)}
-              className="border-white/20 text-white hover:bg-white hover:text-black"
+              className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              loading={submitting}
-              className="bg-white text-black hover:bg-white/90"
-            >
-              {editingAnnouncement ? 'Update' : 'Create'}
-            </Button>
           </div>
         </form>
-      </Modal>
+          </div>
+        </div>
+      )}
       </div>
     </AdminLayout>
   );
