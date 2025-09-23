@@ -60,10 +60,14 @@ export const websiteSchema = {
 export const generateProductSchema = (product: any) => {
   const baseUrl = window.location.origin;
   const productUrl = `${baseUrl}/products/${product.slug || product.id}`;
-  const imageUrl = product.product_images?.[0]?.storage_path
-    ? (product.product_images[0].storage_path.startsWith('http')
-        ? product.product_images[0].storage_path
-        : `${baseUrl}${product.product_images[0].storage_path}`)
+  // Find primary image first, then fallback to first image, then fallback to logo
+  const primaryImage = product.product_images?.find((img: any) => img.is_primary);
+  const displayImage = primaryImage || product.product_images?.[0];
+
+  const imageUrl = displayImage?.storage_path
+    ? (displayImage.storage_path.startsWith('http')
+        ? displayImage.storage_path
+        : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${displayImage.storage_path}`)
     : `${baseUrl}/logo.white.png`;
 
   // Check if product has variants and calculate availability
