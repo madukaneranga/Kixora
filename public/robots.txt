@@ -22,7 +22,7 @@ Disallow: /submit-request
 Disallow: /my-requests
 
 # Sitemap location
-Sitemap: https://inkixora.com/sitemap.xml
+Sitemap: https://www.inkixora.com/sitemap.xml
 
 # Crawl delay (optional - helps with server load)
 Crawl-delay: 1
