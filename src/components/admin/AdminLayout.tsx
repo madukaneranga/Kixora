@@ -12,6 +12,7 @@ import {
   Grid3X3,
   MessageCircle,
   HelpCircle,
+  Megaphone,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../ui/Button';
@@ -40,6 +41,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { path: '/admin/products', label: 'Products', icon: Package },
     { path: '/admin/categories', label: 'Categories', icon: FolderOpen },
     { path: '/admin/collections', label: 'Collections', icon: Grid3X3 },
+    { path: '/admin/announcements', label: 'Announcements', icon: Megaphone },
     { path: '/admin/users', label: 'Users', icon: Users },
     { path: '/admin/contact-messages', label: 'Contact Messages', icon: MessageCircle },
     { path: '/admin/support-requests', label: 'Support Requests', icon: HelpCircle },

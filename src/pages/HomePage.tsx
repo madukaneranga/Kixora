@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import ProductGrid from '../components/products/ProductGrid';
 import ProductCard from '../components/products/ProductCard';
 import Button from '../components/ui/Button';
 import HeroSwiper from '../components/ui/HeroSwiper';
