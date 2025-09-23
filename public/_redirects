@@ -1,0 +1,9 @@
+# Redirect crawler requests for products and collections to Edge Function
+# Replace encxafbdmxjmdardcmks with your actual Supabase project reference
+
+/products/*  https://encxafbdmxjmdardcmks.supabase.co/functions/v1/meta-handler/products/:splat  200  Country=*  User-Agent: *bot*,*crawler*,*spider*,*facebook*,*twitter*,*whatsapp*,*linkedin*,*telegram*,*discord*,*slack*,*skype*,*google*,*bing*,*yandex*,*pinterest*,*apple*,*reddit*
+
+/collections/*  https://encxafbdmxjmdardcmks.supabase.co/functions/v1/meta-handler/collections/:splat  200  Country=*  User-Agent: *bot*,*crawler*,*spider*,*facebook*,*twitter*,*whatsapp*,*linkedin*,*telegram*,*discord*,*slack*,*skype*,*google*,*bing*,*yandex*,*pinterest*,*apple*,*reddit*
+
+# Fallback - serve your React app for all other requests
+/*    /index.html   200
