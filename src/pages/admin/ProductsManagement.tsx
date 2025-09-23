@@ -179,6 +179,41 @@ const ProductsManagement = () => {
     // This prevents auto-saving when just reaching step 4
   };
 
+  // Utility function to generate SKU based on variant details
+  const generateVariantSKU = (baseSku: string, variant: { size?: string | null; color?: string | null }, index: number): string => {
+    const parts = [baseSku];
+
+    // Add size abbreviation
+    if (variant.size) {
+      // Convert size to short format (e.g., "Small" -> "S", "Medium" -> "M", "Large" -> "L", "Extra Large" -> "XL")
+      const sizeMap: { [key: string]: string } = {
+        'Extra Small': 'XS',
+        'Small': 'S',
+        'Medium': 'M',
+        'Large': 'L',
+        'Extra Large': 'XL',
+        'XXL': 'XXL',
+        'XXXL': 'XXXL'
+      };
+      const sizeAbbr = sizeMap[variant.size] || variant.size.toUpperCase().slice(0, 2);
+      parts.push(sizeAbbr);
+    }
+
+    // Add color abbreviation
+    if (variant.color) {
+      // Convert color to short format (first 3 letters)
+      const colorAbbr = variant.color.toUpperCase().slice(0, 3);
+      parts.push(colorAbbr);
+    }
+
+    // If no size or color, add index to ensure uniqueness
+    if (!variant.size && !variant.color) {
+      parts.push((index + 1).toString());
+    }
+
+    return parts.join('-');
+  };
+
   const handleFinalSubmit = async () => {
     setSubmitting(true);
 
@@ -269,7 +304,7 @@ const ProductsManagement = () => {
         if (newVariants.length > 0) {
           const newVariantData = newVariants.map((variant, index) => ({
             product_id: productId,
-            sku: `${formData.sku}-new-${index + 1}`,
+            sku: generateVariantSKU(formData.sku, variant, index),
             size: variant.size || null,
             color: variant.color || null,
             stock: variant.stock
@@ -313,7 +348,7 @@ const ProductsManagement = () => {
           });
         } else {
           variants.forEach((variant, index) => {
-            const variantSku = `${formData.sku}-${index + 1}`;
+            const variantSku = generateVariantSKU(formData.sku, variant, index);
             variantData.push({
               product_id: productId,
               sku: variantSku,
@@ -752,6 +787,60 @@ const ProductsManagement = () => {
   const cancelVariantStockEdit = () => {
     setEditingVariantStock(null);
     setTempVariantStock(0);
+  };
+
+  // Toggle variant status directly from quick view
+  const toggleQuickViewVariantActive = async (variantId: string) => {
+    if (!quickViewProduct) return;
+
+    try {
+      const variant = quickViewProduct.product_variants.find(v => v.id === variantId);
+      if (!variant) return;
+
+      // Check if this is the only active variant and we're trying to deactivate it
+      const activeVariants = quickViewProduct.product_variants.filter(v => v.is_active);
+      if (variant.is_active && activeVariants.length === 1) {
+        showErrorToast('Cannot deactivate the only active variant. A product must have at least one active variant.');
+        return;
+      }
+
+      const newStatus = !variant.is_active;
+
+      // Update in database
+      const { error } = await supabaseAdmin
+        .from('product_variants')
+        .update({ is_active: newStatus })
+        .eq('id', variantId);
+
+      if (error) throw error;
+
+      // Update local state
+      const updatedVariants = quickViewProduct.product_variants.map(v =>
+        v.id === variantId ? { ...v, is_active: newStatus } : v
+      );
+
+      setQuickViewProduct({
+        ...quickViewProduct,
+        product_variants: updatedVariants
+      });
+
+      // Also update the main products list
+      setProducts(prevProducts =>
+        prevProducts.map(product =>
+          product.id === quickViewProduct.id
+            ? {
+                ...product,
+                product_variants: updatedVariants
+              }
+            : product
+        )
+      );
+
+      showSuccessToast(`Variant ${newStatus ? 'activated' : 'deactivated'} successfully`);
+    } catch (error) {
+      console.error('Error toggling variant status:', error);
+      showErrorToast('Failed to update variant status');
+    }
   };
 
   const toggleVariantActive = (index: number) => {
@@ -1546,6 +1635,9 @@ const ProductsManagement = () => {
                                 <thead className="bg-[rgb(15,15,15)]">
                                   <tr>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                                      SKU
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
                                       Size
                                     </th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
@@ -1565,6 +1657,9 @@ const ProductsManagement = () => {
                                 <tbody className="divide-y divide-[rgb(51,51,51)]">
                                   {variants.map((variant, index) => (
                                     <tr key={index} className="hover:bg-white/5">
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-white font-mono">
+                                        {generateVariantSKU(formData.sku || 'TEMP', variant, index)}
+                                      </td>
                                       <td className="px-4 py-3 whitespace-nowrap text-sm text-white">
                                         {variant.size || '-'}
                                       </td>
@@ -2166,6 +2261,9 @@ const ProductsManagement = () => {
                             <thead className="bg-[rgb(15,15,15)] sticky top-0">
                               <tr>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
+                                  SKU
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
                                   Size
                                 </th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-[rgb(94,94,94)] uppercase tracking-wider">
@@ -2182,6 +2280,9 @@ const ProductsManagement = () => {
                             <tbody className="divide-y divide-[rgb(51,51,51)]">
                               {quickViewProduct.product_variants.map((variant, index) => (
                                 <tr key={index} className="hover:bg-white/5">
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-white font-mono">
+                                    {variant.sku}
+                                  </td>
                                   <td className="px-4 py-3 whitespace-nowrap text-sm text-white">
                                     {variant.size || '-'}
                                   </td>
