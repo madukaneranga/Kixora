@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Edit, Trash2, Eye, EyeOff, Calendar, Link as LinkIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import AdminLayout from '../../components/admin/AdminLayout';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
+import Breadcrumb from '../../components/ui/Breadcrumb';
 import { showSuccessToast, showErrorToast } from '../../components/ui/CustomToast';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -202,26 +204,42 @@ const AnnouncementsManagement = () => {
     });
   };
 
+  const breadcrumbItems = [
+    {
+      href: '/admin/dashboard',
+      label: 'Dashboard'
+    },
+    {
+      label: 'Announcements'
+    }
+  ];
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-      </div>
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Announcements</h1>
-          <p className="text-gray-400">Manage announcement bar messages</p>
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Breadcrumb */}
+        <Breadcrumb items={breadcrumbItems} variant="white" />
+
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Announcements</h1>
+            <p className="text-gray-400">Manage announcement bar messages</p>
+          </div>
+          <Button onClick={handleCreate} className="bg-white text-black hover:bg-gray-200">
+            <Plus className="w-4 h-4 mr-2" />
+            Create Announcement
+          </Button>
         </div>
-        <Button onClick={handleCreate} className="bg-white text-black hover:bg-gray-200">
-          <Plus className="w-4 h-4 mr-2" />
-          Create Announcement
-        </Button>
-      </div>
 
       <div className="grid gap-4">
         <AnimatePresence>
@@ -460,7 +478,8 @@ const AnnouncementsManagement = () => {
           </div>
         </form>
       </Modal>
-    </div>
+      </div>
+    </AdminLayout>
   );
 };
 
