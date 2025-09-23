@@ -174,15 +174,15 @@ FROM products p WHERE p.sku = 'AD-RUN-001';
 
 -- Nike Metcon variants
 INSERT INTO product_variants (product_id, sku, size, color, stock)
-SELECT p.id, 'NK-TRN-001-GRY-40', '40', 'Grey', 15
+SELECT p.id, 'NK-TRN-001-GRY-40', '40', 'gray', 15
 FROM products p WHERE p.sku = 'NK-TRN-001';
 
 INSERT INTO product_variants (product_id, sku, size, color, stock)
-SELECT p.id, 'NK-TRN-001-GRY-41', '41', 'Grey', 20
+SELECT p.id, 'NK-TRN-001-GRY-41', '41', 'gray', 20
 FROM products p WHERE p.sku = 'NK-TRN-001';
 
 INSERT INTO product_variants (product_id, sku, size, color, stock)
-SELECT p.id, 'NK-TRN-001-GRY-42', '42', 'Grey', 25
+SELECT p.id, 'NK-TRN-001-GRY-42', '42', 'gray', 25
 FROM products p WHERE p.sku = 'NK-TRN-001';
 
 -- Nike Air Force 1 variants
