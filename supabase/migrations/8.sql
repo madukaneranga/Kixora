@@ -76,7 +76,7 @@ CREATE TRIGGER update_audit_logs_updated_at
 
 -- Add audit logging triggers for all remaining tables
 CREATE TRIGGER audit_profiles_changes
-  AFTER INSERT OR UPDATE OR DELETE ON profiles
+  AFTER  UPDATE OR DELETE ON profiles
   FOR EACH ROW EXECUTE FUNCTION log_audit_changes();
 
 CREATE TRIGGER audit_categories_changes
