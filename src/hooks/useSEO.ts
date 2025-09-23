@@ -161,7 +161,7 @@ export const generateSEOData = {
 
   home: (): SEOData => ({
     title: 'Kixora - Premium Fashion & Lifestyle Online Store Sri Lanka',
-    description: 'Shop the latest fashion trends and premium lifestyle products at Kixora. Secure online shopping with fast delivery across Sri Lanka. Free shipping on orders over LKR 5,000.',
+    description: 'Shop the latest fashion trends and premium lifestyle products at Kixora. Secure online shopping with fast delivery across Sri Lanka. Free shipping on orders over LKR 15,000.',
     keywords: 'online shopping sri lanka, fashion store, lifestyle products, premium brands, secure payment, fast delivery, kixora',
     type: 'website',
     canonical: '/'
