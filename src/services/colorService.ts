@@ -37,12 +37,6 @@ export const COLOR_MAP: Record<string, ColorInfo> = {
     image: grayImg,
     hexCode: '#808080'
   },
-  'grey': {
-    name: 'gray', // Map grey to gray for consistency
-    displayName: 'Gray',
-    image: grayImg,
-    hexCode: '#808080'
-  },
   'green': {
     name: 'green',
     displayName: 'Green',
@@ -86,18 +80,7 @@ export const COLOR_MAP: Record<string, ColorInfo> = {
     hexCode: '#FFFF00'
   },
   // Additional common color variations
-  'navy': {
-    name: 'blue', // Map navy to blue
-    displayName: 'Navy',
-    image: blueImg,
-    hexCode: '#000080'
-  },
-  'beige': {
-    name: 'yellow', // Map beige to yellow as closest match
-    displayName: 'Beige',
-    image: yellowImg,
-    hexCode: '#F5F5DC'
-  }
+
 };
 
 // Get all available colors
