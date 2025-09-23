@@ -32,7 +32,11 @@ const WishlistPage = () => {
         const { data, error } = await supabase
           .from('products')
           .select(`
-            *,
+            id,
+            title,
+            slug,
+            price,
+            featured,
             product_images (storage_path),
             product_variants (id, size, color, stock, is_active, sku)
           `)

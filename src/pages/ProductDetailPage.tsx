@@ -399,15 +399,15 @@ const ProductDetailPage = () => {
           }))), id: 'breadcrumb-schema' }
         ]}
       />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Breadcrumb */}
-        <Breadcrumb items={breadcrumbItems} className="mb-8" />
+        <Breadcrumb items={breadcrumbItems} className="mb-4 sm:mb-6" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 mb-8 sm:mb-12 lg:mb-16">
         {/* Product Images */}
-        <div className="space-y-4">
+        <div className="space-y-2 sm:space-y-4">
           {/* Main Image */}
-          <div className="relative aspect-square bg-slate-100 overflow-hidden group">
+          <div className="relative aspect-square bg-slate-100 overflow-hidden group rounded-lg sm:rounded-none">
             {product.product_images && product.product_images.length > 0 ? (
               <motion.img
                 key={selectedImageIndex}
@@ -428,20 +428,20 @@ const ProductDetailPage = () => {
             {product.product_images && product.product_images.length > 1 && (
               <>
                 <button
-                  onClick={() => setSelectedImageIndex(prev => 
+                  onClick={() => setSelectedImageIndex(prev =>
                     prev === 0 ? product.product_images!.length - 1 : prev - 1
                   )}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-1.5 sm:p-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity rounded-full shadow-md"
                 >
-                  <ChevronLeft size={20} />
+                  <ChevronLeft size={16} className="sm:w-5 sm:h-5" />
                 </button>
                 <button
-                  onClick={() => setSelectedImageIndex(prev => 
+                  onClick={() => setSelectedImageIndex(prev =>
                     prev === product.product_images!.length - 1 ? 0 : prev + 1
                   )}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-1.5 sm:p-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity rounded-full shadow-md"
                 >
-                  <ChevronRight size={20} />
+                  <ChevronRight size={16} className="sm:w-5 sm:h-5" />
                 </button>
               </>
             )}
@@ -449,20 +449,20 @@ const ProductDetailPage = () => {
             {/* Share Button */}
             <button
               onClick={handleShare}
-              className="absolute top-4 right-4 bg-white/80 hover:bg-white p-2 transition-colors"
+              className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-white/90 hover:bg-white p-1.5 sm:p-2 transition-colors rounded-full shadow-md"
             >
-              <Share2 size={16} />
+              <Share2 size={14} className="sm:w-4 sm:h-4" />
             </button>
           </div>
 
           {/* Thumbnail Images */}
           {product.product_images && product.product_images.length > 1 && (
-            <div className="flex space-x-2 overflow-x-auto">
+            <div className="flex space-x-1.5 sm:space-x-2 overflow-x-auto pb-2">
               {product.product_images.map((image, index) => (
                 <button
                   key={image.id}
                   onClick={() => setSelectedImageIndex(index)}
-                  className={`flex-shrink-0 w-20 h-20 overflow-hidden border-2 transition-colors ${
+                  className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 overflow-hidden border-2 transition-colors rounded-md ${
                     selectedImageIndex === index
                       ? 'border-black'
                       : 'border-slate-200 hover:border-slate-400'
@@ -480,29 +480,28 @@ const ProductDetailPage = () => {
         </div>
 
         {/* Product Info */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Header */}
           <div>
             <div className="flex items-start justify-between mb-2">
-              <h1 className="text-xl md:text-2xl font-bold text-slate-900">{product.title}</h1>
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight pr-2">{product.title}</h1>
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={handleWishlistToggle}
-                className={`p-2 transition-colors ${
+                className={`p-1.5 sm:p-2 transition-colors rounded-md ${
                   user && isInWishlist(product.id)
                     ? 'bg-black text-white'
                     : 'bg-slate-100 text-slate-600 hover:bg-black hover:text-white'
                 }`}
               >
-                <Heart size={20} fill={user && isInWishlist(product.id) ? 'currentColor' : 'none'} />
+                <Heart size={18} className="sm:w-5 sm:h-5" fill={user && isInWishlist(product.id) ? 'currentColor' : 'none'} />
               </motion.button>
             </div>
 
-
             {/* Price */}
-            <div className="mb-6">
-              <span className="text-2xl md:text-3xl font-bold text-slate-900">
+            <div className="mb-4 sm:mb-6">
+              <span className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900">
                 LKR {getCurrentPrice().toLocaleString()}
               </span>
               {currentVariant?.price_override && currentVariant.price_override !== product.price && (
@@ -515,14 +514,14 @@ const ProductDetailPage = () => {
 
           {/* Size & Color Selection */}
           {product.product_variants && product.product_variants.length > 0 && (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {/* Size Selection */}
                 {product.product_variants.some(v => v.size) && (
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Size: {currentVariant?.size && <span className="font-normal">{currentVariant.size}</span>}
                     </label>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {Array.from(new Set(product.product_variants.filter(v => v.size).map(v => v.size)))
                         .sort((a, b) => parseInt(a!) - parseInt(b!))
                         .map(size => {
@@ -557,7 +556,7 @@ const ProductDetailPage = () => {
                                 }
                               }}
                               disabled={!isAvailable}
-                              className={`px-4 py-2 border text-sm font-medium transition-colors ${
+                              className={`px-3 py-1.5 sm:px-4 sm:py-2 border text-sm font-medium transition-colors rounded ${
                                 isSelected
                                   ? 'bg-black text-white border-black'
                                   : isAvailable
@@ -576,7 +575,7 @@ const ProductDetailPage = () => {
                 {/* Color Selection */}
                 {product.product_variants.some(v => v.color) && (
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-3">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
                       Color: {currentVariant?.color && <span className="font-normal">{currentVariant.color}</span>}
                     </label>
                     <ColorSelector
@@ -636,17 +635,17 @@ const ProductDetailPage = () => {
           )}
 
           {/* Quantity & Add to Cart */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Quantity</label>
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 sm:space-x-3">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="p-2 border border-slate-300 hover:bg-slate-50"
+                  className="p-1.5 sm:p-2 border border-slate-300 hover:bg-slate-50 rounded"
                 >
-                  <Minus size={16} />
+                  <Minus size={14} className="sm:w-4 sm:h-4" />
                 </button>
-                <span className="px-4 py-2 border border-slate-300 min-w-[60px] text-center">
+                <span className="px-3 py-1.5 sm:px-4 sm:py-2 border border-slate-300 min-w-[50px] sm:min-w-[60px] text-center text-sm sm:text-base rounded">
                   {quantity}
                 </span>
                 <button
@@ -655,14 +654,14 @@ const ProductDetailPage = () => {
                     setQuantity(Math.min(maxStock, quantity + 1));
                   }}
                   disabled={!currentVariant || quantity >= currentVariant.stock}
-                  className="p-2 border border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-1.5 sm:p-2 border border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed rounded"
                 >
-                  <Plus size={16} />
+                  <Plus size={14} className="sm:w-4 sm:h-4" />
                 </button>
               </div>
             </div>
 
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
               <Button
                 variant="primary"
                 size="lg"
@@ -674,9 +673,9 @@ const ProductDetailPage = () => {
                   // Has variants - check if variant is selected and has stock
                   return !currentVariant || currentVariant.stock === 0;
                 })()}
-                className="flex-1 flex items-center justify-center space-x-2"
+                className="flex-1 flex items-center justify-center space-x-2 min-h-[44px] text-sm sm:text-base"
               >
-                <ShoppingCart size={20} />
+                <ShoppingCart size={18} className="sm:w-5 sm:h-5" />
                 <span>Add to Cart</span>
               </Button>
               <Button
@@ -693,6 +692,7 @@ const ProductDetailPage = () => {
                   // Has variants - check if variant is selected and has stock
                   return !currentVariant || currentVariant.stock === 0;
                 })()}
+                className="flex-1 sm:flex-initial min-h-[44px] text-sm sm:text-base"
               >
                 Buy Now
               </Button>
@@ -700,31 +700,31 @@ const ProductDetailPage = () => {
           </div>
 
           {/* Features */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-slate-200">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gray-100">
-                <Truck size={20} className="text-black" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-4 sm:pt-6 border-t border-slate-200">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="p-1.5 sm:p-2 bg-gray-100 rounded">
+                <Truck size={16} className="text-black sm:w-5 sm:h-5" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-900">Free Shipping</p>
+                <p className="text-xs sm:text-sm font-medium text-slate-900">Free Shipping</p>
                 <p className="text-xs text-slate-600">On orders over LKR 15,000</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gray-100">
-                <Shield size={20} className="text-black" />
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="p-1.5 sm:p-2 bg-gray-100 rounded">
+                <Shield size={16} className="text-black sm:w-5 sm:h-5" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-900">Secure Payment</p>
+                <p className="text-xs sm:text-sm font-medium text-slate-900">Secure Payment</p>
                 <p className="text-xs text-slate-600">100% secure checkout</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gray-100">
-                <RotateCcw size={20} className="text-black" />
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="p-1.5 sm:p-2 bg-gray-100 rounded">
+                <RotateCcw size={16} className="text-black sm:w-5 sm:h-5" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-900">Returns</p>
+                <p className="text-xs sm:text-sm font-medium text-slate-900">Returns</p>
                 <Link
                   to="/refund-policy"
                   className="text-xs text-slate-600 hover:text-slate-900 underline"
@@ -738,9 +738,9 @@ const ProductDetailPage = () => {
       </div>
 
       {/* Product Details Tabs */}
-      <div className="mb-16">
-        <div className="border-b border-slate-200 mb-8">
-          <nav className="-mb-px flex space-x-8">
+      <div className="mb-8 sm:mb-12 lg:mb-16">
+        <div className="border-b border-slate-200 mb-4 sm:mb-6 lg:mb-8">
+          <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto">
             {[
               { id: 'description', label: 'Description' },
               { id: 'shipping', label: 'Shipping & Returns' },
@@ -748,7 +748,7 @@ const ProductDetailPage = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-black text-black'
                     : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'

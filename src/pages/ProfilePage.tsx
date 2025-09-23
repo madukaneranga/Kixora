@@ -88,8 +88,12 @@ const ProfilePage = () => {
 
         if (error) throw error;
         setDeliveryAddresses(addresses || []);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching delivery addresses:', error);
+        // Gracefully handle RLS errors or missing policies
+        if (error?.code === 'PGRST116' || error?.message?.includes('406')) {
+          console.log('Delivery addresses table access denied - feature disabled');
+        }
         setDeliveryAddresses([]);
       } finally {
         setAddressesLoading(false);
