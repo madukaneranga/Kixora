@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, ShoppingCart, User, Menu, Heart, LogOut, X, Package, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,9 +21,26 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const cartItemCount = items.reduce((total, item) => total + item.quantity, 0);
   const wishlistItemCount = wishlistItems.length;
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserMenu]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,7 +184,7 @@ const Header = () => {
 
             {/* User Menu */}
             {user ? (
-              <div className="relative">
+              <div className="relative" ref={userMenuRef}>
                 <Button
                   variant="ghost"
                   size="sm"
