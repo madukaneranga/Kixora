@@ -35,6 +35,7 @@ import UsersManagement from './pages/admin/UsersManagement';
 import AuditLogs from './pages/admin/AuditLogs';
 import ContactMessagesManagement from './pages/admin/ContactMessagesManagement';
 import SupportRequestsManagement from './pages/admin/SupportRequestsManagement';
+import AnnouncementsManagement from './pages/admin/AnnouncementsManagement';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
@@ -108,6 +109,7 @@ const AppLayout = () => {
           <Route path="/admin/products" element={<ProtectedAdminRoute><ProductsManagement /></ProtectedAdminRoute>} />
           <Route path="/admin/categories" element={<ProtectedAdminRoute><CategoriesManagement /></ProtectedAdminRoute>} />
           <Route path="/admin/collections" element={<ProtectedAdminRoute><CollectionsManagement /></ProtectedAdminRoute>} />
+          <Route path="/admin/announcements" element={<ProtectedAdminRoute><AnnouncementsManagement /></ProtectedAdminRoute>} />
           <Route path="/admin/users" element={<ProtectedAdminRoute><UsersManagement /></ProtectedAdminRoute>} />
           <Route path="/admin/contact-messages" element={<ProtectedAdminRoute><ContactMessagesManagement /></ProtectedAdminRoute>} />
           <Route path="/admin/support-requests" element={<ProtectedAdminRoute><SupportRequestsManagement /></ProtectedAdminRoute>} />

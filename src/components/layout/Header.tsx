@@ -34,11 +34,11 @@ const Header = () => {
     };
 
     if (showUserMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('click', handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
     };
   }, [showUserMenu]);
 
@@ -59,11 +59,7 @@ const Header = () => {
   return (
     <>
       {/* Announcement Bar */}
-      <AnnouncementBar
-        message="🚚 Island-wide delivery available across Sri Lanka"
-        storageKey="delivery-announcement-dismissed"
-        expirationDays={14}
-      />
+      <AnnouncementBar />
 
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
