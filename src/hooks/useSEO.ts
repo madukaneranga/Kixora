@@ -129,7 +129,15 @@ export const generateSEOData = {
     description: `Shop ${product.title} at the best price in Sri Lanka. ${product.description || 'Premium quality with fast delivery and secure payment.'} Free shipping on orders over LKR 5,000.`,
     keywords: `${product.title}, buy ${product.title}, ${product.categories?.name || 'fashion'}, online shopping sri lanka, ${product.brands?.name || ''}`.toLowerCase(),
     type: 'product',
-    image: product.product_images?.[0]?.storage_path || '/logo.white.png',
+    image: (() => {
+      // Find primary image first, then fallback to first image, then fallback to logo
+      const primaryImage = product.product_images?.find((img: any) => img.is_primary);
+      const displayImage = primaryImage || product.product_images?.[0];
+
+      return displayImage?.storage_path
+        ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/kixora/${displayImage.storage_path}`
+        : '/logo.white.png';
+    })(),
     canonical: `/products/${product.slug || product.id}`
   }),
 
