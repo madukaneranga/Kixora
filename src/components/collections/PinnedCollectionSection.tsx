@@ -191,7 +191,7 @@ const PinnedCollectionSection = ({ collection }: PinnedCollectionSectionProps) =
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="flex-none w-[calc(50%-8px)] md:w-[calc(33.333%-12px)] lg:w-[calc(25%-18px)] min-w-[180px] max-w-[280px]"
+                  className="flex-none w-[calc(50%-6px)] sm:w-[calc(50%-8px)] md:w-[calc(33.333%-12px)] lg:w-[calc(25%-18px)] min-w-[160px] max-w-[320px]"
                 >
                   <ProductCard product={product} />
                 </motion.div>

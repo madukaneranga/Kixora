@@ -55,6 +55,9 @@ const checkoutSchema = yup.object({
   })
 });
 
+// Configuration - Change this value to adjust free shipping threshold
+const FREE_SHIPPING_THRESHOLD = 15000; // LKR
+
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -131,8 +134,12 @@ const CheckoutPage = () => {
           setValue('countryCode', savedAddress.country_code);
           setValue('country', savedAddress.country);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error loading saved address:', error);
+        // Gracefully handle RLS errors or missing policies
+        if (error?.code === 'PGRST116' || error?.message?.includes('406')) {
+          console.log('Delivery addresses table access denied - proceeding without saved address');
+        }
         // Don't show error to user, just proceed without pre-fill
       }
     };
@@ -142,6 +149,9 @@ const CheckoutPage = () => {
 
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const getShippingCost = (method: string) => {
+    // Free shipping for orders over the threshold
+    if (subtotal >= FREE_SHIPPING_THRESHOLD) return 0;
+
     if (method === 'standard') return 399;
     if (method === 'express') return 699;
     return 399;
@@ -560,7 +570,9 @@ const CheckoutPage = () => {
                           </p>
                           <p className="text-[rgb(94,94,94)] text-sm">2-4 business days</p>
                         </div>
-                        <p className="text-white font-medium flex-shrink-0 ml-2">Rs 399</p>
+                        <p className="text-white font-medium flex-shrink-0 ml-2">
+                          {subtotal >= FREE_SHIPPING_THRESHOLD ? 'FREE' : 'Rs 399'}
+                        </p>
                       </div>
                     </div>
                   </label>
@@ -594,7 +606,9 @@ const CheckoutPage = () => {
                           </p>
                           <p className="text-red-400 text-sm font-medium">Only within Colombo</p>
                         </div>
-                        <p className="text-white font-medium flex-shrink-0 ml-2">Rs 699</p>
+                        <p className="text-white font-medium flex-shrink-0 ml-2">
+                          {subtotal >= FREE_SHIPPING_THRESHOLD ? 'FREE' : 'Rs 699'}
+                        </p>
                       </div>
                     </div>
                   </label>
@@ -828,7 +842,7 @@ const CheckoutPage = () => {
                 </div>
                 <div className="flex justify-between text-white text-sm sm:text-base">
                   <span>Shipping</span>
-                  <span>LKR {shipping.toLocaleString()}</span>
+                  <span>{shipping === 0 ? 'FREE' : `LKR ${shipping.toLocaleString()}`}</span>
                 </div>
                 <div className="flex justify-between text-lg sm:text-xl font-semibold text-white pt-2 sm:pt-3 border-t border-[rgb(51,51,51)]">
                   <span>Total</span>
