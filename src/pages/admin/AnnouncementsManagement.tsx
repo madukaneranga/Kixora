@@ -233,9 +233,13 @@ const AnnouncementsManagement = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-white">Announcements</h1>
-            <p className="text-gray-400">Manage announcement bar messages</p>
+            <p className="text-white/60">Manage announcement bar messages</p>
           </div>
-          <Button onClick={handleCreate} className="bg-white text-black hover:bg-gray-200">
+          <Button
+            onClick={handleCreate}
+            variant="outline"
+            className="border-white/20 text-white hover:bg-white hover:text-black"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Create Announcement
           </Button>
@@ -256,15 +260,15 @@ const AnnouncementsManagement = () => {
                   <div className="flex items-center gap-3 mb-3">
                     <h3 className="text-lg font-semibold text-white">{announcement.title}</h3>
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      className={`px-2 py-1 rounded-full text-xs font-medium border ${
                         announcement.is_active
-                          ? 'bg-green-500/20 text-green-400'
-                          : 'bg-red-500/20 text-red-400'
+                          ? 'bg-white/10 text-white border-white/20'
+                          : 'bg-black/50 text-white/60 border-white/10'
                       }`}
                     >
                       {announcement.is_active ? 'Active' : 'Inactive'}
                     </span>
-                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-medium">
+                    <span className="px-2 py-1 bg-white/5 text-white/80 border border-white/10 rounded-full text-xs font-medium">
                       Priority: {announcement.priority}
                     </span>
                   </div>
@@ -279,7 +283,7 @@ const AnnouncementsManagement = () => {
                     {announcement.message}
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                  <div className="flex items-center gap-4 text-sm text-white/60">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       <span>Start: {formatDate(announcement.start_date)}</span>
@@ -304,7 +308,7 @@ const AnnouncementsManagement = () => {
                     onClick={() => toggleActive(announcement.id, announcement.is_active)}
                     variant="outline"
                     size="sm"
-                    className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
+                    className="border-white/20 text-white hover:bg-white hover:text-black"
                   >
                     {announcement.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </Button>
@@ -312,7 +316,7 @@ const AnnouncementsManagement = () => {
                     onClick={() => handleEdit(announcement)}
                     variant="outline"
                     size="sm"
-                    className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
+                    className="border-white/20 text-white hover:bg-white hover:text-black"
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -320,7 +324,7 @@ const AnnouncementsManagement = () => {
                     onClick={() => deleteAnnouncement(announcement.id)}
                     variant="outline"
                     size="sm"
-                    className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                    className="border-white/30 text-white/70 hover:bg-white hover:text-black"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -332,7 +336,7 @@ const AnnouncementsManagement = () => {
 
         {announcements.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-400">No announcements yet. Create your first announcement!</p>
+            <p className="text-white/60">No announcements yet. Create your first announcement!</p>
           </div>
         )}
       </div>
@@ -345,7 +349,7 @@ const AnnouncementsManagement = () => {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Title
               </label>
               <Input
@@ -355,7 +359,7 @@ const AnnouncementsManagement = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Priority
               </label>
               <Input
@@ -368,46 +372,46 @@ const AnnouncementsManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               Message
             </label>
             <textarea
               {...register('message')}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-black border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-white/50"
               rows={3}
               placeholder="Announcement message"
             />
             {errors.message && (
-              <p className="mt-1 text-sm text-red-500">{errors.message.message}</p>
+              <p className="mt-1 text-sm text-white/80">{errors.message.message}</p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Background Color
               </label>
               <input
                 type="color"
                 {...register('background_color')}
-                className="w-full h-10 rounded-md border border-gray-600"
+                className="w-full h-10 rounded-md border border-white/20 bg-black"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Text Color
               </label>
               <input
                 type="color"
                 {...register('text_color')}
-                className="w-full h-10 rounded-md border border-gray-600"
+                className="w-full h-10 rounded-md border border-white/20 bg-black"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Start Date
               </label>
               <Input
@@ -417,7 +421,7 @@ const AnnouncementsManagement = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 End Date (Optional)
               </label>
               <Input
@@ -429,7 +433,7 @@ const AnnouncementsManagement = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               Link URL (Optional)
             </label>
             <Input
@@ -443,9 +447,9 @@ const AnnouncementsManagement = () => {
             <input
               type="checkbox"
               {...register('is_active')}
-              className="mr-2"
+              className="mr-2 accent-white"
             />
-            <label className="text-sm text-gray-300">
+            <label className="text-sm text-white">
               Active
             </label>
           </div>
@@ -465,13 +469,14 @@ const AnnouncementsManagement = () => {
               type="button"
               variant="outline"
               onClick={() => setShowModal(false)}
+              className="border-white/20 text-white hover:bg-white hover:text-black"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               loading={submitting}
-              className="bg-white text-black hover:bg-gray-200"
+              className="bg-white text-black hover:bg-white/90"
             >
               {editingAnnouncement ? 'Update' : 'Create'}
             </Button>
