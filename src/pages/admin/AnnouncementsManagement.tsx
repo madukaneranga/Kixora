@@ -4,8 +4,6 @@ import { Plus, Edit, Trash2, Eye, EyeOff, Calendar, Link as LinkIcon } from 'luc
 import { supabase } from '../../lib/supabase';
 import AdminLayout from '../../components/admin/AdminLayout';
 import Button from '../../components/ui/Button';
-import Modal from '../../components/ui/Modal';
-import Input from '../../components/ui/Input';
 import Breadcrumb from '../../components/ui/Breadcrumb';
 import { showSuccessToast, showErrorToast } from '../../components/ui/CustomToast';
 import { useForm } from 'react-hook-form';
@@ -233,9 +231,13 @@ const AnnouncementsManagement = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-white">Announcements</h1>
-            <p className="text-gray-400">Manage announcement bar messages</p>
+            <p className="text-white/60">Manage announcement bar messages</p>
           </div>
-          <Button onClick={handleCreate} className="bg-white text-black hover:bg-gray-200">
+          <Button
+            onClick={handleCreate}
+            variant="outline"
+            className="border-white/20 text-white hover:bg-white hover:text-black"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Create Announcement
           </Button>
@@ -256,15 +258,15 @@ const AnnouncementsManagement = () => {
                   <div className="flex items-center gap-3 mb-3">
                     <h3 className="text-lg font-semibold text-white">{announcement.title}</h3>
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      className={`px-2 py-1 rounded-full text-xs font-medium border ${
                         announcement.is_active
-                          ? 'bg-green-500/20 text-green-400'
-                          : 'bg-red-500/20 text-red-400'
+                          ? 'bg-white/10 text-white border-white/20'
+                          : 'bg-black/50 text-white/60 border-white/10'
                       }`}
                     >
                       {announcement.is_active ? 'Active' : 'Inactive'}
                     </span>
-                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-medium">
+                    <span className="px-2 py-1 bg-white/5 text-white/80 border border-white/10 rounded-full text-xs font-medium">
                       Priority: {announcement.priority}
                     </span>
                   </div>
@@ -279,7 +281,7 @@ const AnnouncementsManagement = () => {
                     {announcement.message}
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                  <div className="flex items-center gap-4 text-sm text-white/60">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       <span>Start: {formatDate(announcement.start_date)}</span>
@@ -304,7 +306,7 @@ const AnnouncementsManagement = () => {
                     onClick={() => toggleActive(announcement.id, announcement.is_active)}
                     variant="outline"
                     size="sm"
-                    className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
+                    className="border-white/20 text-white hover:bg-white hover:text-black"
                   >
                     {announcement.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </Button>
@@ -312,7 +314,7 @@ const AnnouncementsManagement = () => {
                     onClick={() => handleEdit(announcement)}
                     variant="outline"
                     size="sm"
-                    className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
+                    className="border-white/20 text-white hover:bg-white hover:text-black"
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -320,7 +322,7 @@ const AnnouncementsManagement = () => {
                     onClick={() => deleteAnnouncement(announcement.id)}
                     variant="outline"
                     size="sm"
-                    className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                    className="border-white/30 text-white/70 hover:bg-white hover:text-black"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -332,120 +334,145 @@ const AnnouncementsManagement = () => {
 
         {announcements.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-400">No announcements yet. Create your first announcement!</p>
+            <p className="text-white/60">No announcements yet. Create your first announcement!</p>
           </div>
         )}
       </div>
 
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title={editingAnnouncement ? 'Edit Announcement' : 'Create Announcement'}
-      >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-black border border-[rgb(51,51,51)] rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-[rgb(51,51,51)] flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-white">
+                {editingAnnouncement ? 'Edit Announcement' : 'Create Announcement'}
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-[rgb(94,94,94)] hover:text-white text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Title
               </label>
-              <Input
+              <input
                 {...register('title')}
-                error={errors.title?.message}
+                className="w-full px-4 py-2.5 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
                 placeholder="Announcement title"
               />
+              {errors.title && (
+                <p className="mt-1 text-sm text-white/80">{errors.title.message}</p>
+              )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Priority
               </label>
-              <Input
+              <input
                 type="number"
                 {...register('priority')}
-                error={errors.priority?.message}
+                className="w-full px-4 py-2.5 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
                 placeholder="0"
               />
+              {errors.priority && (
+                <p className="mt-1 text-sm text-white/80">{errors.priority.message}</p>
+              )}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               Message
             </label>
             <textarea
               {...register('message')}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
               rows={3}
               placeholder="Announcement message"
             />
             {errors.message && (
-              <p className="mt-1 text-sm text-red-500">{errors.message.message}</p>
+              <p className="mt-1 text-sm text-white/80">{errors.message.message}</p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Background Color
               </label>
               <input
                 type="color"
                 {...register('background_color')}
-                className="w-full h-10 rounded-md border border-gray-600"
+                className="w-full h-10 rounded-lg border border-[rgb(51,51,51)] bg-black hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Text Color
               </label>
               <input
                 type="color"
                 {...register('text_color')}
-                className="w-full h-10 rounded-md border border-gray-600"
+                className="w-full h-10 rounded-lg border border-[rgb(51,51,51)] bg-black hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Start Date
               </label>
-              <Input
+              <input
                 type="datetime-local"
                 {...register('start_date')}
-                error={errors.start_date?.message}
+                className="w-full px-4 py-2.5 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
               />
+              {errors.start_date && (
+                <p className="mt-1 text-sm text-white/80">{errors.start_date.message}</p>
+              )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 End Date (Optional)
               </label>
-              <Input
+              <input
                 type="datetime-local"
                 {...register('end_date')}
-                error={errors.end_date?.message}
+                className="w-full px-4 py-2.5 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
               />
+              {errors.end_date && (
+                <p className="mt-1 text-sm text-white/80">{errors.end_date.message}</p>
+              )}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               Link URL (Optional)
             </label>
-            <Input
+            <input
               {...register('link_url')}
-              error={errors.link_url?.message}
+              className="w-full px-4 py-2.5 bg-black text-white border border-[rgb(51,51,51)] rounded-lg hover:border-[rgb(94,94,94)] focus:outline-none focus:border-white transition-colors"
               placeholder="https://example.com"
             />
+            {errors.link_url && (
+              <p className="mt-1 text-sm text-white/80">{errors.link_url.message}</p>
+            )}
           </div>
 
           <div className="flex items-center">
             <input
               type="checkbox"
               {...register('is_active')}
-              className="mr-2"
+              className="mr-2 accent-white"
             />
-            <label className="text-sm text-gray-300">
+            <label className="text-sm text-white">
               Active
             </label>
           </div>
@@ -460,24 +487,27 @@ const AnnouncementsManagement = () => {
             Preview: {watch('message') || 'Your message will appear here...'}
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex space-x-4 pt-6 border-t border-[rgb(51,51,51)]">
+            <Button
+              type="submit"
+              loading={submitting}
+              className="bg-[rgb(51,51,51)] text-white hover:bg-[rgb(64,64,64)] border border-[rgb(94,94,94)]"
+            >
+              {editingAnnouncement ? 'Update Announcement' : 'Create Announcement'}
+            </Button>
             <Button
               type="button"
               variant="outline"
               onClick={() => setShowModal(false)}
+              className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              loading={submitting}
-              className="bg-white text-black hover:bg-gray-200"
-            >
-              {editingAnnouncement ? 'Update' : 'Create'}
-            </Button>
           </div>
         </form>
-      </Modal>
+          </div>
+        </div>
+      )}
       </div>
     </AdminLayout>
   );
