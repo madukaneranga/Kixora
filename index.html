@@ -56,6 +56,25 @@
 
     <!-- PayHere Payment Integration -->
     <script type="text/javascript" src="https://www.payhere.lk/lib/payhere.js"></script>
+
+    <!-- Crawler Detection and Redirect -->
+    <script>
+      // Detect crawlers before React loads
+      (function() {
+        const userAgent = navigator.userAgent || '';
+        const isCrawler = /bot|crawler|spider|facebook|twitter|whatsapp|linkedin|telegram|discord|slack|skype|google|bing|yandex|pinterest|apple|reddit/i.test(userAgent);
+
+        if (isCrawler) {
+          const currentPath = window.location.pathname;
+
+          // Only redirect product and collection pages
+          if (currentPath.startsWith('/products/') || currentPath.startsWith('/collections/')) {
+            const edgeFunctionUrl = `https://encxafbdmxjmdardcmks.supabase.co/functions/v1/meta-handler${currentPath}`;
+            window.location.href = edgeFunctionUrl;
+          }
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
