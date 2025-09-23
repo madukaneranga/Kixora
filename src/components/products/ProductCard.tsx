@@ -351,17 +351,33 @@ const ProductCard = ({ product }: ProductCardProps) => {
                 <p className="text-xs font-medium text-gray-700 mb-2">Size</p>
                 <div className="flex space-x-1">
                   {availableSizes.map((size) => {
+                    // Check if ANY variant with this size has stock (regardless of color)
                     const hasStock = product.variants?.some(v =>
-                      v.size === size &&
-                      (!hasColor || !selectedColor || v.color === selectedColor) &&
-                      v.stock && v.stock > 0
+                      v.size === size && v.stock && v.stock > 0
                     );
                     return (
                       <button
                         key={size}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedSize(size === selectedSize ? '' : size);
+                          const newSize = size === selectedSize ? '' : size;
+                          setSelectedSize(newSize);
+
+                          // If switching to a new size, auto-select color if current color is not available
+                          if (newSize && hasColor && selectedColor) {
+                            const isCurrentColorAvailable = product.variants?.some(v =>
+                              v.size === newSize && v.color === selectedColor && v.stock && v.stock > 0
+                            );
+                            if (!isCurrentColorAvailable) {
+                              // Find first available color for this size
+                              const availableColor = product.variants?.find(v =>
+                                v.size === newSize && v.stock && v.stock > 0
+                              )?.color;
+                              if (availableColor) {
+                                setSelectedColor(availableColor);
+                              }
+                            }
+                          }
                         }}
                         disabled={!hasStock}
                         className={`px-2 py-1 text-xs border transition-colors ${
@@ -387,14 +403,32 @@ const ProductCard = ({ product }: ProductCardProps) => {
                   <ColorSelector
                     colors={availableColors}
                     selectedColors={selectedColor ? [selectedColor] : []}
-                    onColorSelect={(color) => setSelectedColor(color === selectedColor ? '' : color)}
+                    onColorSelect={(color) => {
+                      const newColor = color === selectedColor ? '' : color;
+                      setSelectedColor(newColor);
+
+                      // If switching to a new color, auto-select size if current size is not available
+                      if (newColor && hasSize && selectedSize) {
+                        const isCurrentSizeAvailable = product.variants?.some(v =>
+                          v.color === newColor && v.size === selectedSize && v.stock && v.stock > 0
+                        );
+                        if (!isCurrentSizeAvailable) {
+                          // Find first available size for this color
+                          const availableSize = product.variants?.find(v =>
+                            v.color === newColor && v.stock && v.stock > 0
+                          )?.size;
+                          if (availableSize) {
+                            setSelectedSize(availableSize);
+                          }
+                        }
+                      }
+                    }}
                     multiple={false}
                     size="sm"
                     disabledColors={availableColors.filter(color => {
+                      // Disable color only if NO variant with this color has stock (regardless of size)
                       return !product.variants?.some(v =>
-                        v.color === color &&
-                        (!hasSize || !selectedSize || v.size === selectedSize) &&
-                        v.stock && v.stock > 0
+                        v.color === color && v.stock && v.stock > 0
                       );
                     })}
                   />
@@ -497,15 +531,33 @@ const ProductCard = ({ product }: ProductCardProps) => {
                     <p className="text-sm font-medium text-gray-700 mb-3">Select Size</p>
                     <div className="flex flex-wrap gap-2">
                       {availableSizes.map((size) => {
+                        // Check if ANY variant with this size has stock (regardless of color)
                         const hasStock = product.variants?.some(v =>
-                          v.size === size &&
-                          (!hasColor || !selectedColor || v.color === selectedColor) &&
-                          v.stock && v.stock > 0
+                          v.size === size && v.stock && v.stock > 0
                         );
                         return (
                           <button
                             key={size}
-                            onClick={() => setSelectedSize(size === selectedSize ? '' : size)}
+                            onClick={() => {
+                              const newSize = size === selectedSize ? '' : size;
+                              setSelectedSize(newSize);
+
+                              // If switching to a new size, auto-select color if current color is not available
+                              if (newSize && hasColor && selectedColor) {
+                                const isCurrentColorAvailable = product.variants?.some(v =>
+                                  v.size === newSize && v.color === selectedColor && v.stock && v.stock > 0
+                                );
+                                if (!isCurrentColorAvailable) {
+                                  // Find first available color for this size
+                                  const availableColor = product.variants?.find(v =>
+                                    v.size === newSize && v.stock && v.stock > 0
+                                  )?.color;
+                                  if (availableColor) {
+                                    setSelectedColor(availableColor);
+                                  }
+                                }
+                              }
+                            }}
                             disabled={!hasStock}
                             className={`px-4 py-3 text-sm border rounded-lg transition-colors min-w-[50px] ${
                               selectedSize === size
@@ -529,14 +581,32 @@ const ProductCard = ({ product }: ProductCardProps) => {
                     <ColorSelector
                       colors={availableColors}
                       selectedColors={selectedColor ? [selectedColor] : []}
-                      onColorSelect={(color) => setSelectedColor(color === selectedColor ? '' : color)}
+                      onColorSelect={(color) => {
+                        const newColor = color === selectedColor ? '' : color;
+                        setSelectedColor(newColor);
+
+                        // If switching to a new color, auto-select size if current size is not available
+                        if (newColor && hasSize && selectedSize) {
+                          const isCurrentSizeAvailable = product.variants?.some(v =>
+                            v.color === newColor && v.size === selectedSize && v.stock && v.stock > 0
+                          );
+                          if (!isCurrentSizeAvailable) {
+                            // Find first available size for this color
+                            const availableSize = product.variants?.find(v =>
+                              v.color === newColor && v.stock && v.stock > 0
+                            )?.size;
+                            if (availableSize) {
+                              setSelectedSize(availableSize);
+                            }
+                          }
+                        }
+                      }}
                       multiple={false}
                       size="lg"
                       disabledColors={availableColors.filter(color => {
+                        // Disable color only if NO variant with this color has stock (regardless of size)
                         return !product.variants?.some(v =>
-                          v.color === color &&
-                          (!hasSize || !selectedSize || v.size === selectedSize) &&
-                          v.stock && v.stock > 0
+                          v.color === color && v.stock && v.stock > 0
                         );
                       })}
                     />

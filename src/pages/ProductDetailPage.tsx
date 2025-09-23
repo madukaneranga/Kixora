@@ -526,17 +526,36 @@ const ProductDetailPage = () => {
                       {Array.from(new Set(product.product_variants.filter(v => v.size).map(v => v.size)))
                         .sort((a, b) => parseInt(a!) - parseInt(b!))
                         .map(size => {
-                          const variant = product.product_variants?.find(v =>
+                          // Check if ANY variant with this size has stock (regardless of color)
+                          const hasStockInAnyColor = product.product_variants?.some(v =>
+                            v.size === size && v.is_active && v.stock > 0
+                          );
+
+                          // Find the specific variant for this size and current color (if any)
+                          const specificVariant = product.product_variants?.find(v =>
                             v.size === size &&
                             (!currentVariant?.color || v.color === currentVariant.color)
                           );
+
                           const isSelected = currentVariant?.size === size;
-                          const isAvailable = variant && variant.is_active && variant.stock > 0;
+                          const isAvailable = hasStockInAnyColor;
 
                           return (
                             <button
                               key={size}
-                              onClick={() => variant && setSelectedVariant(variant.id)}
+                              onClick={() => {
+                                // When clicking a size, find the best variant to select
+                                // Priority: 1) Same color if available, 2) First available variant with this size
+                                let targetVariant = specificVariant;
+                                if (!targetVariant || !targetVariant.is_active || targetVariant.stock === 0) {
+                                  targetVariant = product.product_variants?.find(v =>
+                                    v.size === size && v.is_active && v.stock > 0
+                                  );
+                                }
+                                if (targetVariant) {
+                                  setSelectedVariant(targetVariant.id);
+                                }
+                              }}
                               disabled={!isAvailable}
                               className={`px-4 py-2 border text-sm font-medium transition-colors ${
                                 isSelected
@@ -564,22 +583,31 @@ const ProductDetailPage = () => {
                       colors={Array.from(new Set(product.product_variants.filter(v => v.color).map(v => v.color!))).filter(Boolean)}
                       selectedColors={currentVariant?.color ? [currentVariant.color] : []}
                       onColorSelect={(color) => {
-                        const variant = product.product_variants?.find(v =>
+                        // When clicking a color, find the best variant to select
+                        // Priority: 1) Same size if available, 2) First available variant with this color
+                        let targetVariant = product.product_variants?.find(v =>
                           v.color === color &&
                           (!currentVariant?.size || v.size === currentVariant.size)
                         );
-                        if (variant) {
-                          setSelectedVariant(variant.id);
+
+                        if (!targetVariant || !targetVariant.is_active || targetVariant.stock === 0) {
+                          targetVariant = product.product_variants?.find(v =>
+                            v.color === color && v.is_active && v.stock > 0
+                          );
+                        }
+
+                        if (targetVariant) {
+                          setSelectedVariant(targetVariant.id);
                         }
                       }}
                       multiple={false}
                       size="lg"
                       disabledColors={Array.from(new Set(product.product_variants.filter(v => v.color).map(v => v.color!))).filter(color => {
-                        const variant = product.product_variants?.find(v =>
-                          v.color === color &&
-                          (!currentVariant?.size || v.size === currentVariant.size)
+                        // Disable color only if NO variant with this color has stock (regardless of size)
+                        const hasStockInAnySize = product.product_variants?.some(v =>
+                          v.color === color && v.is_active && v.stock > 0
                         );
-                        return !variant || !variant.is_active || variant.stock === 0;
+                        return !hasStockInAnySize;
                       })}
                       className="flex flex-wrap gap-3"
                     />
