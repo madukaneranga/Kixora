@@ -10,6 +10,7 @@ import { showSuccessToast, showErrorToast } from '../../components/ui/CustomToas
 import { uploadProductImages, saveProductImages, deleteProductImages, getProductImages } from '../../lib/imageUpload';
 import Breadcrumb from '../../components/ui/Breadcrumb';
 import { generateSlug, ensureUniqueSlug } from '../../utils/slugUtils';
+import { getAvailableColors, getColorInfo } from '../../services/colorService';
 
 interface Product {
   id: string;
@@ -97,18 +98,7 @@ const ProductsManagement = () => {
     isExisting?: boolean; // Flag to track if this is a saved variant
     is_active?: boolean; // Active status for existing variants
   }>>([]);
-  const [availableColors] = useState([
-    { name: 'Black', image: '/src/assests/colors/black.png' },
-    { name: 'White', image: '/src/assests/colors/white.png' },
-    { name: 'Red', image: '/src/assests/colors/red.png' },
-    { name: 'Blue', image: '/src/assests/colors/blue.png' },
-    { name: 'Green', image: '/src/assests/colors/green.png' },
-    { name: 'Yellow', image: '/src/assests/colors/yellow.png' },
-    { name: 'Purple', image: '/src/assests/colors/purple.png' },
-    { name: 'Orange', image: '/src/assests/colors/orange.png' },
-    { name: 'Pink', image: '/src/assests/colors/pink.png' },
-    { name: 'Gray', image: '/src/assests/colors/gray.png' },
-  ]);
+  const [availableColors] = useState(getAvailableColors());
   const [images, setImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<any[]>([]);
   const [loadingImages, setLoadingImages] = useState(false);
@@ -1441,13 +1431,13 @@ const ProductsManagement = () => {
                               <div className="grid grid-cols-5 gap-1">
                                 {availableColors.map((color) => (
                                   <button
-                                    key={color.name}
+                                    key={color.displayName}
                                     type="button"
-                                    id={`color-${color.name}`}
+                                    id={`color-${color.displayName}`}
                                     onClick={(e) => {
                                       // Remove selected class from all buttons
                                       availableColors.forEach(c => {
-                                        const btn = document.getElementById(`color-${c.name}`);
+                                        const btn = document.getElementById(`color-${c.displayName}`);
                                         if (btn) btn.classList.remove('border-white', 'shadow-lg', 'scale-110');
                                         if (btn) btn.classList.add('border-[rgb(51,51,51)]');
                                       });
@@ -1458,11 +1448,11 @@ const ProductsManagement = () => {
                                       e.currentTarget.setAttribute('data-selected', color.name);
                                     }}
                                     className="w-8 h-8 rounded border-2 border-[rgb(51,51,51)] hover:border-[rgb(94,94,94)] transition-all overflow-hidden"
-                                    title={color.name}
+                                    title={color.displayName}
                                   >
                                     <img
                                       src={color.image}
-                                      alt={color.name}
+                                      alt={color.displayName}
                                       className="w-full h-full object-cover"
                                       onError={(e) => {
                                         e.currentTarget.style.display = 'none';
@@ -1500,7 +1490,7 @@ const ProductsManagement = () => {
 
                                   // Get selected color from clicked button
                                   const selectedColorBtn = availableColors.find(c => {
-                                    const btn = document.getElementById(`color-${c.name}`);
+                                    const btn = document.getElementById(`color-${c.displayName}`);
                                     return btn && btn.getAttribute('data-selected');
                                   });
                                   const color = selectedColorBtn?.name || '';
@@ -1528,7 +1518,7 @@ const ProductsManagement = () => {
 
                                   // Clear color selection
                                   availableColors.forEach(c => {
-                                    const btn = document.getElementById(`color-${c.name}`);
+                                    const btn = document.getElementById(`color-${c.displayName}`);
                                     if (btn) {
                                       btn.classList.remove('border-white', 'shadow-lg', 'scale-110');
                                       btn.classList.add('border-[rgb(51,51,51)]');
@@ -1583,7 +1573,7 @@ const ProductsManagement = () => {
                                           <div className="flex items-center">
                                             <div className="w-4 h-4 rounded border border-[rgb(51,51,51)] mr-2 overflow-hidden">
                                               <img
-                                                src={availableColors.find(c => c.name === variant.color)?.image || ''}
+                                                src={getColorInfo(variant.color)?.image || ''}
                                                 alt={variant.color}
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => {
@@ -2200,7 +2190,7 @@ const ProductsManagement = () => {
                                       <div className="flex items-center">
                                         <div className="w-4 h-4 rounded border border-[rgb(51,51,51)] mr-2 overflow-hidden">
                                           <img
-                                            src={availableColors.find(c => c.name === variant.color)?.image || ''}
+                                            src={getColorInfo(variant.color)?.image || ''}
                                             alt={variant.color}
                                             className="w-full h-full object-cover"
                                             onError={(e) => {
