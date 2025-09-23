@@ -236,7 +236,7 @@ const AnnouncementsManagement = () => {
           <Button
             onClick={handleCreate}
             variant="outline"
-            className="border-white/20 text-white hover:bg-white hover:text-black"
+            className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Announcement
@@ -306,7 +306,7 @@ const AnnouncementsManagement = () => {
                     onClick={() => toggleActive(announcement.id, announcement.is_active)}
                     variant="outline"
                     size="sm"
-                    className="border-white/20 text-white hover:bg-white hover:text-black"
+                    className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
                   >
                     {announcement.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </Button>
@@ -314,7 +314,7 @@ const AnnouncementsManagement = () => {
                     onClick={() => handleEdit(announcement)}
                     variant="outline"
                     size="sm"
-                    className="border-white/20 text-white hover:bg-white hover:text-black"
+                    className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -322,7 +322,7 @@ const AnnouncementsManagement = () => {
                     onClick={() => deleteAnnouncement(announcement.id)}
                     variant="outline"
                     size="sm"
-                    className="border-white/30 text-white/70 hover:bg-white hover:text-black"
+                    className="border-[rgb(51,51,51)] text-white hover:bg-white hover:text-black"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
