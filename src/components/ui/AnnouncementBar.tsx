@@ -160,7 +160,7 @@ const AnnouncementBar: React.FC = () => {
               <div className="flex items-center gap-3 ml-4">
                 {/* Dots indicator for multiple announcements */}
                 {activeAnnouncements.length > 1 && (
-                  <div className="flex items-center space-x-1">
+                  <div className="hidden sm:flex items-center space-x-1">
                     {activeAnnouncements.map((_, index) => (
                       <button
                         key={index}
