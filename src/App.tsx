@@ -36,6 +36,7 @@ import AuditLogs from './pages/admin/AuditLogs';
 import ContactMessagesManagement from './pages/admin/ContactMessagesManagement';
 import SupportRequestsManagement from './pages/admin/SupportRequestsManagement';
 import AnnouncementsManagement from './pages/admin/AnnouncementsManagement';
+import ShopSettingsManagement from './pages/admin/ShopSettingsManagement';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
