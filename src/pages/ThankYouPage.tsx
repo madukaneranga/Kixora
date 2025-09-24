@@ -8,6 +8,7 @@ import ProductCard from '../components/products/ProductCard';
 import logo from '../assests/logo.black.png';
 import { InlineLoading } from '../components/ui/Loading';
 import Breadcrumb from '../components/ui/Breadcrumb';
+import { FREE_SHIPPING_THRESHOLD } from '../utils/constants';
 
 interface Product {
   id: string;
@@ -24,8 +25,6 @@ interface Product {
   }>;
 }
 
-// Configuration - Change this value to adjust free shipping threshold
-const FREE_SHIPPING_THRESHOLD = 15000; // LKR
 
 const ThankYouPage = () => {
   const navigate = useNavigate();
