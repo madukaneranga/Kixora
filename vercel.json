@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/products/:slug",
-      "destination": "/index.html",
+      "destination": "https://encxafbdmxjmdardcmks.supabase.co/functions/v1/meta-handler/products/:slug",
       "has": [
         {
           "type": "header",
@@ -13,7 +13,7 @@
     },
     {
       "source": "/collections/:slug",
-      "destination": "/index.html",
+      "destination": "https://encxafbdmxjmdardcmks.supabase.co/functions/v1/meta-handler/collections/:slug",
       "has": [
         {
           "type": "header",
@@ -21,6 +21,14 @@
           "value": "(?i).*(bot|crawler|spider|crawling|facebook|twitter|linkedin|whatsapp|telegram|slack|discord).*"
         }
       ]
+    },
+    {
+      "source": "/products/:slug",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/collections/:slug",
+      "destination": "/index.html"
     },
     {
       "source": "/((?!api/).*)",
