@@ -14,6 +14,7 @@ import { showErrorToast } from '../components/ui/CustomToast';
 import logo from '../assests/logo.black.png';
 import { payHereService, PayHerePaymentData } from '../services/payhere';
 import Breadcrumb from '../components/ui/Breadcrumb';
+import { FREE_SHIPPING_THRESHOLD } from '../utils/constants';
 
 const checkoutSchema = yup.object({
   country: yup.string().required('Country is required'),
@@ -55,8 +56,6 @@ const checkoutSchema = yup.object({
   })
 });
 
-// Configuration - Change this value to adjust free shipping threshold
-const FREE_SHIPPING_THRESHOLD = 15000; // LKR
 
 const CheckoutPage = () => {
   const navigate = useNavigate();

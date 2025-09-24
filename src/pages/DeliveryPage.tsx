@@ -1,5 +1,6 @@
 import React from 'react';
 import { Truck, Clock, MapPin, CreditCard } from 'lucide-react';
+import { FREE_SHIPPING_THRESHOLD } from '../utils/constants';
 
 const DeliveryPage: React.FC = () => {
   const deliveryOptions = [
@@ -116,7 +117,7 @@ const DeliveryPage: React.FC = () => {
             <div className="border border-white p-3">
               <h3 className="text-sm font-semibold mb-2">Free Shipping</h3>
               <ul className="space-y-1 text-xs">
-                <li>• Free standard delivery on orders over LKR 15,000</li>
+                <li>• Free standard delivery on orders over LKR {FREE_SHIPPING_THRESHOLD.toLocaleString()}</li>
                 <li>• International shipping will be paid shipping</li>
                 <li>• Express delivery charges still apply</li>
                 <li>• Offer valid for regular-priced items only</li>

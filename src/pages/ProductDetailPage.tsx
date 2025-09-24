@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { FREE_SHIPPING_THRESHOLD } from '../utils/constants';
 import {
   Heart,
   Star,
@@ -707,7 +708,7 @@ const ProductDetailPage = () => {
               </div>
               <div>
                 <p className="text-xs sm:text-sm font-medium text-slate-900">Free Shipping</p>
-                <p className="text-xs text-slate-600">On orders over LKR 15,000</p>
+                <p className="text-xs text-slate-600">On orders over LKR {FREE_SHIPPING_THRESHOLD.toLocaleString()}</p>
               </div>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-3">
@@ -786,7 +787,7 @@ const ProductDetailPage = () => {
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3">
                       <Truck size={16} className="text-slate-400" />
-                      <span className="text-slate-600">Free standard delivery on orders over LKR 15,000</span>
+                      <span className="text-slate-600">Free standard delivery on orders over LKR {FREE_SHIPPING_THRESHOLD.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center space-x-3">
                       <Clock size={16} className="text-slate-400" />
