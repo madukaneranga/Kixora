@@ -99,32 +99,32 @@ const ContactPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 py-8 sm:px-6 sm:py-10 md:px-20 md:py-12">
+    <div className="min-h-screen bg-black text-white px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Contact Us</h1>
-        <p className="text-lg mb-12">
+        <h1 className="text-2xl font-bold mb-4">Contact Us</h1>
+        <p className="text-sm mb-6">
           Have a question or need help? We're here to assist you. Reach out to us through any of the methods below.
         </p>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Contact Information */}
           <div>
-            <h2 className="text-2xl font-semibold mb-8">Get in Touch</h2>
-            <div className="space-y-6">
+            <h2 className="text-base font-semibold mb-4">Get in Touch</h2>
+            <div className="space-y-3">
               {contactInfo.map((info, index) => (
-                <div key={index} className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 mt-1">{info.icon}</div>
+                <div key={index} className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 mt-0.5 scale-75">{info.icon}</div>
                   <div>
-                    <h3 className="font-semibold mb-1">{info.title}</h3>
+                    <h3 className="text-sm font-semibold mb-1">{info.title}</h3>
                     {info.action ? (
                       <a
                         href={info.action}
-                        className="text-white hover:opacity-70 transition-opacity"
+                        className="text-white hover:opacity-70 transition-opacity text-xs"
                       >
                         {info.details}
                       </a>
                     ) : (
-                      <p className="text-white">{info.details}</p>
+                      <p className="text-white text-xs">{info.details}</p>
                     )}
                   </div>
                 </div>
@@ -132,29 +132,29 @@ const ContactPage: React.FC = () => {
             </div>
 
             {/* Additional Support Options */}
-            <div className="mt-12">
-              <h3 className="text-xl font-semibold mb-4">Other Ways to Get Help</h3>
-              <div className="space-y-3">
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold mb-3">Other Ways to Get Help</h3>
+              <div className="space-y-2">
                 <a
                   href="/faq"
-                  className="block border border-white p-4 hover:bg-white hover:bg-opacity-10 transition-colors"
+                  className="block border border-white p-2 hover:bg-white hover:bg-opacity-10 transition-colors"
                 >
-                  <div className="font-medium">Frequently Asked Questions</div>
-                  <div className="text-sm opacity-90">Find quick answers to common questions</div>
+                  <div className="text-xs font-medium">Frequently Asked Questions</div>
+                  <div className="text-xs opacity-90">Find quick answers to common questions</div>
                 </a>
                 <a
                   href="/submit-request"
-                  className="block border border-white p-4 hover:bg-white hover:bg-opacity-10 transition-colors"
+                  className="block border border-white p-2 hover:bg-white hover:bg-opacity-10 transition-colors"
                 >
-                  <div className="font-medium">Submit a Support Request</div>
-                  <div className="text-sm opacity-90">Create a support ticket for detailed assistance</div>
+                  <div className="text-xs font-medium">Submit a Support Request</div>
+                  <div className="text-xs opacity-90">Create a support ticket for detailed assistance</div>
                 </a>
                 <a
                   href="/delivery"
-                  className="block border border-white p-4 hover:bg-white hover:bg-opacity-10 transition-colors"
+                  className="block border border-white p-2 hover:bg-white hover:bg-opacity-10 transition-colors"
                 >
-                  <div className="font-medium">Delivery Information</div>
-                  <div className="text-sm opacity-90">Learn about shipping options and policies</div>
+                  <div className="text-xs font-medium">Delivery Information</div>
+                  <div className="text-xs opacity-90">Learn about shipping options and policies</div>
                 </a>
               </div>
             </div>
@@ -162,10 +162,10 @@ const ContactPage: React.FC = () => {
 
           {/* Contact Form */}
           <div>
-            <h2 className="text-2xl font-semibold mb-8">Send us a Message</h2>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <h2 className="text-base font-semibold mb-4">Send us a Message</h2>
+            <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium mb-2">
+                <label htmlFor="name" className="block text-xs font-medium mb-1">
                   Full Name *
                 </label>
                 <input
@@ -175,13 +175,13 @@ const ContactPage: React.FC = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   disabled={isSubmitting}
-                  className="w-full px-4 py-3 bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
+                  className="w-full px-3 py-2 text-xs bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
                   placeholder="Enter your full name"
                 />
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium mb-2">
+                <label htmlFor="email" className="block text-xs font-medium mb-1">
                   Email Address *
                 </label>
                 <input
@@ -191,13 +191,13 @@ const ContactPage: React.FC = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   disabled={isSubmitting}
-                  className="w-full px-4 py-3 bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
+                  className="w-full px-3 py-2 text-xs bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
                   placeholder="Enter your email address"
                 />
               </div>
 
               <div>
-                <label htmlFor="mobile" className="block text-sm font-medium mb-2">
+                <label htmlFor="mobile" className="block text-xs font-medium mb-1">
                   WhatsApp Number *
                 </label>
                 <input
@@ -207,13 +207,13 @@ const ContactPage: React.FC = () => {
                   value={formData.mobile}
                   onChange={handleInputChange}
                   disabled={isSubmitting}
-                  className="w-full px-4 py-3 bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
+                  className="w-full px-3 py-2 text-xs bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
                   placeholder="Enter your WhatsApp number (e.g., +94771234567)"
                 />
               </div>
 
               <div>
-                <label htmlFor="subject" className="block text-sm font-medium mb-2">
+                <label htmlFor="subject" className="block text-xs font-medium mb-1">
                   Subject *
                 </label>
                 <select
@@ -222,7 +222,7 @@ const ContactPage: React.FC = () => {
                   value={formData.subject}
                   onChange={handleInputChange}
                   disabled={isSubmitting}
-                  className="w-full px-4 py-3 bg-black border border-white text-white focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
+                  className="w-full px-3 py-2 text-xs bg-black border border-white text-white focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
                 >
                   <option value="">Select a subject</option>
                   {subjects.map((subject, index) => (
@@ -232,7 +232,7 @@ const ContactPage: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="message" className="block text-sm font-medium mb-2">
+                <label htmlFor="message" className="block text-xs font-medium mb-1">
                   Message *
                 </label>
                 <textarea
@@ -241,8 +241,8 @@ const ContactPage: React.FC = () => {
                   value={formData.message}
                   onChange={handleInputChange}
                   disabled={isSubmitting}
-                  rows={6}
-                  className="w-full px-4 py-3 bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50 resize-vertical"
+                  rows={4}
+                  className="w-full px-3 py-2 text-xs bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50 resize-vertical"
                   placeholder="Tell us how we can help you..."
                 />
               </div>
@@ -250,14 +250,14 @@ const ContactPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-white text-black py-3 px-6 font-medium hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                className="w-full bg-white text-black py-2 px-4 text-xs font-medium hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-1"
               >
-                <Send size={18} />
+                <Send size={14} />
                 <span>{isSubmitting ? 'Sending...' : 'Send Message'}</span>
               </button>
             </form>
 
-            <p className="text-sm opacity-90 mt-4">
+            <p className="text-xs opacity-90 mt-2">
               * Required fields. We typically respond within 24 hours during business days.
             </p>
           </div>

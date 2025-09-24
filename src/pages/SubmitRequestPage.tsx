@@ -187,26 +187,26 @@ const SubmitRequestPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 py-8 sm:px-6 sm:py-10 md:px-20 md:py-12">
+    <div className="min-h-screen bg-black text-white px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Submit a Support Request</h1>
-        <p className="text-lg mb-8">
+        <h1 className="text-2xl font-bold mb-4">Submit a Support Request</h1>
+        <p className="text-sm mb-4">
           Need help with your order or have a specific issue? Submit a detailed support request and our team will assist you.
         </p>
 
         {!user && (
-          <div className="mb-8 p-6 border border-yellow-400 bg-yellow-400 bg-opacity-10 rounded">
-            <p className="text-yellow-400">
+          <div className="mb-4 p-3 border border-yellow-400 bg-yellow-400 bg-opacity-10 rounded">
+            <p className="text-yellow-400 text-xs">
               <strong>Sign in required:</strong> You must be signed in to submit a support request.
               <a href="/auth" className="underline ml-1">Sign in here</a>
             </p>
           </div>
         )}
 
-        <div className="border border-white p-6 mb-8">
-          <div className="flex items-start space-x-3">
-            <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
-            <div className="text-sm">
+        <div className="border border-white p-3 mb-4">
+          <div className="flex items-start space-x-2">
+            <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+            <div className="text-xs">
               <p className="font-semibold mb-1">Before submitting a request:</p>
               <ul className="space-y-1 opacity-90">
                 <li>• Check our <a href="/faq" className="underline">FAQ page</a> for quick answers</li>
@@ -218,11 +218,11 @@ const SubmitRequestPage: React.FC = () => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-3">
           {/* Personal Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium mb-2">
+              <label htmlFor="name" className="block text-xs font-medium mb-1">
                 Full Name *
               </label>
               <input
@@ -232,13 +232,13 @@ const SubmitRequestPage: React.FC = () => {
                 value={formData.name}
                 onChange={handleInputChange}
                 disabled={isSubmitting || !user}
-                className="w-full px-4 py-3 bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
+                className="w-full px-3 py-2 text-xs bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
                 placeholder="Enter your full name"
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-2">
+              <label htmlFor="email" className="block text-xs font-medium mb-1">
                 Email Address *
               </label>
               <input
@@ -248,13 +248,13 @@ const SubmitRequestPage: React.FC = () => {
                 value={formData.email}
                 onChange={handleInputChange}
                 disabled={isSubmitting || !user}
-                className="w-full px-4 py-3 bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
+                className="w-full px-3 py-2 text-xs bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
                 placeholder="Enter your email address"
               />
             </div>
 
             <div>
-              <label htmlFor="mobile" className="block text-sm font-medium mb-2">
+              <label htmlFor="mobile" className="block text-xs font-medium mb-1">
                 WhatsApp Number *
               </label>
               <input
@@ -264,7 +264,7 @@ const SubmitRequestPage: React.FC = () => {
                 value={formData.mobile}
                 onChange={handleInputChange}
                 disabled={isSubmitting || !user}
-                className="w-full px-4 py-3 bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
+                className="w-full px-3 py-2 text-xs bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
                 placeholder="Enter your WhatsApp number (e.g., +94771234567)"
               />
             </div>
@@ -272,7 +272,7 @@ const SubmitRequestPage: React.FC = () => {
 
           {/* Order Information */}
           <div>
-            <label htmlFor="orderNumber" className="block text-sm font-medium mb-2">
+            <label htmlFor="orderNumber" className="block text-xs font-medium mb-1">
               Order Number
             </label>
             <input
@@ -282,16 +282,16 @@ const SubmitRequestPage: React.FC = () => {
               value={formData.orderNumber}
               onChange={handleInputChange}
               disabled={isSubmitting}
-              className="w-full px-4 py-3 bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
+              className="w-full px-3 py-2 text-xs bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
               placeholder="Enter order number (if applicable)"
             />
             <p className="text-xs opacity-70 mt-1">Include your order number if this request relates to a specific order</p>
           </div>
 
           {/* Request Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label htmlFor="category" className="block text-sm font-medium mb-2">
+              <label htmlFor="category" className="block text-xs font-medium mb-1">
                 Category *
               </label>
               <select
@@ -300,7 +300,7 @@ const SubmitRequestPage: React.FC = () => {
                 value={formData.category}
                 onChange={handleInputChange}
                 disabled={isSubmitting || !user}
-                className="w-full px-4 py-3 bg-black border border-white text-white focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
+                className="w-full px-3 py-2 text-xs bg-black border border-white text-white focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
               >
                 <option value="">Select a category</option>
                 {categories.map((category, index) => (
@@ -310,7 +310,7 @@ const SubmitRequestPage: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="priority" className="block text-sm font-medium mb-2">
+              <label htmlFor="priority" className="block text-xs font-medium mb-1">
                 Priority *
               </label>
               <select
@@ -319,7 +319,7 @@ const SubmitRequestPage: React.FC = () => {
                 value={formData.priority}
                 onChange={handleInputChange}
                 disabled={isSubmitting || !user}
-                className="w-full px-4 py-3 bg-black border border-white text-white focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
+                className="w-full px-3 py-2 text-xs bg-black border border-white text-white focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
               >
                 {priorities.map((priority) => (
                   <option key={priority.value} value={priority.value}>
@@ -331,7 +331,7 @@ const SubmitRequestPage: React.FC = () => {
           </div>
 
           <div>
-            <label htmlFor="subject" className="block text-sm font-medium mb-2">
+            <label htmlFor="subject" className="block text-xs font-medium mb-1">
               Subject *
             </label>
             <input
@@ -341,13 +341,13 @@ const SubmitRequestPage: React.FC = () => {
               value={formData.subject}
               onChange={handleInputChange}
               disabled={isSubmitting}
-              className="w-full px-4 py-3 bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
+              className="w-full px-3 py-2 text-xs bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50"
               placeholder="Brief description of your issue"
             />
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium mb-2">
+            <label htmlFor="description" className="block text-xs font-medium mb-1">
               Detailed Description *
             </label>
             <textarea
@@ -356,21 +356,21 @@ const SubmitRequestPage: React.FC = () => {
               value={formData.description}
               onChange={handleInputChange}
               disabled={isSubmitting}
-              rows={6}
-              className="w-full px-4 py-3 bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50 resize-vertical"
+              rows={4}
+              className="w-full px-3 py-2 text-xs bg-black border border-white text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-white disabled:opacity-50 resize-vertical"
               placeholder="Please provide as much detail as possible about your issue..."
             />
           </div>
 
           {/* File Attachments */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-xs font-medium mb-1">
               Attachments
             </label>
-            <div className="border border-white border-dashed p-6 text-center">
-              <Upload size={32} className="mx-auto mb-3 opacity-60" />
-              <p className="mb-2">Drop files here or click to upload</p>
-              <p className="text-xs opacity-70 mb-4">
+            <div className="border border-white border-dashed p-3 text-center">
+              <Upload size={24} className="mx-auto mb-2 opacity-60" />
+              <p className="mb-1 text-xs">Drop files here or click to upload</p>
+              <p className="text-xs opacity-70 mb-2">
                 Supported: JPG, PNG, WebP, PDF, TXT (Max 5MB each, 3 files max)
               </p>
               <input
@@ -384,17 +384,17 @@ const SubmitRequestPage: React.FC = () => {
               />
               <label
                 htmlFor="file-upload"
-                className="inline-block bg-white text-black px-4 py-2 font-medium hover:opacity-80 transition-opacity cursor-pointer disabled:opacity-50"
+                className="inline-block bg-white text-black px-3 py-1 text-xs font-medium hover:opacity-80 transition-opacity cursor-pointer disabled:opacity-50"
               >
                 Choose Files
               </label>
             </div>
 
             {attachments.length > 0 && (
-              <div className="mt-4 space-y-2">
+              <div className="mt-2 space-y-1">
                 {attachments.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between bg-white bg-opacity-5 p-3 border border-white border-opacity-20">
-                    <span className="text-sm">{file.name}</span>
+                  <div key={index} className="flex items-center justify-between bg-white bg-opacity-5 p-2 border border-white border-opacity-20">
+                    <span className="text-xs">{file.name}</span>
                     <button
                       type="button"
                       onClick={() => removeAttachment(index)}
@@ -412,15 +412,15 @@ const SubmitRequestPage: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-white text-black py-3 px-6 font-medium hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            className="w-full bg-white text-black py-2 px-4 text-xs font-medium hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-1"
           >
-            <Send size={18} />
+            <Send size={14} />
             <span>{isSubmitting ? 'Submitting Request...' : 'Submit Request'}</span>
           </button>
         </form>
 
-        <div className="mt-8 text-center">
-          <p className="text-sm opacity-90">
+        <div className="mt-4 text-center">
+          <p className="text-xs opacity-90">
             Need immediate help? <a href="/contact" className="underline">Contact us directly</a> or check our <a href="/faq" className="underline">FAQ page</a>.
           </p>
         </div>

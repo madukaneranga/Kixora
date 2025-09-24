@@ -25,7 +25,7 @@ const TermsOfServicePage: React.FC = () => {
             Permission is granted to temporarily download one copy of the materials on Kixora's website for personal,
             non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:
           </p>
-          <ul className="list-disc list-inside space-y-1 mt-3">
+          <ul className="list-disc list-inside space-y-1 mt-3 text-xs">
             <li>modify or copy the materials</li>
             <li>use the materials for any commercial purpose or for any public display (commercial or non-commercial)</li>
             <li>attempt to decompile or reverse engineer any software contained on the website</li>
@@ -45,7 +45,7 @@ const TermsOfServicePage: React.FC = () => {
             When you create an account with us, you must provide information that is accurate, complete, and current at all times.
             You are responsible for safeguarding the password and for maintaining the confidentiality of your account.
           </p>
-          <ul className="list-disc list-inside space-y-1 mt-3">
+          <ul className="list-disc list-inside space-y-1 mt-3 text-xs">
             <li>You must be at least 13 years old to create an account</li>
             <li>You are responsible for all activities that occur under your account</li>
             <li>You must notify us immediately of any unauthorized use of your account</li>
@@ -61,7 +61,7 @@ const TermsOfServicePage: React.FC = () => {
           <p>
             All orders are subject to acceptance and availability. We reserve the right to refuse or cancel orders at our discretion.
           </p>
-          <ul className="list-disc list-inside space-y-1 mt-3">
+          <ul className="list-disc list-inside space-y-1 mt-3 text-xs">
             <li>Prices are subject to change without notice</li>
             <li>Payment must be received before order processing</li>
             <li>We accept major credit cards and PayHere payments</li>
@@ -78,7 +78,7 @@ const TermsOfServicePage: React.FC = () => {
           <p>
             We will make every effort to deliver products within the estimated timeframes, but delivery dates are not guaranteed.
           </p>
-          <ul className="list-disc list-inside space-y-1 mt-3">
+          <ul className="list-disc list-inside space-y-1 mt-3 text-xs">
             <li>Shipping times are estimates and not guarantees</li>
             <li>Risk of loss passes to you upon delivery to the carrier</li>
             <li>International orders may be subject to customs duties and taxes</li>
@@ -94,7 +94,7 @@ const TermsOfServicePage: React.FC = () => {
           <p>
             Our return policy allows returns within 14 days of delivery. Please refer to our detailed Refund Policy for complete terms.
           </p>
-          <ul className="list-disc list-inside space-y-1 mt-3">
+          <ul className="list-disc list-inside space-y-1 mt-3 text-xs">
             <li>Items must be returned in original, unworn condition</li>
             <li>Original packaging and tags must be included</li>
             <li>Refunds are processed to the original payment method</li>
@@ -110,7 +110,7 @@ const TermsOfServicePage: React.FC = () => {
           <p>
             We strive to provide accurate product information, but we do not warrant that product descriptions or other content is accurate, complete, or error-free.
           </p>
-          <ul className="list-disc list-inside space-y-1 mt-3">
+          <ul className="list-disc list-inside space-y-1 mt-3 text-xs">
             <li>Colors may vary due to monitor settings</li>
             <li>Sizes may vary slightly from measurements listed</li>
             <li>We reserve the right to correct errors in product information</li>
@@ -126,7 +126,7 @@ const TermsOfServicePage: React.FC = () => {
           <p>
             The Service and its original content, features, and functionality are and will remain the exclusive property of Kixora and its licensors.
           </p>
-          <ul className="list-disc list-inside space-y-1 mt-3">
+          <ul className="list-disc list-inside space-y-1 mt-3 text-xs">
             <li>All trademarks, logos, and brand names are our property</li>
             <li>You may not use our intellectual property without written permission</li>
             <li>User-generated content may be used by us for marketing purposes</li>
@@ -140,7 +140,7 @@ const TermsOfServicePage: React.FC = () => {
       content: (
         <>
           <p>You may not use our Service:</p>
-          <ul className="list-disc list-inside space-y-1 mt-3">
+          <ul className="list-disc list-inside space-y-1 mt-3 text-xs">
             <li>For any unlawful purpose or to solicit others to unlawful acts</li>
             <li>To violate any international, federal, provincial, or state regulations, rules, laws, or local ordinances</li>
             <li>To infringe upon or violate our intellectual property rights or the intellectual property rights of others</li>
@@ -160,7 +160,7 @@ const TermsOfServicePage: React.FC = () => {
           <p>
             The information on this website is provided on an "as is" basis. To the fullest extent permitted by law, this Company:
           </p>
-          <ul className="list-disc list-inside space-y-1 mt-3">
+          <ul className="list-disc list-inside space-y-1 mt-3 text-xs">
             <li>Excludes all representations and warranties relating to this website and its contents</li>
             <li>Does not warrant that the website will be constantly available or available at all</li>
             <li>Makes no warranties about the accuracy or completeness of the website's content</li>
@@ -214,7 +214,7 @@ const TermsOfServicePage: React.FC = () => {
       content: (
         <>
           <p>If you have any questions about these Terms of Service, please contact us:</p>
-          <ul className="list-disc list-inside space-y-1 mt-3">
+          <ul className="list-disc list-inside space-y-1 mt-3 text-xs">
             <li>Email: <a href="mailto:support@kixora.com" className="underline">inkixora@gmail.com</a></li>
             <li>Phone: <a href="tel:+94112345678" className="underline">+94 74 128 5920</a></li>
           </ul>
@@ -224,24 +224,24 @@ const TermsOfServicePage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 py-8 sm:px-6 sm:py-10 md:px-20 md:py-12 space-y-6 sm:space-y-8">
-      <h1 className="text-4xl font-bold mb-2">Terms of Service</h1>
-      <p className="mb-6">Last updated: September 22, 2025</p>
-      <p className="mb-8">
+    <div className="min-h-screen bg-black text-white px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 space-y-3 sm:space-y-4">
+      <h1 className="text-2xl font-bold mb-2">Terms of Service</h1>
+      <p className="mb-3 text-xs">Last updated: September 22, 2025</p>
+      <p className="mb-4 text-sm">
         Please read these Terms of Service ("Terms", "Terms of Service") carefully before using the Kixora website
         (the "Service") operated by Kixora ("us", "we", or "our").
       </p>
 
       {sections.map((section, idx) => (
-        <div key={idx} className="p-6 border border-white space-y-3">
-          <h2 className="text-2xl font-semibold">{section.title}</h2>
-          <div className="space-y-3">{section.content}</div>
+        <div key={idx} className="p-3 border border-white space-y-2">
+          <h2 className="text-base font-semibold">{section.title}</h2>
+          <div className="space-y-2 text-xs">{section.content}</div>
         </div>
       ))}
 
-      <div className="p-6 border border-white space-y-3">
-        <h2 className="text-2xl font-semibold">Acknowledgment</h2>
-        <p>
+      <div className="p-3 border border-white space-y-2">
+        <h2 className="text-base font-semibold">Acknowledgment</h2>
+        <p className="text-xs">
           By using our Service, you acknowledge that you have read these Terms of Service and agree to be bound by them.
           If you do not agree to these Terms, you may not use our Service.
         </p>

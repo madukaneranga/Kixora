@@ -75,52 +75,52 @@ const FAQPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 py-8 sm:px-6 sm:py-10 md:px-20 md:py-12">
+    <div className="min-h-screen bg-black text-white px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Frequently Asked Questions</h1>
-        <p className="text-lg mb-8">
+        <h1 className="text-2xl font-bold mb-4">Frequently Asked Questions</h1>
+        <p className="text-sm mb-6">
           Find answers to the most common questions about Kixora. Can't find what you're looking for?
           <a href="/contact" className="underline ml-1">Contact our support team</a>.
         </p>
 
-        <div className="space-y-4">
+        <div className="space-y-2">
           {faqs.map((faq, index) => (
             <div key={index} className="border border-white">
               <button
                 onClick={() => toggleItem(index)}
-                className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-white hover:bg-opacity-5 transition-colors"
+                className="w-full px-3 py-3 text-left flex justify-between items-center hover:bg-white hover:bg-opacity-5 transition-colors"
               >
-                <h3 className="text-lg font-medium pr-4">{faq.question}</h3>
+                <h3 className="text-sm font-medium pr-2">{faq.question}</h3>
                 {openItems.has(index) ? (
-                  <ChevronUp size={20} className="flex-shrink-0" />
+                  <ChevronUp size={16} className="flex-shrink-0" />
                 ) : (
-                  <ChevronDown size={20} className="flex-shrink-0" />
+                  <ChevronDown size={16} className="flex-shrink-0" />
                 )}
               </button>
               {openItems.has(index) && (
-                <div className="px-6 pb-4 border-t border-white border-opacity-20">
-                  <p className="pt-4 leading-relaxed">{faq.answer}</p>
+                <div className="px-3 pb-3 border-t border-white border-opacity-20">
+                  <p className="pt-3 text-sm leading-relaxed">{faq.answer}</p>
                 </div>
               )}
             </div>
           ))}
         </div>
 
-        <div className="mt-12 p-6 border border-white">
-          <h2 className="text-2xl font-semibold mb-4">Still have questions?</h2>
-          <p className="mb-4">
+        <div className="mt-6 p-3 border border-white">
+          <h2 className="text-base font-semibold mb-3">Still have questions?</h2>
+          <p className="mb-3 text-sm">
             Our customer support team is here to help you with any additional questions or concerns.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-2">
             <a
               href="/contact"
-              className="bg-white text-black px-6 py-3 font-medium hover:opacity-80 transition-opacity text-center"
+              className="bg-white text-black px-4 py-2 text-sm font-medium hover:opacity-80 transition-opacity text-center"
             >
               Contact Support
             </a>
             <a
               href="/submit-request"
-              className="border border-white px-6 py-3 font-medium hover:bg-white hover:bg-opacity-10 transition-colors text-center"
+              className="border border-white px-4 py-2 text-sm font-medium hover:bg-white hover:bg-opacity-10 transition-colors text-center"
             >
               Submit a Request
             </a>
