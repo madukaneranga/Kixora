@@ -22,27 +22,27 @@ const DeliveryPage: React.FC = () => {
   const internationalRates = [];
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 py-8 sm:px-6 sm:py-10 md:px-20 md:py-12">
+    <div className="min-h-screen bg-black text-white px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Delivery Information</h1>
-        <p className="text-lg mb-12">
+        <h1 className="text-2xl font-bold mb-4">Delivery Information</h1>
+        <p className="text-sm mb-6">
           Fast, reliable delivery options to get your Kixora footwear to you quickly and safely.
         </p>
 
         {/* Domestic Delivery Options */}
-        <section className="mb-12">
-          <h2 className="text-3xl font-semibold mb-8">Delivery Options in Sri Lanka</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <section className="mb-6">
+          <h2 className="text-base font-semibold mb-4">Delivery Options in Sri Lanka</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {deliveryOptions.map((option, index) => (
-              <div key={index} className="border border-white p-6">
-                <div className="flex items-center mb-4">
-                  <div className="mr-3">{option.icon}</div>
-                  <h3 className="text-xl font-semibold">{option.title}</h3>
+              <div key={index} className="border border-white p-3">
+                <div className="flex items-center mb-2">
+                  <div className="mr-2 scale-75">{option.icon}</div>
+                  <h3 className="text-sm font-semibold">{option.title}</h3>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-lg"><strong>Delivery Time:</strong> {option.time}</p>
-                  <p className="text-lg"><strong>Cost:</strong> {option.cost}</p>
-                  <p className="text-sm opacity-90">{option.description}</p>
+                <div className="space-y-1">
+                  <p className="text-xs"><strong>Delivery Time:</strong> {option.time}</p>
+                  <p className="text-xs"><strong>Cost:</strong> {option.cost}</p>
+                  <p className="text-xs opacity-90">{option.description}</p>
                 </div>
               </div>
             ))}
@@ -50,12 +50,12 @@ const DeliveryPage: React.FC = () => {
         </section>
 
         {/* International Shipping */}
-        <section className="mb-12">
-          <h2 className="text-3xl font-semibold mb-8">International Shipping</h2>
+        <section className="mb-6">
+          <h2 className="text-base font-semibold mb-4">International Shipping</h2>
         
           {internationalRates.length > 0 && (
-            <div className="border border-white p-6 mb-6">
-            <p className="mb-6">
+            <div className="border border-white p-3 mb-3">
+            <p className="mb-3 text-sm">
               We ship worldwide! International shipping rates and delivery times vary by destination.
               All international orders are shipped via DHL Express.
             </p>
@@ -63,39 +63,39 @@ const DeliveryPage: React.FC = () => {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b border-white">
-                    <th className="text-left py-3 pr-6">Region</th>
-                    <th className="text-left py-3 pr-6">Delivery Time</th>
-                    <th className="text-left py-3">Shipping Cost</th>
+                    <th className="text-left py-2 pr-4 text-xs">Region</th>
+                    <th className="text-left py-2 pr-4 text-xs">Delivery Time</th>
+                    <th className="text-left py-2 text-xs">Shipping Cost</th>
                   </tr>
                 </thead>
                 <tbody>
                   {internationalRates.map((rate, index) => (
                     <tr key={index} className="border-b border-white border-opacity-30">
-                      <td className="py-3 pr-6">{rate.region}</td>
-                      <td className="py-3 pr-6">{rate.time}</td>
-                      <td className="py-3">{rate.cost}</td>
+                      <td className="py-2 pr-4 text-xs">{rate.region}</td>
+                      <td className="py-2 pr-4 text-xs">{rate.time}</td>
+                      <td className="py-2 text-xs">{rate.cost}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <p className="mt-4 text-sm opacity-90">
+            <p className="mt-2 text-xs opacity-90">
               * International customers are responsible for any customs duties, taxes, or additional fees imposed by their country.
             </p>
           </div>
           ) } 
           {internationalRates.length === 0 && (
-            <p>No international shipping options available at this time.</p>
+            <p className="text-sm">No international shipping options available at this time.</p>
           )} 
         </section>
 
         {/* Important Information */}
-        <section className="mb-12">
-          <h2 className="text-3xl font-semibold mb-8">Important Delivery Information</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="border border-white p-6">
-              <h3 className="text-xl font-semibold mb-4">Order Processing</h3>
-              <ul className="space-y-2 text-sm">
+        <section className="mb-6">
+          <h2 className="text-base font-semibold mb-4">Important Delivery Information</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <div className="border border-white p-3">
+              <h3 className="text-sm font-semibold mb-2">Order Processing</h3>
+              <ul className="space-y-1 text-xs">
                 <li>• Orders are processed within 1-2 business days</li>
                 <li>• Orders placed after 11 AM will be processed the next business day</li>
                 <li>• Weekend orders are shipped on Monday</li>
@@ -103,9 +103,9 @@ const DeliveryPage: React.FC = () => {
               </ul>
             </div>
 
-            <div className="border border-white p-6">
-              <h3 className="text-xl font-semibold mb-4">Delivery Areas</h3>
-              <ul className="space-y-2 text-sm">
+            <div className="border border-white p-3">
+              <h3 className="text-sm font-semibold mb-2">Delivery Areas</h3>
+              <ul className="space-y-1 text-xs">
                 <li>• We deliver island-wide in Sri Lanka</li>
                 <li>• Same-day delivery only in Colombo city limits</li>
                 <li>• Cash on Delivery available in Colombo only</li>
@@ -113,9 +113,9 @@ const DeliveryPage: React.FC = () => {
               </ul>
             </div>
 
-            <div className="border border-white p-6">
-              <h3 className="text-xl font-semibold mb-4">Free Shipping</h3>
-              <ul className="space-y-2 text-sm">
+            <div className="border border-white p-3">
+              <h3 className="text-sm font-semibold mb-2">Free Shipping</h3>
+              <ul className="space-y-1 text-xs">
                 <li>• Free standard delivery on orders over LKR 15,000</li>
                 <li>• International shipping will be paid shipping</li>
                 <li>• Express delivery charges still apply</li>
@@ -123,9 +123,9 @@ const DeliveryPage: React.FC = () => {
               </ul>
             </div>
 
-            <div className="border border-white p-6">
-              <h3 className="text-xl font-semibold mb-4">Delivery Issues</h3>
-              <ul className="space-y-2 text-sm">
+            <div className="border border-white p-3">
+              <h3 className="text-sm font-semibold mb-2">Delivery Issues</h3>
+              <ul className="space-y-1 text-xs">
                 <li>• We're not responsible for delays due to weather or customs</li>
                 <li>• Someone must be available to receive the package</li>
                 <li>• Failed delivery attempts may incur additional charges</li>
@@ -136,21 +136,21 @@ const DeliveryPage: React.FC = () => {
         </section>
 
         {/* Contact for Delivery Questions */}
-        <section className="border border-white p-6">
-          <h2 className="text-2xl font-semibold mb-4">Questions About Delivery?</h2>
-          <p className="mb-4">
+        <section className="border border-white p-3">
+          <h2 className="text-base font-semibold mb-3">Questions About Delivery?</h2>
+          <p className="mb-3 text-sm">
             Need help with delivery options or have a special delivery request? Our customer service team is here to help.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-2">
             <a
               href="/contact"
-              className="bg-white text-black px-6 py-3 font-medium hover:opacity-80 transition-opacity text-center"
+              className="bg-white text-black px-4 py-2 text-sm font-medium hover:opacity-80 transition-opacity text-center"
             >
               Contact Support
             </a>
             <a
               href="/faq"
-              className="border border-white px-6 py-3 font-medium hover:bg-white hover:bg-opacity-10 transition-colors text-center"
+              className="border border-white px-4 py-2 text-sm font-medium hover:bg-white hover:bg-opacity-10 transition-colors text-center"
             >
               View FAQ
             </a>

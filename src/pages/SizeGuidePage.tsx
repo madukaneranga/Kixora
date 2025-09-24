@@ -119,26 +119,26 @@ const SizeGuidePage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 py-8 sm:px-6 sm:py-10 md:px-20 md:py-12">
+    <div className="min-h-screen bg-black text-white px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Size Guide</h1>
-        <p className="text-lg mb-12">
+        <h1 className="text-2xl font-bold mb-4">Size Guide</h1>
+        <p className="text-sm mb-6">
           Find your perfect fit with our comprehensive size guide. Accurate measurements ensure comfortable footwear.
         </p>
 
         {/* How to Measure */}
-        <section className="mb-12">
-          <h2 className="text-3xl font-semibold mb-8 flex items-center">
-            <Ruler className="mr-3" size={28} />
+        <section className="mb-6">
+          <h2 className="text-base font-semibold mb-4 flex items-center">
+            <Ruler className="mr-2" size={20} />
             How to Measure Your Feet
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
             {measurementSteps.map((step, index) => (
-              <div key={index} className="border border-white p-4 text-center">
-                <div className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-3">
+              <div key={index} className="border border-white p-2 text-center">
+                <div className="w-8 h-8 bg-white text-black rounded-full flex items-center justify-center font-bold text-xs mx-auto mb-2">
                   {step.step}
                 </div>
-                <h3 className="font-semibold mb-2">{step.title}</h3>
+                <h3 className="text-xs font-semibold mb-1">{step.title}</h3>
                 <p className="text-xs opacity-90">{step.description}</p>
               </div>
             ))}
@@ -146,16 +146,16 @@ const SizeGuidePage: React.FC = () => {
         </section>
 
         {/* Size Chart */}
-        <section className="mb-12">
-          <h2 className="text-3xl font-semibold mb-8">Size Chart</h2>
+        <section className="mb-6">
+          <h2 className="text-base font-semibold mb-4">Size Chart</h2>
 
           {/* Category Selector */}
-          <div className="flex flex-wrap gap-4 mb-6">
+          <div className="flex flex-wrap gap-2 mb-3">
             {categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`px-6 py-3 font-medium transition-colors ${
+                className={`px-3 py-1 text-xs font-medium transition-colors ${
                   selectedCategory === category.id
                     ? 'bg-white text-black'
                     : 'border border-white hover:bg-white hover:bg-opacity-10'
@@ -167,11 +167,11 @@ const SizeGuidePage: React.FC = () => {
           </div>
 
           {/* Unit Selector */}
-          <div className="flex gap-4 mb-6">
-            <span className="text-sm font-medium">Foot Length:</span>
+          <div className="flex gap-2 mb-3">
+            <span className="text-xs font-medium">Foot Length:</span>
             <button
               onClick={() => setMeasurementUnit('cm')}
-              className={`text-sm px-3 py-1 ${
+              className={`text-xs px-2 py-1 ${
                 measurementUnit === 'cm' ? 'bg-white text-black' : 'border border-white'
               }`}
             >
@@ -179,7 +179,7 @@ const SizeGuidePage: React.FC = () => {
             </button>
             <button
               onClick={() => setMeasurementUnit('inches')}
-              className={`text-sm px-3 py-1 ${
+              className={`text-xs px-2 py-1 ${
                 measurementUnit === 'inches' ? 'bg-white text-black' : 'border border-white'
               }`}
             >
@@ -192,10 +192,10 @@ const SizeGuidePage: React.FC = () => {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b border-white">
-                  <th className="text-left py-3 px-4 font-semibold">US Size</th>
-                  <th className="text-left py-3 px-4 font-semibold">UK Size</th>
-                  <th className="text-left py-3 px-4 font-semibold">EU Size</th>
-                  <th className="text-left py-3 px-4 font-semibold">
+                  <th className="text-left py-2 px-2 text-xs font-semibold">US Size</th>
+                  <th className="text-left py-2 px-2 text-xs font-semibold">UK Size</th>
+                  <th className="text-left py-2 px-2 text-xs font-semibold">EU Size</th>
+                  <th className="text-left py-2 px-2 text-xs font-semibold">
                     Foot Length ({measurementUnit === 'cm' ? 'CM' : 'Inches'})
                   </th>
                 </tr>
@@ -203,10 +203,10 @@ const SizeGuidePage: React.FC = () => {
               <tbody>
                 {getCurrentSizes().map((size, index) => (
                   <tr key={index} className="border-b border-white border-opacity-30">
-                    <td className="py-3 px-4">{size.us}</td>
-                    <td className="py-3 px-4">{size.uk}</td>
-                    <td className="py-3 px-4">{size.eu}</td>
-                    <td className="py-3 px-4">
+                    <td className="py-2 px-2 text-xs">{size.us}</td>
+                    <td className="py-2 px-2 text-xs">{size.uk}</td>
+                    <td className="py-2 px-2 text-xs">{size.eu}</td>
+                    <td className="py-2 px-2 text-xs">
                       {measurementUnit === 'cm'
                         ? size.cm
                         : (parseFloat(size.cm) / 2.54).toFixed(1)
@@ -220,72 +220,72 @@ const SizeGuidePage: React.FC = () => {
         </section>
 
         {/* Fit Tips */}
-        <section className="mb-12">
-          <h2 className="text-3xl font-semibold mb-8 flex items-center">
-            <Info className="mr-3" size={28} />
+        <section className="mb-6">
+          <h2 className="text-base font-semibold mb-4 flex items-center">
+            <Info className="mr-2" size={20} />
             Fit Tips & Recommendations
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {fitTips.map((tip, index) => (
-              <div key={index} className="border border-white p-4 flex items-start">
-                <ArrowRight size={16} className="flex-shrink-0 mt-1 mr-3" />
-                <p className="text-sm">{tip}</p>
+              <div key={index} className="border border-white p-2 flex items-start">
+                <ArrowRight size={12} className="flex-shrink-0 mt-0.5 mr-2" />
+                <p className="text-xs">{tip}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* Width Guide */}
-        <section className="mb-12">
-          <h2 className="text-3xl font-semibold mb-8">Width Guide</h2>
-          <div className="border border-white p-6">
-            <p className="mb-4">
+        <section className="mb-6">
+          <h2 className="text-base font-semibold mb-4">Width Guide</h2>
+          <div className="border border-white p-3">
+            <p className="mb-3 text-sm">
               Most of our shoes come in standard (D) width. If you have wider or narrower feet, consider these guidelines:
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="text-center">
-                <h3 className="font-semibold mb-2">Narrow (B/C)</h3>
-                <p className="text-sm opacity-90">Consider going down half a size or using insoles for better fit</p>
+                <h3 className="text-xs font-semibold mb-1">Narrow (B/C)</h3>
+                <p className="text-xs opacity-90">Consider going down half a size or using insoles for better fit</p>
               </div>
               <div className="text-center">
-                <h3 className="font-semibold mb-2">Standard (D)</h3>
-                <p className="text-sm opacity-90">Use our standard size chart measurements</p>
+                <h3 className="text-xs font-semibold mb-1">Standard (D)</h3>
+                <p className="text-xs opacity-90">Use our standard size chart measurements</p>
               </div>
               <div className="text-center">
-                <h3 className="font-semibold mb-2">Wide (E/EE)</h3>
-                <p className="text-sm opacity-90">Consider going up half a size for comfortable fit</p>
+                <h3 className="text-xs font-semibold mb-1">Wide (E/EE)</h3>
+                <p className="text-xs opacity-90">Consider going up half a size for comfortable fit</p>
               </div>
             </div>
           </div>
         </section>
 
         {/* Need Help */}
-        <section className="border border-white p-6">
-          <h2 className="text-2xl font-semibold mb-4">Still Need Help?</h2>
-          <p className="mb-4">
+        <section className="border border-white p-3">
+          <h2 className="text-base font-semibold mb-3">Still Need Help?</h2>
+          <p className="mb-3 text-sm">
             Can't find your perfect size or have questions about fit? Our customer service team is here to help.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-2">
             <a
               href="/contact"
-              className="bg-white text-black px-6 py-3 font-medium hover:opacity-80 transition-opacity text-center"
+              className="bg-white text-black px-4 py-2 text-xs font-medium hover:opacity-80 transition-opacity text-center"
             >
               Contact Support
             </a>
             <a
               href="/submit-request"
-              className="border border-white px-6 py-3 font-medium hover:bg-white hover:bg-opacity-10 transition-colors text-center"
+              className="border border-white px-4 py-2 text-xs font-medium hover:bg-white hover:bg-opacity-10 transition-colors text-center"
             >
               Ask About Sizing
             </a>
             <a
               href="/faq"
-              className="border border-white px-6 py-3 font-medium hover:bg-white hover:bg-opacity-10 transition-colors text-center"
+              className="border border-white px-4 py-2 text-xs font-medium hover:bg-white hover:bg-opacity-10 transition-colors text-center"
             >
               View FAQ
             </a>
           </div>
-          <p className="text-sm opacity-90 mt-4">
+          <p className="text-xs opacity-90 mt-2">
             Remember: If you're unsure about sizing, we offer free returns within 30 days!
           </p>
         </section>
