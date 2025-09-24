@@ -59,14 +59,15 @@ const ConfirmDialog = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/50"
+            onTouchEnd={onClose}
+            className="absolute inset-0 bg-black/50 touch-manipulation"
           />
 
           {/* Dialog */}
@@ -75,12 +76,19 @@ const ConfirmDialog = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+            className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 touch-manipulation"
           >
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-2 touch-manipulation"
             >
               <X className="w-5 h-5" />
             </button>
@@ -104,21 +112,30 @@ const ConfirmDialog = ({
 
               {/* Actions */}
               <div className="flex space-x-3">
-                <Button
-                  variant="outline"
+                <button
                   onClick={onClose}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onClose();
+                  }}
                   disabled={loading}
-                  className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
                 >
                   {cancelText}
-                </Button>
-                <Button
+                </button>
+                <button
                   onClick={onConfirm}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onConfirm();
+                  }}
                   disabled={loading}
-                  className={`flex-1 ${styles.confirmButton}`}
+                  className={`flex-1 px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation ${styles.confirmButton}`}
                 >
                   {loading ? 'Processing...' : confirmText}
-                </Button>
+                </button>
               </div>
             </div>
           </motion.div>
