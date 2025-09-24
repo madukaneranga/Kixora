@@ -35,7 +35,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) =>
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center">
+          <div className="flex min-h-full items-center justify-center p-4">
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-300"
@@ -47,25 +47,12 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) =>
             >
               <Dialog.Panel
                 as={motion.div}
-                className={`w-full ${sizeClasses[size]} transform overflow-hidden  text-left align-middle shadow-xl transition-all`}
+                className="w-full max-w-md transform overflow-hidden text-left align-middle shadow-xl transition-all"
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
               >
-                {title && (
-                  <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                    <Dialog.Title as="h3" className="text-lg font-semibold text-black">
-                      {title}
-                    </Dialog.Title>
-                    <button
-                      onClick={onClose}
-                      className="p-2 hover:bg-gray-100 transition-colors text-black"
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-                )}
-                <div className="p-6">{children}</div>
+                {children}
               </Dialog.Panel>
             </Transition.Child>
           </div>
