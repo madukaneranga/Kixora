@@ -122,7 +122,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         onClick={toggleChat}
-        className="bg-black text-white border-2 border-white w-12 h-12 md:w-12 md:h-12 sm:w-10 sm:h-10 flex items-center justify-center shadow-lg hover:bg-gray-900 transition-colors duration-300"
+        className="bg-black text-white border-2 border-white w-12 h-12 md:w-12 md:h-12 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-900 transition-colors duration-300"
         title="Chat with us on WhatsApp"
       >
         <MessageCircle size={20} className="md:w-5 md:h-5 sm:w-4 sm:h-4" />
