@@ -24,6 +24,9 @@ interface Product {
   }>;
 }
 
+// Configuration - Change this value to adjust free shipping threshold
+const FREE_SHIPPING_THRESHOLD = 15000; // LKR
+
 const ThankYouPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -37,6 +40,15 @@ const ThankYouPage = () => {
   const paymentMethod = searchParams.get('method') as 'payhere' | 'bank' | 'cod' || 'cod';
   const customerName = searchParams.get('name') || 'Customer';
   const orderId = searchParams.get('orderId') || searchParams.get('order_id') || 'UNKNOWN';
+
+  // Calculate shipping cost based on free shipping threshold
+  const getShippingCost = (total: number) => {
+    if (total >= FREE_SHIPPING_THRESHOLD) return 0;
+    return 399; // Default shipping cost
+  };
+
+  const shippingCost = getShippingCost(orderTotal);
+  const subtotal = orderTotal - shippingCost;
 
   useEffect(() => {
     // Redirect if no order info
@@ -251,12 +263,20 @@ const ThankYouPage = () => {
               <div className="space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Subtotal:</span>
-                  <span className="text-white">LKR {(orderTotal - 399).toLocaleString()}</span>
+                  <span className="text-white">LKR {subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Shipping:</span>
-                  <span className="text-white">LKR 399</span>
+                  <span className={`${shippingCost === 0 ? 'text-green-400 font-medium' : 'text-white'}`}>
+                    {shippingCost === 0 ? 'FREE' : `LKR ${shippingCost.toLocaleString()}`}
+                  </span>
                 </div>
+                {shippingCost === 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-green-400 text-xs">Free shipping applied!</span>
+                    <span className="text-green-400 text-xs">Saved LKR 399</span>
+                  </div>
+                )}
                 <div className="border-t border-gray-700 pt-2 mt-2">
                   <div className="flex justify-between font-semibold">
                     <span className="text-white">Total:</span>

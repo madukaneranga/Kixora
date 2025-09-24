@@ -18,7 +18,7 @@ export interface SEOData {
 
 const DEFAULT_SEO: SEOData = {
   title: 'Kixora - Premium Fashion & Lifestyle Online Store Sri Lanka',
-  description: 'Shop the latest fashion trends and premium lifestyle products at Kixora. Secure online shopping with fast delivery across Sri Lanka. Free shipping on orders over LKR 5,000.',
+  description: 'Shop the latest fashion trends and premium lifestyle products at Kixora. Secure online shopping with fast delivery across Sri Lanka. Free shipping on orders over LKR 15,000.',
   keywords: 'online shopping sri lanka, fashion store, lifestyle products, premium brands, secure payment, fast delivery',
   siteName: 'Kixora',
   type: 'website',
@@ -126,7 +126,7 @@ export const useSEO = (seoData?: Partial<SEOData>) => {
 export const generateSEOData = {
   product: (product: any): SEOData => ({
     title: `${product.title} - Buy Online at Kixora Sri Lanka`,
-    description: `Shop ${product.title} at the best price in Sri Lanka. ${product.description || 'Premium quality with fast delivery and secure payment.'} Free shipping on orders over LKR 5,000.`,
+    description: `Shop ${product.title} at the best price in Sri Lanka. ${product.description || 'Premium quality with fast delivery and secure payment.'} Free shipping on orders over LKR 15,000.`,
     keywords: `${product.title}, buy ${product.title}, ${product.categories?.name || 'fashion'}, online shopping sri lanka, ${product.brands?.name || ''}`.toLowerCase(),
     type: 'product',
     image: (() => {
@@ -152,7 +152,7 @@ export const generateSEOData = {
 
   category: (category: any): SEOData => ({
     title: `${category.name} - Shop Online at Kixora Sri Lanka`,
-    description: `Browse our ${category.name} collection. ${category.description || 'Premium quality products with the latest trends.'} Free shipping on orders over LKR 5,000.`,
+    description: `Browse our ${category.name} collection. ${category.description || 'Premium quality products with the latest trends.'} Free shipping on orders over LKR 15,000.`,
     keywords: `${category.name}, ${category.name} online, buy ${category.name}, fashion, online shopping sri lanka`.toLowerCase(),
     type: 'website',
     image: category.image_url || '/logo.white.png',
