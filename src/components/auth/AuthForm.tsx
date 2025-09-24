@@ -3,14 +3,16 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { motion } from 'framer-motion';
+import { X } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { showSuccessToast, showErrorToast } from '../ui/CustomToast';
-import logoWhite from '../../assests/logo.white.png';
+import logoBlack from '../../assests/logo.black.png';
 
 interface AuthFormProps {
   onSuccess: () => void;
+  onClose?: () => void;
   initialMode?: AuthMode;
 }
 
@@ -42,7 +44,7 @@ const changeEmailSchema = yup.object({
 
 type AuthMode = 'signin' | 'signup' | 'forgot' | 'reset' | 'changeemail';
 
-const AuthForm = ({ onSuccess, initialMode = 'signin' }: AuthFormProps) => {
+const AuthForm = ({ onSuccess, onClose, initialMode = 'signin' }: AuthFormProps) => {
   const [authMode, setAuthMode] = useState<AuthMode>(initialMode);
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -141,126 +143,132 @@ const AuthForm = ({ onSuccess, initialMode = 'signin' }: AuthFormProps) => {
   };
 
   return (
-    <div>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-black border border-white/10 rounded-xl shadow-2xl p-8"
-      >
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <img
-            src={logoWhite}
-            alt="Kixora"
-            className="h-12 w-auto mx-auto mb-6"
-          />
-          <h2 className="text-xl font-bold text-white mb-2">
-            {getTitle()}
-          </h2>
-          <p className="text-gray-400 text-sm">
-            {getSubtitle()}
-          </p>
-        </div>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="bg-white rounded-3xl shadow-xl overflow-hidden relative"
+    >
+      {/* Close Button */}
+      {onClose && (
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600 z-10"
+        >
+          <X size={20} />
+        </button>
+      )}
 
-        {emailSent && (authMode === 'forgot' || authMode === 'signup') ? (
-          <div className="text-center py-8">
-            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">✓</span>
+      {/* Header */}
+      <div className="px-6 pt-6 pb-4 text-center">
+        <div className="flex items-center justify-center mx-auto mb-4">
+          <img src={logoBlack} alt="Kixora" className="h-12 w-auto" />
+        </div>
+        <h1 className="text-lg font-bold text-gray-900 mb-1">
+          {getTitle()}
+        </h1>
+        <p className="text-gray-600 text-xs">
+          {getSubtitle()}
+        </p>
+      </div>
+
+      {emailSent && (authMode === 'forgot' || authMode === 'signup') ? (
+        <div className="px-6 pb-6 text-center">
+          <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+              <span className="text-white text-sm font-bold">✓</span>
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">
-              {authMode === 'forgot' ? 'Email Sent!' : 'Account Created!'}
-            </h3>
-            <p className="text-gray-400 text-sm mb-6">
-              {authMode === 'forgot'
-                ? "We've sent a password reset link to your email address. Please check your inbox and follow the instructions."
-                : "Welcome to Kixora! We've sent a confirmation email to your inbox. Please click the link in the email to verify your account and complete the registration process."
-              }
-            </p>
-            <button
-              onClick={() => switchMode('signin')}
-              className="text-gray-400 hover:text-white font-medium text-sm transition-colors"
-            >
-              {authMode === 'forgot' ? 'Back to Sign In' : 'Continue to Sign In'}
-            </button>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <h3 className="text-base font-semibold text-gray-900 mb-2">
+            {authMode === 'forgot' ? 'Check Your Email' : 'Welcome to Kixora!'}
+          </h3>
+          <p className="text-gray-600 text-xs leading-relaxed mb-6 max-w-sm mx-auto">
+            {authMode === 'forgot'
+              ? "We've sent a password reset link to your email address. Click the link to reset your password."
+              : "Your account has been created successfully! Please check your email to verify your account and get started."
+            }
+          </p>
+          <button
+            onClick={() => switchMode('signin')}
+            className="w-full bg-black text-white py-2.5 px-5 rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
+          >
+            {authMode === 'forgot' ? 'Back to Sign In' : 'Continue to Sign In'}
+          </button>
+        </div>
+      ) : (
+        <div className="px-6 pb-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
             {/* Full Name - Only for signup */}
             {authMode === 'signup' && (
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-white uppercase tracking-wide">
-                  Full Name
-                </label>
-                <Input
+              <div>
+                <input
                   {...register('fullName')}
-                  error={errors.fullName?.message}
-                  placeholder="Enter your full name"
-                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 text-sm"
+                  placeholder="Full name"
+                  className="w-full px-3 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-gray-400 focus:bg-white transition-all"
                 />
+                {errors.fullName && (
+                  <p className="mt-1 text-xs text-red-500">{errors.fullName.message}</p>
+                )}
               </div>
             )}
 
-            {/* Email - For signin, signup, forgot, changeemail */}
+            {/* Email */}
             {(authMode === 'signin' || authMode === 'signup' || authMode === 'forgot') && (
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-white uppercase tracking-wide">
-                  Email
-                </label>
-                <Input
+              <div>
+                <input
                   type="email"
                   {...register('email')}
-                  error={errors.email?.message}
-                  placeholder="Enter your email"
-                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 text-sm"
+                  placeholder="Email address"
+                  className="w-full px-3 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-gray-400 focus:bg-white transition-all"
                 />
+                {errors.email && (
+                  <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
+                )}
               </div>
             )}
 
             {/* New Email - Only for changeemail */}
             {authMode === 'changeemail' && (
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-white uppercase tracking-wide">
-                  New Email
-                </label>
-                <Input
+              <div>
+                <input
                   type="email"
                   {...register('newEmail')}
-                  error={errors.newEmail?.message}
-                  placeholder="Enter your new email"
-                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 text-sm"
+                  placeholder="New email address"
+                  className="w-full px-3 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-gray-400 focus:bg-white transition-all"
                 />
+                {errors.newEmail && (
+                  <p className="mt-1 text-xs text-red-500">{errors.newEmail.message}</p>
+                )}
               </div>
             )}
 
-            {/* Password - For signin, signup, reset */}
+            {/* Password */}
             {(authMode === 'signin' || authMode === 'signup' || authMode === 'reset') && (
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-white uppercase tracking-wide">
-                  Password
-                </label>
-                <Input
+              <div>
+                <input
                   type="password"
                   {...register('password')}
-                  error={errors.password?.message}
-                  placeholder="Enter your password"
-                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 text-sm"
+                  placeholder="Password"
+                  className="w-full px-3 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-gray-400 focus:bg-white transition-all"
                 />
+                {errors.password && (
+                  <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
+                )}
               </div>
             )}
 
             {/* Confirm Password - Only for reset */}
             {authMode === 'reset' && (
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-white uppercase tracking-wide">
-                  Confirm Password
-                </label>
-                <Input
+              <div>
+                <input
                   type="password"
                   {...register('confirmPassword')}
-                  error={errors.confirmPassword?.message}
-                  placeholder="Confirm your password"
-                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 text-sm"
+                  placeholder="Confirm password"
+                  className="w-full px-3 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-gray-400 focus:bg-white transition-all"
                 />
+                {errors.confirmPassword && (
+                  <p className="mt-1 text-xs text-red-500">{errors.confirmPassword.message}</p>
+                )}
               </div>
             )}
 
@@ -270,82 +278,79 @@ const AuthForm = ({ onSuccess, initialMode = 'signin' }: AuthFormProps) => {
                 <button
                   type="button"
                   onClick={() => switchMode('forgot')}
-                  className="text-gray-400 hover:text-white text-xs transition-colors"
+                  className="text-xs text-gray-600 hover:text-gray-900 transition-colors"
                 >
                   Forgot password?
                 </button>
               </div>
             )}
 
-            <Button
+            <button
               type="submit"
-              fullWidth
-              loading={loading}
-              className="mt-6 !bg-white !text-black hover:!bg-gray-200 !text-sm font-medium"
+              disabled={loading}
+              className="w-full bg-black text-white py-2.5 px-5 rounded-lg text-sm font-medium hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors mt-4"
             >
-              {authMode === 'signin' && 'Sign In'}
-              {authMode === 'signup' && 'Create Account'}
-              {authMode === 'forgot' && 'Send Reset Link'}
-              {authMode === 'reset' && 'Update Password'}
-              {authMode === 'changeemail' && 'Change Email'}
-            </Button>
-
+              {loading ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Loading...
+                </span>
+              ) : (
+                <>
+                  {authMode === 'signin' && 'Sign In'}
+                  {authMode === 'signup' && 'Create Account'}
+                  {authMode === 'forgot' && 'Send Reset Link'}
+                  {authMode === 'reset' && 'Update Password'}
+                  {authMode === 'changeemail' && 'Change Email'}
+                </>
+              )}
+            </button>
           </form>
-        )}
 
-        <div className="text-center mt-6 space-y-2">
-          {authMode === 'signin' && (
-            <button
-              type="button"
-              onClick={() => switchMode('signup')}
-              className="text-gray-400 hover:text-white font-medium text-sm transition-colors block w-full"
-            >
-              Don't have an account? Sign up
-            </button>
-          )}
+          {/* Bottom Links */}
+          <div className="text-center mt-4">
+            {authMode === 'signin' && (
+              <p className="text-gray-600 text-xs">
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => switchMode('signup')}
+                  className="text-black font-medium hover:underline transition-colors"
+                >
+                  Sign up
+                </button>
+              </p>
+            )}
 
-          {authMode === 'signup' && (
-            <button
-              type="button"
-              onClick={() => switchMode('signin')}
-              className="text-gray-400 hover:text-white font-medium text-sm transition-colors block w-full"
-            >
-              Already have an account? Sign in
-            </button>
-          )}
+            {authMode === 'signup' && (
+              <p className="text-gray-600 text-xs">
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => switchMode('signin')}
+                  className="text-black font-medium hover:underline transition-colors"
+                >
+                  Sign in
+                </button>
+              </p>
+            )}
 
-          {authMode === 'forgot' && (
-            <button
-              type="button"
-              onClick={() => switchMode('signin')}
-              className="text-gray-400 hover:text-white font-medium text-sm transition-colors block w-full"
-            >
-              Back to Sign In
-            </button>
-          )}
-
-          {authMode === 'reset' && (
-            <button
-              type="button"
-              onClick={() => switchMode('signin')}
-              className="text-gray-400 hover:text-white font-medium text-sm transition-colors block w-full"
-            >
-              Back to Sign In
-            </button>
-          )}
-
-          {authMode === 'changeemail' && (
-            <button
-              type="button"
-              onClick={() => switchMode('signin')}
-              className="text-gray-400 hover:text-white font-medium text-sm transition-colors block w-full"
-            >
-              Back to Sign In
-            </button>
-          )}
+            {(authMode === 'forgot' || authMode === 'reset' || authMode === 'changeemail') && (
+              <button
+                type="button"
+                onClick={() => switchMode('signin')}
+                className="text-gray-600 text-xs hover:text-gray-900 transition-colors"
+              >
+                ← Back to Sign In
+              </button>
+            )}
+          </div>
         </div>
-      </motion.div>
-    </div>
+      )}
+    </motion.div>
   );
 };
 

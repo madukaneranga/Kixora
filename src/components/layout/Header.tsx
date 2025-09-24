@@ -339,7 +339,10 @@ const Header = () => {
         onClose={() => setShowAuthModal(false)}
         title=""
       >
-        <AuthForm onSuccess={() => setShowAuthModal(false)} />
+        <AuthForm
+          onSuccess={() => setShowAuthModal(false)}
+          onClose={() => setShowAuthModal(false)}
+        />
       </Modal>
       </header>
     </>
