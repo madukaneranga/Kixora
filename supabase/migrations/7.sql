@@ -1,12 +1,5 @@
 -- Extend existing product_images table with missing fields for image upload functionality
 
--- Add missing columns to product_images table
-ALTER TABLE product_images
-ADD COLUMN IF NOT EXISTS image_url text,
-ADD COLUMN IF NOT EXISTS file_name text,
-ADD COLUMN IF NOT EXISTS file_size bigint,
-ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
-
 -- Create indexes for better performance (only if they don't exist)
 CREATE INDEX IF NOT EXISTS idx_product_images_product_id ON product_images(product_id);
 CREATE INDEX IF NOT EXISTS idx_product_images_display_order ON product_images(product_id, display_order);
@@ -17,21 +10,6 @@ ALTER TABLE product_images ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies if they exist and recreate them
 DROP POLICY IF EXISTS "Product images are viewable by everyone" ON product_images;
-DROP POLICY IF EXISTS "Admin users can manage product images" ON product_images;
-
--- Allow public read access to product images
-CREATE POLICY "Product images are viewable by everyone" ON product_images
-  FOR SELECT USING (true);
-
--- Allow admin users to insert, update, delete product images
-CREATE POLICY "Admin users can manage product images" ON product_images
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid()
-      AND role = 'admin'
-    )
-  );
 
 -- Create function to ensure only one primary image per product
 CREATE OR REPLACE FUNCTION ensure_single_primary_image()
@@ -67,11 +45,6 @@ CREATE TRIGGER trigger_ensure_single_primary_image
   FOR EACH ROW
   EXECUTE FUNCTION ensure_single_primary_image();
 
--- Create storage bucket for product images (if not exists)
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('product-images', 'product-images', true)
-ON CONFLICT (id) DO NOTHING;
-
 -- Drop existing storage policies and recreate them
 DO $$
 BEGIN
@@ -83,36 +56,3 @@ EXCEPTION
   WHEN undefined_object THEN NULL;
 END $$;
 
--- Set up storage policies for product images bucket
-CREATE POLICY "Public can view product images" ON storage.objects
-  FOR SELECT USING (bucket_id = 'product-images');
-
-CREATE POLICY "Admin users can upload product images" ON storage.objects
-  FOR INSERT WITH CHECK (
-    bucket_id = 'product-images'
-    AND EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid()
-      AND role = 'admin'
-    )
-  );
-
-CREATE POLICY "Admin users can update product images" ON storage.objects
-  FOR UPDATE USING (
-    bucket_id = 'product-images'
-    AND EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid()
-      AND role = 'admin'
-    )
-  );
-
-CREATE POLICY "Admin users can delete product images" ON storage.objects
-  FOR DELETE USING (
-    bucket_id = 'product-images'
-    AND EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid()
-      AND role = 'admin'
-    )
-  );
