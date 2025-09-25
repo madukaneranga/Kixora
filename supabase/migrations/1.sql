@@ -97,7 +97,11 @@ CREATE TABLE product_images (
   alt_text text,
   display_order integer DEFAULT 0,
   is_primary boolean DEFAULT false,
-  created_at timestamptz DEFAULT now()
+  created_at timestamptz DEFAULT now(),
+  image_url text NOT NULL,
+  file_name text NOT NULL,
+  file_size text NOT NULL,
+  updated_at timestamptz DEFAULT now()
 );
 
 -- =====================================================
@@ -125,6 +129,7 @@ CREATE TABLE collection_products (
   product_id uuid REFERENCES products(id) ON DELETE CASCADE,
   display_order integer DEFAULT 0,
   created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
   UNIQUE(collection_id, product_id)
 );
 

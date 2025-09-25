@@ -31,15 +31,6 @@ CREATE POLICY "Anyone can view active announcements" ON announcements
     AND (end_date IS NULL OR end_date >= now())
   );
 
--- Create policy for admins to manage announcements
-CREATE POLICY "Admins can manage announcements" ON announcements
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
 
 -- Create trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_announcements_updated_at()

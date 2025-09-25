@@ -2,7 +2,6 @@
   # Add updated_at columns to remaining tables
 
   Adds updated_at columns and triggers to tables that don't have them:
-  - collection_products
   - wishlists
   - cart_items
   - order_items
@@ -12,8 +11,7 @@
 */
 
 -- Add updated_at columns to remaining tables that don't have them
-ALTER TABLE collection_products
-ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
+
 
 ALTER TABLE wishlists
 ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
